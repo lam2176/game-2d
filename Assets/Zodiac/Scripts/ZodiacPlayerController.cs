@@ -139,6 +139,17 @@ public class ZodiacPlayerController : MonoBehaviour
         IsGrounded = false;
     }
 
+    /// <summary>Bật nảy lên (đạp đầu quái). Giữ Space thì nảy hết cỡ, thả ra thì bị cắt như cú nhảy thường.</summary>
+    public void Bounce(float velocity)
+    {
+        if (!controlEnabled) return;
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, velocity);
+        jumping = true;
+        IsGrounded = false;
+        coyoteCounter = 0f;
+        jumpBufferCounter = 0f;
+    }
+
     void OnDamaged(int amount, Vector2 source)
     {
         float away = transform.position.x >= source.x ? 1f : -1f;
