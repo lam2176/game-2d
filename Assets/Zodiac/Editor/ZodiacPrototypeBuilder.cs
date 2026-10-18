@@ -25,17 +25,17 @@ public static class ZodiacPrototypeBuilder
     const string Root = "Assets/Zodiac";
     const string SceneFolder = Root + "/Scenes";
     const string StartScenePath = SceneFolder + "/Zodiac_Start.unity";
-    const string LevelScenePath = SceneFolder + "/Zodiac_Level01.unity";
+    internal const string LevelScenePath = SceneFolder + "/Zodiac_Level01.unity";
     const string PlaceholderFolder = Root + "/Art/Placeholder";
-    const string SquarePath = PlaceholderFolder + "/Square.png";
-    const string CirclePath = PlaceholderFolder + "/Circle.png";
+    internal const string SquarePath = PlaceholderFolder + "/Square.png";
+    internal const string CirclePath = PlaceholderFolder + "/Circle.png";
     const string MonkeySpritePath = Root + "/Art/Characters/Monkey_Than.png";
     const string CharacterFolder = Root + "/Characters";
     const string MonkeyDataPath = CharacterFolder + "/Monkey_Than.asset";
     const string AnimationFolder = Root + "/Animations";
     const string ControllerPath = AnimationFolder + "/ZodiacCharacter.controller";
     const string PhysicsFolder = Root + "/Physics";
-    const string NoFrictionPath = PhysicsFolder + "/NoFriction.physicsMaterial2D";
+    internal const string NoFrictionPath = PhysicsFolder + "/NoFriction.physicsMaterial2D";
 
     static readonly Color SkyColor = new Color(0.98f, 0.90f, 0.75f);
     static readonly Color SoilColor = new Color(0.55f, 0.36f, 0.22f);
@@ -182,6 +182,7 @@ public static class ZodiacPrototypeBuilder
         manager.goal = goal;
         manager.killZone = killTrigger;
         BuildLevelUI(manager, monkey);
+        ZodiacCombatSetup.Apply();
 
         EnsureFolder(SceneFolder);
         EditorSceneManager.SaveScene(scene, LevelScenePath);
@@ -284,7 +285,7 @@ public static class ZodiacPrototypeBuilder
                         new Vector2(size.x, GrassThickness), GrassColor, 1).layer = layer;
     }
 
-    static GameObject CreateDecor(string name, Transform parent, Sprite sprite, Vector2 localPosition, Vector2 size,
+    internal static GameObject CreateDecor(string name, Transform parent, Sprite sprite, Vector2 localPosition, Vector2 size,
                                   Color color, int sortingOrder)
     {
         var go = new GameObject(name);
@@ -405,7 +406,7 @@ public static class ZodiacPrototypeBuilder
         go.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
     }
 
-    static Text CreateText(Transform parent, string name, string content, int size, Color color,
+    internal static Text CreateText(Transform parent, string name, string content, int size, Color color,
                            Vector2 anchor, Vector2 position, Vector2 boxSize, TextAnchor alignment)
     {
         var text = new GameObject(name, typeof(RectTransform)).AddComponent<Text>();
@@ -424,7 +425,7 @@ public static class ZodiacPrototypeBuilder
         return text;
     }
 
-    static Image CreateImage(Transform parent, string name, Color color)
+    internal static Image CreateImage(Transform parent, string name, Color color)
     {
         var image = new GameObject(name, typeof(RectTransform)).AddComponent<Image>();
         image.transform.SetParent(parent, false);
@@ -447,14 +448,14 @@ public static class ZodiacPrototypeBuilder
         return button;
     }
 
-    static void Place(RectTransform rt, Vector2 anchor, Vector2 position, Vector2 size)
+    internal static void Place(RectTransform rt, Vector2 anchor, Vector2 position, Vector2 size)
     {
         rt.anchorMin = rt.anchorMax = anchor;
         rt.anchoredPosition = position;
         rt.sizeDelta = size;
     }
 
-    static void Stretch(RectTransform rt)
+    internal static void Stretch(RectTransform rt)
     {
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
@@ -647,7 +648,7 @@ public static class ZodiacPrototypeBuilder
         EditorBuildSettings.scenes = scenes.ToArray();
     }
 
-    static void EnsureFolder(string path)
+    internal static void EnsureFolder(string path)
     {
         if (AssetDatabase.IsValidFolder(path)) return;
         string parent = Path.GetDirectoryName(path).Replace('\\', '/');

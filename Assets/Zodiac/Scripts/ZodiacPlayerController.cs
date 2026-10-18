@@ -49,6 +49,12 @@ public class ZodiacPlayerController : MonoBehaviour
     [Tooltip("Tốc độ rơi tối đa (unit/s) — tránh rơi quá nhanh xuyên nền mỏng.")]
     [Min(1f)] public float maxFallSpeed = 20f;
 
+    [Header("Bị đánh (cần component Health)")]
+    [Tooltip("Vận tốc bị đẩy ra xa nguồn sát thương (x) và bật lên (y).")]
+    public Vector2 hurtKnockback = new Vector2(6f, 7f);
+    [Tooltip("Mất điều khiển trong khoảng này sau khi bị đánh (giây).")]
+    [Min(0f)] public float hurtStunTime = 0.25f;
+
     [Header("Kiểm tra tiếp đất")]
     public LayerMask groundLayer;
     [Min(0.01f)] public float groundCheckDepth = 0.08f;
@@ -69,7 +75,9 @@ public class ZodiacPlayerController : MonoBehaviour
     float coyoteCounter, jumpBufferCounter;
     bool jumping;
     bool controlEnabled = true;
+    float stunCounter;
 
+    public bool ControlEnabled => controlEnabled;
     public bool IsGrounded { get; private set; }
     public bool IsRunning { get; private set; }
 
@@ -93,6 +101,7 @@ public class ZodiacPlayerController : MonoBehaviour
         body = GetComponent<CapsuleCollider2D>();
         rb.gravityScale = gravityScale;
         ApplyCharacter();
+        if (TryGetComponent(out Health health)) health.Damaged += OnDamaged;
 
         moveAction = InputSystem.actions.FindAction("Player/Move");
         jumpAction = InputSystem.actions.FindAction("Player/Jump");
@@ -117,6 +126,34 @@ public class ZodiacPlayerController : MonoBehaviour
         body.size = character.colliderSize;
         body.offset = character.colliderOffset;
         if (spriteRenderer != null && character.sprite != null) spriteRenderer.sprite = character.sprite;
+    }
+
+    /// <summary>Đẩy nhân vật đi với vận tốc cho trước và tạm mất điều khiển trong stunTime giây.</summary>
+    public void ApplyKnockback(Vector2 velocity, float stunTime)
+    {
+        if (!controlEnabled) return;
+        rb.linearVelocity = velocity;
+        stunCounter = stunTime;
+        jumping = false;
+        jumpBufferCounter = 0f;
+        IsGrounded = false;
+    }
+
+    /// <summary>Bật nảy lên (đạp đầu quái). Giữ Space thì nảy hết cỡ, thả ra thì bị cắt như cú nhảy thường.</summary>
+    public void Bounce(float velocity)
+    {
+        if (!controlEnabled) return;
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, velocity);
+        jumping = true;
+        IsGrounded = false;
+        coyoteCounter = 0f;
+        jumpBufferCounter = 0f;
+    }
+
+    void OnDamaged(int amount, Vector2 source)
+    {
+        float away = transform.position.x >= source.x ? 1f : -1f;
+        ApplyKnockback(new Vector2(away * hurtKnockback.x, hurtKnockback.y), hurtStunTime);
     }
 
     /// <summary>Khoá/mở điều khiển. Khi khoá, nhân vật đứng yên tại chỗ (dùng lúc thắng/thua).</summary>
@@ -162,6 +199,16 @@ public class ZodiacPlayerController : MonoBehaviour
             coyoteCounter -= dt;
         }
         if (!controlEnabled) return;
+
+        if (stunCounter > 0f)
+        {
+            // Đang bị đẩy lùi: để vận tốc tự nhiên, chỉ áp trọng lực và giới hạn tốc độ rơi.
+            stunCounter -= dt;
+            v.y = Mathf.Max(v.y, -maxFallSpeed);
+            rb.linearVelocity = v;
+            rb.gravityScale = v.y < 0f ? gravityScale * fallGravityMultiplier : gravityScale;
+            return;
+        }
 
         // Ngang: tăng tốc tới tốc độ mục tiêu, giảm tốc riêng khi thả phím hoặc đổi hướng.
         IsRunning = inputX != 0f && sprintHeld;
