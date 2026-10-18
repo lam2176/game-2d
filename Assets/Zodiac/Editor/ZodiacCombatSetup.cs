@@ -24,6 +24,10 @@ public static class ZodiacCombatSetup
     // Quái đặt trên mặt đất: x, quãng tuần tra mỗi phía.
     static readonly (float x, float patrol)[] EnemySpawns = { (6f, 3f), (18f, 2.5f), (44f, 3f) };
 
+    // Menu mờ đi trong Play mode — sửa/lưu scene lúc đó sẽ lỗi InvalidOperationException.
+    [MenuItem("Tools/Zodiac/Thêm chiến đấu vào Level01", true)]
+    static bool CanApply() => !EditorApplication.isPlayingOrWillChangePlaymode;
+
     [MenuItem("Tools/Zodiac/Thêm chiến đấu vào Level01")]
     static void ApplyInteractive()
     {
