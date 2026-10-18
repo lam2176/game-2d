@@ -18,7 +18,7 @@ concurrency:
 jobs:
   project-checks:
     name: Kiểm tra cấu trúc dự án
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
   build:
     name: Build Unity (Windows 64-bit)
     needs: project-checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - name: Kiểm tra secret license Unity
