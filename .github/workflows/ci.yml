@@ -1,0 +1,90 @@
+# CI cho dự án Unity 2D 12 con giáp.
+# - project-checks: kiểm tra cấu trúc dự án (meta, GUID, JSON, Build Settings, dung lượng) — không cần Unity.
+# - build: mở dự án bằng Unity (GameCI) để biên dịch toàn bộ script và build bản Windows chơi được.
+#   Cần 3 secret: UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD. Chưa có secret thì job tự bỏ qua (cảnh báo vàng).
+name: CI
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  project-checks:
+    name: Kiểm tra cấu trúc dự án
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python ci/check_project.py
+
+  build:
+    name: Build Unity (Windows 64-bit)
+    needs: project-checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Kiểm tra secret license Unity
+        id: license
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -n "$UNITY_LICENSE" ] && [ -n "$UNITY_EMAIL" ] && [ -n "$UNITY_PASSWORD" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Chưa cấu hình secret UNITY_LICENSE / UNITY_EMAIL / UNITY_PASSWORD — bỏ qua build Unity."
+          fi
+
+      - name: Giải phóng dung lượng runner (image Unity rất nặng)
+        if: steps.license.outputs.available == 'true'
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - uses: actions/checkout@v4
+        if: steps.license.outputs.available == 'true'
+
+      - name: Cache thư mục Library
+        if: steps.license.outputs.available == 'true'
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-StandaloneWindows64-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-StandaloneWindows64-
+
+      - name: Build bằng Unity (phiên bản lấy từ ProjectSettings/ProjectVersion.txt)
+        if: steps.license.outputs.available == 'true'
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: StandaloneWindows64
+          buildName: Zodiac2D
+
+      - name: Tải bản build lên Artifacts
+        if: steps.license.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zodiac2D-Windows64
+          path: build/StandaloneWindows64
+          retention-days: 7
