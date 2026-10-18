@@ -194,7 +194,7 @@ public static class ZodiacPrototypeBuilder
         go.transform.position = SpawnPoint;
 
         var rb = go.AddComponent<Rigidbody2D>();
-        rb.gravityScale = 3f;
+        rb.gravityScale = 3f;   // ZodiacPlayerController.gravityScale ghi đè khi vào game
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
@@ -218,9 +218,6 @@ public static class ZodiacPrototypeBuilder
 
         var pc = go.AddComponent<ZodiacPlayerController>();
         pc.character = character;
-        pc.walkSpeed = character.walkSpeed;
-        pc.runSpeed = character.runSpeed;
-        pc.jumpHeight = character.jumpHeight;
         pc.groundLayer = 1 << groundLayer;
         pc.facing = facing;
         pc.spriteRenderer = sr;

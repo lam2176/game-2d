@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Trạng thái màn chơi: đang chơi → thắng (chạm đích) hoặc thua (rơi xuống vực).
+/// Trạng thái màn chơi: đang chơi → thắng (chạm đích) hoặc thua (rơi xuống vực: chạm KillZone hoặc thấp hơn fallLimitY).
 /// Đếm vật phẩm, cập nhật HUD, hiện bảng thắng/thua. Phím R chơi lại nhanh.
 /// </summary>
 public class ZodiacGameManager : MonoBehaviour
@@ -15,6 +15,8 @@ public class ZodiacGameManager : MonoBehaviour
     public PlayerTrigger goal;
     public PlayerTrigger killZone;
     public string startSceneName = "Zodiac_Start";
+    [Tooltip("Dự phòng cho KillZone: nhân vật xuống thấp hơn độ cao này là thua.")]
+    public float fallLimitY = -10f;
 
     [Header("UI")]
     public Text collectText;
@@ -41,6 +43,7 @@ public class ZodiacGameManager : MonoBehaviour
 
     void Update()
     {
+        if (Current == State.Playing && player.transform.position.y < fallLimitY) Finish(State.Lost);
         if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) Restart();
     }
 
