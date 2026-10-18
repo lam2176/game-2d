@@ -85,6 +85,10 @@ public static class ZodiacPrototypeBuilder
     const float GoalX = 55f;
     static readonly Rect CameraBounds = new Rect(-13f, -4f, 72f, 20f);
 
+    // Menu mờ đi trong Play mode — dựng/lưu scene lúc đó sẽ lỗi InvalidOperationException.
+    [MenuItem("Tools/Zodiac/Dựng prototype", true)]
+    static bool CanBuild() => !EditorApplication.isPlayingOrWillChangePlaymode;
+
     [MenuItem("Tools/Zodiac/Dựng prototype")]
     public static void BuildInteractive() => Build(interactive: true);
 
