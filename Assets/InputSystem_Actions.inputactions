@@ -321,6 +321,17 @@
                 },
                 {
                     "name": "",
+                    "id": "45f3cede-f3be-4413-943e-42a4ec5fe1c6",
+                    "path": "<Keyboard>/j",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "cbac6039-9c09-46a1-b5f2-4e5124ccb5ed",
                     "path": "<Keyboard>/2",
                     "interactions": "",
