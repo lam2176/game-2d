@@ -31,6 +31,7 @@ public class CharacterAnimator : MonoBehaviour
     ZodiacPlayerController player;
     PlayerMeleeAttack attack;
     PlayerSkill skill;
+    PlayerDodge dodge;
     Health health;
     Transform t;
 
@@ -48,6 +49,7 @@ public class CharacterAnimator : MonoBehaviour
         player = GetComponentInParent<ZodiacPlayerController>();
         attack = GetComponentInParent<PlayerMeleeAttack>();
         skill = GetComponentInParent<PlayerSkill>();
+        dodge = GetComponentInParent<PlayerDodge>();
         health = GetComponentInParent<Health>();
     }
 
@@ -56,6 +58,7 @@ public class CharacterAnimator : MonoBehaviour
         if (player != null) { player.Jumped += OnJumped; player.Landed += OnLanded; }
         if (attack != null) attack.Swung += OnSwung;
         if (skill != null) skill.Used += OnSkill;
+        if (dodge != null) dodge.Dodged += OnDodged;
         if (health != null) health.Damaged += OnDamaged;
     }
 
@@ -64,6 +67,7 @@ public class CharacterAnimator : MonoBehaviour
         if (player != null) { player.Jumped -= OnJumped; player.Landed -= OnLanded; }
         if (attack != null) attack.Swung -= OnSwung;
         if (skill != null) skill.Used -= OnSkill;
+        if (dodge != null) dodge.Dodged -= OnDodged;
         if (health != null) health.Damaged -= OnDamaged;
     }
 
@@ -118,6 +122,14 @@ public class CharacterAnimator : MonoBehaviour
         }
     }
 
+    /// <summary>Lăn: lộn một vòng về phía trước, người thu nhỏ lại.</summary>
+    void OnDodged(float dir)
+    {
+        spin = 0f;
+        spinSpeed = -360f / Mathf.Max(0.1f, dodge.duration);
+        Impulse(new Vector2(2f, -3f));
+    }
+
     void OnDamaged(Hit hit)
     {
         Kick(18f);
@@ -145,7 +157,11 @@ public class CharacterAnimator : MonoBehaviour
         Vector2 targetSquash = Vector2.zero;
         float targetLean = 0f, bob = 0f, wobble = 0f;
 
-        if (player.IsOverridden && skill != null && skill.IsBusy)
+        if (dodge != null && dodge.IsDodging)
+        {
+            targetSquash = new Vector2(-0.12f, -0.22f);   // cuộn tròn người
+        }
+        else if (player.IsOverridden && skill != null && skill.IsBusy)
         {
             // Đang lướt / dậm đất: kéo dài theo hướng chuyển động
             if (Mathf.Abs(v.y) > Mathf.Abs(v.x)) targetSquash = new Vector2(-0.18f, 0.25f);

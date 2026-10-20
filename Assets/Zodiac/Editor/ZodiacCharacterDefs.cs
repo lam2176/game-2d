@@ -7,7 +7,7 @@ using UnityEngine;
 /// Ảnh trong Assets/Zodiac/Art/Characters đã được cắt gọn từ ảnh gốc (Assets/Characters/...), lật cho mọi con quay mặt sang phải,
 /// pivot đặt ở bàn chân. Riêng Khỉ dùng lại ảnh và thiết lập import cũ.
 ///
-/// Asset đã có thì giữ nguyên chỉnh sửa tay — chỉ điền khi còn trống (asset cũ chưa có nội tại/chiêu).
+/// Asset đã có thì giữ nguyên chỉnh sửa tay — chỉ điền lại khi asset được tạo bởi bảng số liệu cũ hơn (DataVersion).
 /// Menu "Tools/Zodiac/Ghi đè chỉ số 12 con giáp" ghi đè lại toàn bộ theo bảng dưới đây.
 /// </summary>
 public static class ZodiacCharacterDefs
@@ -48,7 +48,7 @@ public static class ZodiacCharacterDefs
             passive = "Lanh lẹ", passiveDesc = "Nhỏ con, chạy nhanh, nhảy cao hơn một chút — dễ luồn lách.",
             skill = Hold(Skill(SkillType.Dash, "Độn Ảnh", 1f, 0,
                 "Lướt vụt về phía trước như bóng chuột: bất tử trong lúc lướt, đi xuyên qua quái và đạn.\n(Tham khảo: Dash của Celeste, Shade Cloak của Hollow Knight)"),
-                s => { s.dashSpeed = 22f; s.dashTime = 0.18f; s.dashInvulnerable = true; }),
+                s => { s.energyCost = 2; s.dashSpeed = 22f; s.dashTime = 0.18f; s.dashInvulnerable = true; }),
         },
         new Def
         {
@@ -58,7 +58,7 @@ public static class ZodiacCharacterDefs
             passive = "Da trâu", passiveDesc = "7 máu và đứng vững như cột đình — bị đánh gần như không bị đẩy lùi.",
             skill = Hold(Skill(SkillType.Projectile, "Chiêng Chấn Địa", 3f, 2,
                 "Gõ chiêng: hai làn sóng chấn chạy dọc mặt đất sang hai bên, gây 2 sát thương và làm choáng quái 1.2 giây.\n(Tham khảo: sóng chấn của Mega Man, Cuphead)"),
-                s => { s.groundWave = true; s.bothDirections = true; s.projectileSpeed = 11f; s.projectileRange = 9f;
+                s => { s.energyCost = 3; s.groundWave = true; s.bothDirections = true; s.projectileSpeed = 11f; s.projectileRange = 9f;
                        s.projectileSize = 0.9f; s.pierce = -1; s.stunTime = 1.2f; s.knockback = 0.5f; }),
         },
         new Def
@@ -69,7 +69,7 @@ public static class ZodiacCharacterDefs
             passive = "Mãnh hổ", passiveDesc = "Đòn đánh thường gây 2 sát thương.",
             skill = Hold(Skill(SkillType.Dash, "Hổ Vồ", 2.5f, 3,
                 "Vồ chéo lên phía trước, xé 3 sát thương; vồ trúng thì bật nảy lên để vồ tiếp.\n(Tham khảo: Dash Slash của Hollow Knight)"),
-                s => { s.dashSpeed = 17f; s.dashTime = 0.3f; s.dashAngle = 28f; s.dashInvulnerable = true;
+                s => { s.energyCost = 3; s.dashSpeed = 17f; s.dashTime = 0.3f; s.dashAngle = 28f; s.dashInvulnerable = true;
                        s.dashBounceOnHit = true; s.knockback = 1.5f; }),
         },
         new Def
@@ -80,7 +80,7 @@ public static class ZodiacCharacterDefs
             passive = "Chín mạng", passiveDesc = "Mỗi màn được thoát chết một lần: đòn chí mạng chỉ để lại 1 máu.",
             skill = Hold(Skill(SkillType.Projectile, "Tiếng Nhị Xuyên Tâm", 1.6f, 2,
                 "Kéo nhị bắn một sợi âm sắc lẹm bay thẳng, xuyên qua mọi kẻ địch trên đường (2 sát thương).\n(Tham khảo: Charge Shot của Mega Man)"),
-                s => { s.projectileSpeed = 18f; s.projectileRange = 13f; s.projectileSize = 0.5f; s.pierce = -1; }),
+                s => { s.energyCost = 2; s.projectileSpeed = 18f; s.projectileRange = 13f; s.projectileSize = 0.5f; s.pierce = -1; }),
         },
         new Def
         {
@@ -90,7 +90,7 @@ public static class ZodiacCharacterDefs
             passive = "Thăng long", passiveDesc = "Nhảy cao nhất trong 12 con giáp (4 ô) và có 6 máu.",
             skill = Hold(Skill(SkillType.Projectile, "Long Hoả", 2.2f, 1,
                 "Gảy đàn tranh phun 5 cầu lửa toả hình quạt — đứng càng gần càng trúng nhiều.\n(Tham khảo: Spread Shot của Contra, Cuphead)"),
-                s => { s.projectileCount = 5; s.spreadAngle = 50f; s.projectileSpeed = 12f; s.projectileRange = 8f;
+                s => { s.energyCost = 3; s.projectileCount = 5; s.spreadAngle = 50f; s.projectileSpeed = 12f; s.projectileRange = 8f;
                        s.projectileSize = 0.55f; }),
         },
         new Def
@@ -101,7 +101,7 @@ public static class ZodiacCharacterDefs
             passive = "Nọc độc", passiveDesc = "Đòn đánh thường tẩm độc, gây thêm 2 sát thương theo thời gian.",
             skill = Hold(Skill(SkillType.Stealth, "Xà Ảnh", 6f, 0,
                 "Ẩn vào bóng tối 3 giây: bất tử, quái mất dấu. Đòn đánh đầu tiên khi đang ẩn gây sát thương x3.\n(Tham khảo: Mark of the Ninja, Dead Cells)"),
-                s => { s.stealthDuration = 3f; s.backstabMultiplier = 3f; }),
+                s => { s.energyCost = 4; s.stealthDuration = 3f; s.backstabMultiplier = 3f; }),
         },
         new Def
         {
@@ -111,7 +111,7 @@ public static class ZodiacCharacterDefs
             passive = "Thiên lý mã", passiveDesc = "Chạy nhanh nhất (11 ô/giây khi giữ Shift) — nhảy xa qua vực rộng.",
             skill = Hold(Skill(SkillType.Dash, "Vó Ngựa Phi", 2.5f, 2,
                 "Phi nước đại một quãng dài, húc văng mọi quái trên đường (2 sát thương, bất tử khi phi).\n(Tham khảo: Spin Dash của Sonic)"),
-                s => { s.dashSpeed = 19f; s.dashTime = 0.45f; s.dashInvulnerable = true; s.knockback = 2f; }),
+                s => { s.energyCost = 3; s.dashSpeed = 19f; s.dashTime = 0.45f; s.dashInvulnerable = true; s.knockback = 2f; }),
         },
         new Def
         {
@@ -121,7 +121,7 @@ public static class ZodiacCharacterDefs
             passive = "Hiền hoà", passiveDesc = "Cứ nhặt 6 đồng xu lại hồi 1 máu.",
             skill = Hold(Skill(SkillType.Heal, "Khúc Hồi Xuân", 8f, 0,
                 "Đứng yên gảy tỳ bà 0.8 giây để hồi 2 máu — bị đánh trúng thì bị ngắt.\n(Tham khảo: Focus của Hollow Knight)"),
-                s => { s.channelTime = 0.8f; s.healAmount = 2; }),
+                s => { s.energyCost = 4; s.channelTime = 0.8f; s.healAmount = 2; }),
         },
         new Def
         {
@@ -131,7 +131,7 @@ public static class ZodiacCharacterDefs
             passive = "Tề Thiên", passiveDesc = "Nhảy thêm 1 lần trên không. Đạp đầu quái thì được nhảy đôi lại.",
             skill = Hold(Skill(SkillType.Projectile, "Chũm Chọe Bay", 1.8f, 1,
                 "Ném chũm chọe xoay tít bay ra rồi quay về tay, chém mọi quái trên đường đi lẫn đường về.\n(Tham khảo: Metal Blade của Mega Man, boomerang của Zelda)"),
-                s => { s.boomerang = true; s.projectileSpeed = 13f; s.projectileRange = 10f; s.projectileSize = 0.7f; s.pierce = -1; }),
+                s => { s.energyCost = 2; s.boomerang = true; s.projectileSpeed = 13f; s.projectileRange = 10f; s.projectileSize = 0.7f; s.pierce = -1; }),
         },
         new Def
         {
@@ -141,7 +141,7 @@ public static class ZodiacCharacterDefs
             passive = "Cánh phượng", passiveDesc = "Giữ Space khi đang rơi để xoè cánh lượn chậm — bay qua vực rộng.",
             skill = Hold(Skill(SkillType.Burst, "Kèn Hiệu Bình Minh", 5f, 1,
                 "Thổi kèn: sóng âm toả tròn làm choáng mọi quái quanh mình 2 giây, gây 1 sát thương và thổi tan đạn địch.\n(Tham khảo: Howling Wraiths của Hollow Knight)"),
-                s => { s.radius = 4f; s.stunTime = 2f; s.knockback = 1f; s.clearsProjectiles = true; }),
+                s => { s.energyCost = 4; s.radius = 4f; s.stunTime = 2f; s.knockback = 1f; s.clearsProjectiles = true; }),
         },
         new Def
         {
@@ -151,7 +151,7 @@ public static class ZodiacCharacterDefs
             passive = "Mũi thính", passiveDesc = "Đồng xu trong bán kính 4.5 ô tự bay về phía Chó.",
             skill = Hold(Skill(SkillType.Burst, "Khuyển Hống", 2f, 2,
                 "Sủa vang: sóng âm phía trước gây 2 sát thương và hất văng quái ra xa.\n(Tham khảo: Force Push, Bash của Ori)"),
-                s => { s.radius = 2.2f; s.forwardOffset = 1.6f; s.knockback = 2.5f; s.stunTime = 0.6f; }),
+                s => { s.energyCost = 2; s.radius = 2.2f; s.forwardOffset = 1.6f; s.knockback = 2.5f; s.stunTime = 0.6f; }),
         },
         new Def
         {
@@ -161,7 +161,7 @@ public static class ZodiacCharacterDefs
             passive = "Phúc hậu", passiveDesc = "6 máu; đạp đầu quái gây gấp đôi sát thương.",
             skill = Hold(Skill(SkillType.GroundPound, "Heo Dậm Đất", 3f, 3,
                 "Bật lên rồi lao thẳng xuống dậm đất: sóng chấn quanh chỗ đáp gây 3 sát thương và làm choáng.\n(Tham khảo: Ground Pound của Mario, Stone của Kirby)"),
-                s => { s.diveSpeed = 26f; s.radius = 2.8f; s.stunTime = 1f; s.knockback = 1.2f; }),
+                s => { s.energyCost = 3; s.diveSpeed = 26f; s.radius = 2.8f; s.stunTime = 1f; s.knockback = 1.2f; }),
         },
     };
 
@@ -210,6 +210,9 @@ public static class ZodiacCharacterDefs
         return roster;
     }
 
+    /// <summary>Tăng khi bảng số liệu đổi cấu trúc (vd. thêm Khí) — asset cũ hơn sẽ được điền lại.</summary>
+    const int DataVersion = 2;
+
     static ZodiacCharacter EnsureCharacter(Def d, bool overwrite)
     {
         string spritePath = $"{ArtFolder}/{d.file}.png";
@@ -225,7 +228,7 @@ public static class ZodiacCharacterDefs
             data = ScriptableObject.CreateInstance<ZodiacCharacter>();
             AssetDatabase.CreateAsset(data, path);
         }
-        if (created || overwrite || string.IsNullOrEmpty(data.passiveName)) Fill(data, d, sprite);
+        if (created || overwrite || data.dataVersion < DataVersion) Fill(data, d, sprite);
         if (data.skillSound == null && SkillSounds.TryGetValue(d.file, out string sound))
         {
             data.skillSound = ZodiacVisualSetup.Clip("Synth/" + sound);
@@ -259,6 +262,7 @@ public static class ZodiacCharacterDefs
         c.coinsPerHeal = d.coinsPerHeal;
         c.stompDamageMultiplier = d.stompMult;
         c.skill = JsonUtility.FromJson<SkillConfig>(JsonUtility.ToJson(d.skill));   // bản sao, không dùng chung object
+        c.dataVersion = DataVersion;
         EditorUtility.SetDirty(c);
     }
 

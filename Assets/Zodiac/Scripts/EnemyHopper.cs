@@ -37,7 +37,11 @@ public class EnemyHopper : EnemyBase
                 SetHorizontalVelocity(0f);
                 if (Time.time >= stateEnd && grounded)
                 {
-                    if (CanSeePlayer(detectRange, verticalRange)) direction = Mathf.Sign(player.transform.position.x - transform.position.x);
+                    if (CanSeePlayer(detectRange, verticalRange))
+                    {
+                        direction = Mathf.Sign(player.transform.position.x - transform.position.x);
+                        Alert();
+                    }
                     if (!SafeToHop(direction)) direction = -direction;
                     state = State.Crouch;
                     stateEnd = Time.time + crouchTime;
@@ -97,6 +101,6 @@ public class EnemyHopper : EnemyBase
             State.Air => new Vector3(0.85f, 1.2f, 1f),
             _ => Vector3.one,
         };
-        visual.localScale = new Vector3(s.x * direction, s.y, 1f);
+        SetVisualScale(new Vector3(s.x * direction, s.y, 1f));
     }
 }

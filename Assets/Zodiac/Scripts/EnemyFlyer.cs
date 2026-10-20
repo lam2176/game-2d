@@ -57,6 +57,7 @@ public class EnemyFlyer : EnemyBase
                 {
                     state = State.Windup;
                     stateEnd = Time.time + windupTime;
+                    Alert();
                 }
                 break;
             }

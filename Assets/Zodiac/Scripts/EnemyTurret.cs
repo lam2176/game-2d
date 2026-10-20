@@ -46,6 +46,7 @@ public class EnemyTurret : EnemyBase
         {
             charging = true;
             chargeEnd = Time.time + chargeTime;
+            Alert();
         }
         if (charging && Time.time >= chargeEnd)
         {

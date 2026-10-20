@@ -70,7 +70,7 @@ public class EnemyPatrol : EnemyBase
 
     void UpdatePatrol()
     {
-        if (chases && CanSeePlayer(detectRange, verticalRange)) { state = State.Chase; return; }
+        if (chases && CanSeePlayer(detectRange, verticalRange)) { state = State.Chase; Alert(); return; }
 
         float x = transform.position.x;
         bool pastLimit = (direction > 0f && x >= startX + patrolDistance) || (direction < 0f && x <= startX - patrolDistance);
@@ -150,9 +150,9 @@ public class EnemyPatrol : EnemyBase
     {
         if (visual == null) return;
         // Gồng đòn: thân bẹp xuống, phình ngang — báo hiệu sắp tấn công (thay cho animation chưa có).
-        visual.localScale = state == State.Windup
+        SetVisualScale(state == State.Windup
             ? new Vector3(direction * 1.15f, 0.85f, 1f)
-            : new Vector3(direction, 1f, 1f);
+            : new Vector3(direction, 1f, 1f));
     }
 
     void OnDrawGizmosSelected()

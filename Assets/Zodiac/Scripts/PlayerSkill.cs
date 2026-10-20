@@ -10,6 +10,7 @@ using UnityEngine.InputSystem;
 /// Dash / Projectile / Burst / Heal / Stealth / GroundPound (xem <see cref="SkillType"/>).
 /// Trong lúc chiêu chiếm quyền di chuyển (lướt, dậm đất, gồng hồi máu) controller ngừng điều khiển vận tốc
 /// và đòn đánh thường bị khoá. Hồi chiêu tính từ lúc chiêu kết thúc.
+/// Mỗi lần tung tốn <see cref="SkillConfig.energyCost"/> Khí (<see cref="PlayerEnergy"/>) — thiếu Khí thì không tung được.
 /// </summary>
 [RequireComponent(typeof(ZodiacPlayerController))]
 public class PlayerSkill : MonoBehaviour
@@ -19,6 +20,7 @@ public class PlayerSkill : MonoBehaviour
     public LayerMask groundLayer;
 
     ZodiacPlayerController controller;
+    PlayerEnergy energy;
     Health health;
     HitFlash flash;
     InputAction skillAction;
@@ -31,6 +33,8 @@ public class PlayerSkill : MonoBehaviour
     /// <summary>Chiêu đang chiếm quyền điều khiển.</summary>
     public bool IsBusy { get; private set; }
     public bool IsReady => Time.time >= readyTime && !IsBusy;
+    /// <summary>Đủ Khí để tung chiêu.</summary>
+    public bool HasEnergy => energy == null || Config == null || energy.CanSpend(Config.energyCost);
     public float CooldownRemaining => Mathf.Max(0f, readyTime - Time.time);
     /// <summary>0 = sẵn sàng, 1 = vừa dùng.</summary>
     public float CooldownNormalized => Config == null ? 0f : Mathf.Clamp01(CooldownRemaining / Config.cooldown);
@@ -42,6 +46,7 @@ public class PlayerSkill : MonoBehaviour
     void Awake()
     {
         controller = GetComponent<ZodiacPlayerController>();
+        energy = GetComponent<PlayerEnergy>();
         health = GetComponent<Health>();
         flash = GetComponent<HitFlash>();
         skillAction = InputSystem.actions.FindAction("Player/Skill");
@@ -68,10 +73,11 @@ public class PlayerSkill : MonoBehaviour
     public bool TryUse()
     {
         var cfg = Config;
-        if (cfg == null || !IsReady || !controller.ControlEnabled) return false;
+        if (cfg == null || !IsReady || !controller.ControlEnabled || controller.IsOverridden || !HasEnergy) return false;
         if (cfg.type == SkillType.Heal && (!controller.IsGrounded || health == null || health.Current >= health.maxHealth))
             return false;
 
+        energy?.TrySpend(cfg.energyCost);
         UseCount++;
         readyTime = float.PositiveInfinity;   // tính hồi chiêu khi chiêu kết thúc
         hitThisSkill.Clear();

@@ -263,7 +263,7 @@ public class BossFoxSpirit : EnemyBase
             State.Leap => new Vector3(0.9f, 1.15f, 1f),
             _ => Vector3.one,
         };
-        visual.localScale = new Vector3(s.x * direction, s.y, 1f);
+        SetVisualScale(new Vector3(s.x * direction, s.y, 1f));
         if (tails == null) return;
         float flicker = winding ? 0.5f + 0.5f * Mathf.Sin(Time.time * 25f) : 0f;
         for (int i = 0; i < tails.Length; i++)

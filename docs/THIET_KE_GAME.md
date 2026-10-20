@@ -13,7 +13,8 @@ Bấm Play ở `Zodiac_Start`.
 | A/D, ←/→ | Đi (giữ Shift để chạy) |
 | Space | Nhảy (giữ lâu thì nhảy cao, thả sớm thì nhảy thấp). ↓ + Space: rơi xuống qua bục tre |
 | J / chuột trái | Đánh thường (chém tan được đạn của quái) |
-| K / chuột phải / RB | Chiêu riêng của con giáp |
+| K / chuột phải / RB | Chiêu riêng của con giáp (tốn Khí) |
+| L / Ctrl trái / LB | Lăn né — bất tử, xuyên qua quái và đạn; trên không né được 1 lần |
 | R | Chơi lại màn |
 
 ## Luật chung (tham khảo)
@@ -102,3 +103,23 @@ Quy ước độ khó (nhảy cao 3.2 ô, chạy 8.5 ô/s): bậc leo ≤ 3 ô, 
 - **Animation bằng code** (`CharacterAnimator`): nhịp bước khớp tốc độ, nghiêng theo gia tốc, co giãn khi nhảy/đáp,
   vung người theo đòn, lộn vòng khi nhảy đôi, chao khi lượn.
 - **Chiến đấu**: combo 3 đòn (đòn 3 gấp đôi sát thương), ↑ + J chém lên, trên không ↓ + J chém xuống — trúng quái/gai thì nảy lên (pogo).
+
+## Chiêu & quái (đợt 2)
+
+- **Khí** (6 ô xanh dưới thanh máu, như Soul của *Hollow Knight*): vào màn đầy Khí; đánh trúng +1, đòn kết combo +2, đạp đầu +1;
+  tự hồi 1 ô mỗi 6 giây. Mỗi chiêu tốn 2–4 Khí (cột "Khí" trong bảng dưới), vẫn có hồi chiêu ngắn.
+  Ô chiêu trên HUD tối lại và hiện chữ "Khí" khi thiếu.
+
+  | Chiêu | Khí | | Chiêu | Khí |
+  |---|---|---|---|---|
+  | Độn Ảnh (Chuột) | 2 | | Vó Ngựa Phi (Ngựa) | 3 |
+  | Chiêng Chấn Địa (Trâu) | 3 | | Khúc Hồi Xuân (Dê) | 4 |
+  | Hổ Vồ (Hổ) | 3 | | Chũm Chọe Bay (Khỉ) | 2 |
+  | Tiếng Nhị Xuyên Tâm (Mèo) | 2 | | Kèn Hiệu Bình Minh (Gà) | 4 |
+  | Long Hoả (Rồng) | 3 | | Khuyển Hống (Chó) | 2 |
+  | Xà Ảnh (Rắn) | 4 | | Heo Dậm Đất (Heo) | 3 |
+
+- **Lăn né** (mọi con giáp): lăn ~3.5 ô, bất tử, lộn một vòng; hồi 0.45 giây.
+- **Lính Khiên** (`Q` trên bản đồ, màn 2–3): đỡ mọi đòn từ phía trước (tia lửa, tiếng "keng", người chơi bật lại).
+  Hạ bằng cách lăn ra sau lưng, chém xuống / đạp từ trên đầu, hoặc làm choáng bằng chiêu (khiên hạ xuống). Cắn 2 máu.
+- **Quái phản ứng rõ hơn**: dấu "!" vàng khi phát hiện người chơi, thân bẹp/nảy khi trúng đòn, chết thì văng lên lộn vòng rồi rơi.

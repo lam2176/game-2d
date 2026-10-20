@@ -59,6 +59,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     ZodiacPlayerController controller;
     PlayerSkill skill;
+    PlayerEnergy energy;
+    PlayerDodge dodge;
     InputAction attackAction;
     ContactFilter2D filter, anyFilter;
     readonly List<Collider2D> overlaps = new List<Collider2D>();
@@ -85,6 +87,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         controller = GetComponent<ZodiacPlayerController>();
         skill = GetComponent<PlayerSkill>();
+        energy = GetComponent<PlayerEnergy>();
+        dodge = GetComponent<PlayerDodge>();
         attackAction = InputSystem.actions.FindAction("Player/Attack");
         if (attackAction == null || hitbox == null)
         {
@@ -112,7 +116,8 @@ public class PlayerMeleeAttack : MonoBehaviour
             return;
         }
 
-        if (attackAction.WasPressedThisFrame() && Time.time >= nextAttackTime && (skill == null || !skill.IsBusy)) StartSwing();
+        if (attackAction.WasPressedThisFrame() && Time.time >= nextAttackTime && (skill == null || !skill.IsBusy) &&
+            (dodge == null || !dodge.IsDodging)) StartSwing();
 
         if (phase == Phase.Startup && Time.time >= phaseEndTime)
         {
@@ -222,6 +227,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (target.TakeDamage(new Hit(amount, source, current.knockback)))
             {
                 if (controller.Character != null) Poison.Apply(target, controller.Character.poisonDamage);
+                energy?.Gain(energy.gainPerHit + (heavy ? 1 : 0));
                 Color spark = controller.Character != null ? controller.Character.themeColor : Color.white;
                 GameFeel.Impact(col.ClosestPoint(center), spark, heavy || multiplier >= 2.5f);
             }
