@@ -255,12 +255,12 @@ public class PlayerSkill : MonoBehaviour
         Finish(cfg);
     }
 
-    void EndStealth()
+    void EndStealth(bool effect = true)
     {
         hidden = false;
         controller.IsHidden = false;
         if (flash != null) flash.tint = Color.white;
-        ZodiacFx.Ring(BodyCenter, 1.2f, new Color(0.2f, 0.4f, 0.3f, 0.5f), 0.2f);
+        if (effect) ZodiacFx.Ring(BodyCenter, 1.2f, new Color(0.2f, 0.4f, 0.3f, 0.5f), 0.2f);
     }
 
     /// <summary>
@@ -314,7 +314,7 @@ public class PlayerSkill : MonoBehaviour
 
     void OnDisable()
     {
-        if (hidden) EndStealth();
+        if (hidden) EndStealth(effect: false);   // có thể đang huỷ scene — không tạo object mới
         if (IsBusy && controller != null) controller.SetOverride(false);
         IsBusy = false;
     }
