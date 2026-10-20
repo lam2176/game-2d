@@ -88,6 +88,7 @@ public static class ZodiacPrototypeBuilder
             return;
         }
         ctx.particleMaterial = ZodiacVisualSetup.EnsureParticleMaterial(ctx.circle.texture);
+        ctx.textures = ZodiacTextureFactory.EnsureAll();
         ctx.prefabs = ZodiacEnemyFactory.EnsurePrefabs(ctx.square, ctx.circle, ctx.noFriction, groundLayer, playerLayer, enemyLayer);
 
         foreach (var level in ZodiacLevelData.Levels)
@@ -203,7 +204,7 @@ public static class ZodiacPrototypeBuilder
         var cam = new GameObject("Main Camera").AddComponent<Camera>();
         cam.tag = "MainCamera";
         cam.orthographic = true;
-        cam.orthographicSize = 6f;
+        cam.orthographicSize = 5.5f;   // nhân vật to hơn trên màn hình → rõ nét vẽ
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = background;
         cam.transform.position = new Vector3(position.x, position.y, -10f);

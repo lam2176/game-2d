@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 /// Định nghĩa 12 con giáp (Tý → Hợi): ảnh, kích thước, chỉ số, nội tại, chiêu thức — và tạo asset ZodiacCharacter + ZodiacRoster.
 /// Ảnh trong Assets/Zodiac/Art/Characters đã được cắt gọn từ ảnh gốc (Assets/Characters/...), lật cho mọi con quay mặt sang phải,
-/// pivot đặt ở bàn chân. Riêng Khỉ dùng lại ảnh và thiết lập import cũ.
+/// pivot đặt ở bàn chân (kể cả Khỉ — đã cắt lại cho cùng quy cách).
 ///
 /// Asset đã có thì giữ nguyên chỉnh sửa tay — chỉ điền lại khi asset được tạo bởi bảng số liệu cũ hơn (DataVersion).
 /// Menu "Tools/Zodiac/Ghi đè chỉ số 12 con giáp" ghi đè lại toàn bộ theo bảng dưới đây.
@@ -20,7 +20,7 @@ public static class ZodiacCharacterDefs
     {
         public string file, display, zodiac, instrument;
         public Color theme;
-        // Ảnh: pivot (chuẩn hoá) ở bàn chân, chiều cao toàn ảnh trong game (unit). height = 0 → giữ thiết lập import cũ.
+        // Ảnh: pivot (chuẩn hoá) ở bàn chân, chiều cao toàn ảnh trong game (unit).
         public Vector2 pivot;
         public float height;
         public Vector2 collider;
@@ -126,7 +126,7 @@ public static class ZodiacCharacterDefs
         new Def
         {
             file = "Monkey_Than", display = "Khỉ", zodiac = "Thân", instrument = "Chũm chọe", theme = new Color(0.95f, 0.7f, 0.25f),
-            height = 0f, collider = new Vector2(0.8f, 1.9f), colliderOffsetX = 0.15f,
+            pivot = new Vector2(0.365f, 0.003f), height = 2.46f, collider = new Vector2(0.8f, 1.9f), colliderOffsetX = 0.15f,
             hp = 5, airJumps = 1,
             passive = "Tề Thiên", passiveDesc = "Nhảy thêm 1 lần trên không. Đạp đầu quái thì được nhảy đôi lại.",
             skill = Hold(Skill(SkillType.Projectile, "Chũm Chọe Bay", 1.8f, 1,
@@ -266,7 +266,11 @@ public static class ZodiacCharacterDefs
         EditorUtility.SetDirty(c);
     }
 
-    /// <summary>Sprite đơn, pivot ở chân, PPU tính sao cho cả ảnh cao đúng d.height unit. Chỉ reimport khi thiết lập khác.</summary>
+    /// <summary>
+    /// Sprite đơn, pivot ở chân, PPU tính sao cho cả ảnh cao đúng d.height unit. Chỉ reimport khi thiết lập khác.
+    /// Ảnh 1024px hiển thị chỉ ~250px → bật mipmap (lọc Kaiser giữ nét, bias âm nhẹ) để thu nhỏ không bị nhoè/lấp lánh;
+    /// nén chất lượng cao (BC7) để màu áo, hoa văn không bị bệt.
+    /// </summary>
     static void ConfigureImporter(string path, Def d)
     {
         var importer = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -281,7 +285,8 @@ public static class ZodiacCharacterDefs
                     settings.spriteAlignment == (int)SpriteAlignment.Custom &&
                     Mathf.Approximately(settings.spritePixelsPerUnit, ppu) &&
                     (settings.spritePivot - d.pivot).sqrMagnitude < 1e-6f &&
-                    !importer.mipmapEnabled && importer.alphaIsTransparency;
+                    importer.mipmapEnabled && importer.mipmapFilter == TextureImporterMipFilter.KaiserFilter &&
+                    importer.alphaIsTransparency && importer.textureCompression == TextureImporterCompression.CompressedHQ;
         if (same) return;
 
         importer.textureType = TextureImporterType.Sprite;
@@ -291,9 +296,12 @@ public static class ZodiacCharacterDefs
         settings.spritePivot = d.pivot;
         settings.spritePixelsPerUnit = ppu;
         settings.spriteMeshType = SpriteMeshType.Tight;
-        settings.mipmapEnabled = false;
+        settings.mipmapEnabled = true;
+        settings.mipmapFilter = TextureImporterMipFilter.KaiserFilter;
+        settings.mipmapBias = -0.4f;
         settings.alphaIsTransparency = true;
-        settings.filterMode = FilterMode.Bilinear;
+        settings.filterMode = FilterMode.Trilinear;
+        settings.aniso = 1;
         importer.SetTextureSettings(settings);
         importer.maxTextureSize = 1024;
         importer.textureCompression = TextureImporterCompression.CompressedHQ;

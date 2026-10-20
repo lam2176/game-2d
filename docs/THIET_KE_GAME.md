@@ -123,3 +123,15 @@ Quy ước độ khó (nhảy cao 3.2 ô, chạy 8.5 ô/s): bậc leo ≤ 3 ô, 
 - **Lính Khiên** (`Q` trên bản đồ, màn 2–3): đỡ mọi đòn từ phía trước (tia lửa, tiếng "keng", người chơi bật lại).
   Hạ bằng cách lăn ra sau lưng, chém xuống / đạp từ trên đầu, hoặc làm choáng bằng chiêu (khiên hạ xuống). Cắn 2 máu.
 - **Quái phản ứng rõ hơn**: dấu "!" vàng khi phát hiện người chơi, thân bẹp/nảy khi trúng đòn, chết thì văng lên lộn vòng rồi rơi.
+
+## Đồ hoạ (đợt 3 — sửa hình bị mờ)
+
+Nguyên nhân hình mờ và cách sửa:
+- **Bloom** ngưỡng 0.85 làm cả bầu trời sáng loá → nâng ngưỡng lên 1.05 (chỉ đèn lồng, lửa — sáng hơn trắng — mới loá), giảm vignette.
+- **Ảnh nhân vật** 1024px hiển thị chỉ ~250px mà không có mipmap → bật mipmap (lọc Kaiser, bias âm nhẹ), lọc Trilinear,
+  nén chất lượng cao (BC7). Khỉ được cắt lại sát hình như 11 con kia (trước đây chỉ ~700px là hình con khỉ).
+- **Khử răng cưa** MSAA 4x; camera zoom gần hơn (orthographic size 6 → 5.5) để nhân vật to và rõ nét vẽ hơn.
+
+Texture vẽ bằng code (`ZodiacTextureFactory`, lưu ở `Assets/Zodiac/Art/Generated`), tô màu theo từng màn:
+đất có vân và sỏi, gạch đá có mạch vữa/vết sứt, viền cỏ có ngọn (chân nhân vật lẫn trong cỏ), bục tre có đốt,
+dãy núi và đồi có đường sống lưng tự nhiên + lớp mù chân núi, sương mù rừng trúc, vách hang xếp gạch, bầu trời chuyển màu.

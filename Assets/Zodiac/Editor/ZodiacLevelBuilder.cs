@@ -25,6 +25,7 @@ public static class ZodiacLevelBuilder
         public ZodiacRoster roster;
         public ZodiacResources resources;
         public Material particleMaterial;
+        public ZodiacTextureFactory.Set textures;
         public PhysicsMaterial2D noFriction;
         public ZodiacEnemyFactory.Prefabs prefabs;
         public int groundLayer, playerLayer, enemyLayer;
@@ -120,6 +121,7 @@ public static class ZodiacLevelBuilder
         var canvas = BuildHud(manager, player);
         if (boss != null && arenaGates.Count > 0) BuildArena(boss, arenaGates[0], canvas);
 
+        BuildSky(cam);
         BuildLighting(cam, player);
         BuildAmbientParticles(cam);
         ApplySpriteMaterials();
@@ -191,12 +193,9 @@ public static class ZodiacLevelBuilder
                 // Khối chạm đáy bản đồ kéo sâu xuống để camera không nhìn thấy "đáy" mặt đất (vực vẫn thủng)
                 float bottom = r.y == 0 ? r.y - GroundDepthBelow : r.y;
                 float height = r.yMax - bottom;
-                var go = Block($"{(ch == '#' ? "Ground" : "Stone")} {r.x},{r.y}", level.transform,
-                               new Vector2(r.x + r.width / 2f, bottom + height / 2f), new Vector2(r.width, height), body, 0);
-                if (ch == 'B')
-                    for (int i = 1; i < height; i++)   // mạch vữa giữa các hàng đá
-                        ZodiacPrototypeBuilder.CreateDecor("Mortar", go.transform, ctx.square, new Vector2(0f, -height / 2f + i),
-                                                           new Vector2(r.width, 0.06f), Color.Lerp(def.stone, Color.black, 0.3f), 1);
+                Block($"{(ch == '#' ? "Ground" : "Stone")} {r.x},{r.y}", level.transform,
+                      new Vector2(r.x + r.width / 2f, bottom + height / 2f), new Vector2(r.width, height), body, 0,
+                      ch == '#' ? ctx.textures.soil : ctx.textures.brick);
             }
         }
 
@@ -213,9 +212,9 @@ public static class ZodiacLevelBuilder
                 float w = x1 - x + 1;
                 if (ch == '#')
                 {
-                    Decor(level.transform, "Grass", new Vector2(x + w / 2f, y + 0.88f), new Vector2(w, 0.24f), def.grass, 2);
-                    Decor(level.transform, "GrassLip", new Vector2(x + w / 2f, y + 0.99f), new Vector2(w, 0.06f),
-                          Color.Lerp(def.grass, Color.white, 0.3f), 2);
+                    // Viền cỏ: dải cỏ phủ 0.25 unit xuống mép đất, ngọn cỏ nhô lên 0.5 unit (chân nhân vật lẫn trong cỏ)
+                    Decor(level.transform, "Grass", new Vector2(x + w / 2f, y + 1.125f), new Vector2(w, 0.75f), def.grass, 2,
+                          ctx.textures.grass);
                 }
                 else
                 {
@@ -228,13 +227,15 @@ public static class ZodiacLevelBuilder
 
         // Tường biên trái/phải.
         float wallH = H + 12f;
-        Block("Wall Left", level.transform, new Vector2(-0.5f, wallH / 2f - 4f), new Vector2(1f, wallH), Color.Lerp(def.soil, Color.black, 0.3f), 0);
-        Block("Wall Right", level.transform, new Vector2(W + 0.5f, wallH / 2f - 4f), new Vector2(1f, wallH), Color.Lerp(def.soil, Color.black, 0.3f), 0);
+        Block("Wall Left", level.transform, new Vector2(-0.5f, wallH / 2f - 4f), new Vector2(1f, wallH),
+              Color.Lerp(def.soil, Color.black, 0.3f), 0, ctx.textures.soil);
+        Block("Wall Right", level.transform, new Vector2(W + 0.5f, wallH / 2f - 4f), new Vector2(1f, wallH),
+              Color.Lerp(def.soil, Color.black, 0.3f), 0, ctx.textures.soil);
     }
 
-    static GameObject Block(string name, Transform parent, Vector2 center, Vector2 size, Color color, int order)
+    static GameObject Block(string name, Transform parent, Vector2 center, Vector2 size, Color color, int order, Sprite texture)
     {
-        var go = Decor(parent, name, center, size, color, order);
+        var go = Decor(parent, name, center, size, color, order, texture);
         go.layer = ctx.groundLayer;
         var box = go.AddComponent<BoxCollider2D>();
         box.size = size;
@@ -242,10 +243,25 @@ public static class ZodiacLevelBuilder
         return go;
     }
 
-    static GameObject Decor(Transform parent, string name, Vector2 position, Vector2 size, Color color, int order)
+    static GameObject Decor(Transform parent, string name, Vector2 position, Vector2 size, Color color, int order, Sprite sprite = null)
     {
-        var go = ZodiacPrototypeBuilder.CreateDecor(name, parent, ctx.square, Vector2.zero, size, color, order);
+        var go = ZodiacPrototypeBuilder.CreateDecor(name, parent, sprite != null ? sprite : ctx.square, Vector2.zero, size, color, order);
         go.transform.position = position;
+        return go;
+    }
+
+    /// <summary>Kéo giãn một sprite (sương mù chuyển màu) cho vừa kích thước — không lát ô.</summary>
+    static GameObject Stretch(Transform parent, string name, Vector2 position, Vector2 size, Color color, int order, Sprite sprite)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        go.transform.position = position;
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.color = color;
+        sr.sortingOrder = order;
+        Vector2 s = sprite.bounds.size;
+        go.transform.localScale = new Vector3(size.x / s.x, size.y / s.y, 1f);
         return go;
     }
 
@@ -291,12 +307,7 @@ public static class ZodiacLevelBuilder
 
     static void PlankVisual(Transform t, float width)
     {
-        ZodiacPrototypeBuilder.CreateDecor("Bamboo", t, ctx.square, Vector2.zero, new Vector2(width, 0.3f), def.plank, 3);
-        ZodiacPrototypeBuilder.CreateDecor("Shade", t, ctx.square, new Vector2(0f, -0.11f), new Vector2(width, 0.08f),
-                                           Color.Lerp(def.plank, Color.black, 0.35f), 3);
-        for (float x = -width / 2f + 0.5f; x < width / 2f; x += 1f)   // đốt tre
-            ZodiacPrototypeBuilder.CreateDecor("Node", t, ctx.square, new Vector2(x + 0.5f, 0f), new Vector2(0.06f, 0.3f),
-                                               Color.Lerp(def.plank, Color.black, 0.45f), 4);
+        ZodiacPrototypeBuilder.CreateDecor("Bamboo", t, ctx.textures.plank, Vector2.zero, new Vector2(width, 0.375f), def.plank, 3);
     }
 
     static void BuildSpikes()
@@ -512,6 +523,27 @@ public static class ZodiacLevelBuilder
 
     // ───────────────────────────── Ánh sáng, hậu kỳ, hạt môi trường ─────────────────────────────
 
+    /// <summary>Bầu trời chuyển màu (đỉnh đậm → chân trời sáng) gắn vào camera, nằm sau mọi lớp nền.</summary>
+    static void BuildSky(Camera cam)
+    {
+        Color top = def.backdrop switch
+        {
+            Backdrop.Village => Color.Lerp(def.sky, new Color(0.45f, 0.62f, 0.85f), 0.65f),
+            Backdrop.Bamboo => Color.Lerp(def.sky, new Color(0.45f, 0.65f, 0.55f), 0.55f),
+            _ => Color.Lerp(def.sky, Color.black, 0.6f),
+        };
+        var sprite = ZodiacTextureFactory.SkyGradient(def.sceneName, top, def.sky);
+        var sky = new GameObject("Sky");
+        sky.transform.SetParent(cam.transform, false);
+        sky.transform.localPosition = new Vector3(0f, 0f, 20f);
+        var sr = sky.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = -100;
+        Unlit(sky);
+        Vector2 size = sprite.bounds.size;
+        sky.transform.localScale = new Vector3(48f / size.x, 16f / size.y, 1f);   // phủ kín khung nhìn mọi tỉ lệ màn hình
+    }
+
     static string MusicFor(Backdrop b) => b switch
     {
         Backdrop.Village => "Music/music_village",
@@ -536,9 +568,9 @@ public static class ZodiacLevelBuilder
         volume.isGlobal = true;
         volume.sharedProfile = def.backdrop switch
         {
-            Backdrop.Village => ZodiacVisualSetup.EnsureVolumeProfile("Village", 0.5f, 0.22f, 8f, 6f, new Color(1f, 0.97f, 0.9f)),
-            Backdrop.Bamboo => ZodiacVisualSetup.EnsureVolumeProfile("Bamboo", 0.7f, 0.3f, -8f, 4f, new Color(0.92f, 1f, 0.95f)),
-            _ => ZodiacVisualSetup.EnsureVolumeProfile("Cave", 1.1f, 0.4f, -5f, 12f, new Color(0.92f, 0.9f, 1f)),
+            Backdrop.Village => ZodiacVisualSetup.EnsureVolumeProfile("Village", 0.4f, 0.14f, 10f, 10f, Color.white),
+            Backdrop.Bamboo => ZodiacVisualSetup.EnsureVolumeProfile("Bamboo", 0.5f, 0.18f, 0f, 8f, new Color(0.96f, 1f, 0.97f)),
+            _ => ZodiacVisualSetup.EnsureVolumeProfile("Cave", 0.9f, 0.3f, 0f, 14f, new Color(0.95f, 0.93f, 1f)),
         };
     }
 
@@ -659,14 +691,16 @@ public static class ZodiacLevelBuilder
                         Circle(clouds, "Cloud", new Vector2(x + i * 1.2f, R(10f, 13f)), new Vector2(R(2.2f, 3.2f), R(1f, 1.4f)),
                                new Color(1f, 0.97f, 0.92f, 0.85f), -55);
                 var mountains = Layer("Mountains", 0.75f, 0.6f);
-                for (float x = -10f; x < span * 0.4f; x += R(6f, 10f))
-                {
-                    float s = R(8f, 13f);
-                    Diamond(mountains, "Mountain", new Vector2(x, R(0f, 1.5f)), s, def.far, -50);
-                }
+                Decor(mountains, "RangeFar", new Vector2(span * 0.2f, 6.5f), new Vector2(span * 0.6f, 8f),
+                      Color.Lerp(def.far, def.sky, 0.45f), -52, ctx.textures.ridge).GetComponent<SpriteRenderer>().flipX = true;
+                Decor(mountains, "Range", new Vector2(span * 0.2f + 5f, 5f), new Vector2(span * 0.6f, 8f), def.far, -50, ctx.textures.ridge);
+                Stretch(mountains, "Haze", new Vector2(span * 0.2f, 3f), new Vector2(span * 0.6f, 4f),
+                        new Color(def.sky.r, def.sky.g, def.sky.b, 0.75f), -49, ctx.textures.fog);
                 var hills = Layer("Hills", 0.5f, 0.35f);
-                for (float x = -10f; x < span * 0.6f; x += R(5f, 8f))
-                    Circle(hills, "Hill", new Vector2(x, R(0f, 1f)), new Vector2(R(9f, 14f), R(5f, 7f)), def.mid, -45);
+                Decor(hills, "Hills", new Vector2(span * 0.3f, 2f), new Vector2(span * 0.8f, 4f), def.mid, -45, ctx.textures.hills);
+                // Phần dưới chân đồi (nhìn xuống vực không thấy bầu trời)
+                Decor(hills, "HillBase", new Vector2(span * 0.3f, -6f), new Vector2(span * 0.8f, 16f), Color.Lerp(def.mid, Color.black, 0.35f), -46,
+                      ctx.textures.soil);
                 var fields = Layer("RiceFields", 0.3f, 0.2f);
                 for (int i = 0; i < 3; i++)
                     Decor(fields, "Field", new Vector2(span * 0.4f, 1.6f - i * 0.6f), new Vector2(span, 0.35f),
@@ -680,7 +714,8 @@ public static class ZodiacLevelBuilder
             {
                 var mist = Layer("Mist", 0.9f, 0.85f);
                 for (int i = 0; i < 4; i++)
-                    Decor(mist, "MistBand", new Vector2(span * 0.3f, 6f + i * 4f), new Vector2(span, 1.5f), new Color(1f, 1f, 1f, 0.25f), -58);
+                    Stretch(mist, "MistBand", new Vector2(span * 0.3f, 3f + i * 5f), new Vector2(span, 3f), new Color(1f, 1f, 1f, 0.35f), -58,
+                            ctx.textures.fog);
                 Color[] tints = { def.far, Color.Lerp(def.far, def.mid, 0.5f), def.mid };
                 float[] factors = { 0.75f, 0.55f, 0.35f };
                 for (int l = 0; l < 3; l++)
@@ -694,8 +729,10 @@ public static class ZodiacLevelBuilder
             case Backdrop.Cave:
             {
                 var back = Layer("CaveWall", 0.8f, 0.7f);
+                Decor(back, "Rock", new Vector2(span * 0.15f, H / 2f), new Vector2(span * 0.4f, H + 12f),
+                      Color.Lerp(def.far, Color.black, 0.2f), -56, ctx.textures.soil);
                 for (float x = -10f; x < span * 0.3f; x += R(3f, 6f))
-                    Decor(back, "Column", new Vector2(x, H / 2f), new Vector2(R(1.5f, 3f), H + 10f), def.far, -55);
+                    Decor(back, "Column", new Vector2(x, H / 2f), new Vector2(R(1.5f, 3f), H + 10f), def.far, -55, ctx.textures.brick);
                 var crystals = Layer("Crystals", 0.55f, 0.45f);
                 for (float x = -10f; x < span * 0.5f; x += R(4f, 8f))
                 {
