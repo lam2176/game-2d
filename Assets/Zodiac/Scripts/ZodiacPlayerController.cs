@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -11,17 +12,12 @@ using UnityEngine.InputSystem;
 /// Nhân vật lấy từ <see cref="roster"/> theo lựa chọn ở màn hình chính (dự phòng: <see cref="character"/>);
 /// chỉ số tốc độ/nhảy/máu của asset nhân vật ghi đè các ô bên dưới khi vào game — vẫn chỉnh được khi đang Play.
 /// Chiêu thức (PlayerSkill) tạm chiếm quyền điều khiển vận tốc bằng <see cref="SetOverride"/>.
-/// Dùng project-wide actions trong Assets/InputSystem_Actions.inputactions (Player/Move, Jump, Sprint)
-/// và đẩy tham số Speed / Running / Grounded / VerticalSpeed sang Animator của Visual.
+/// Dùng project-wide actions trong Assets/InputSystem_Actions.inputactions (Player/Move, Jump, Sprint).
+/// Animation do <see cref="CharacterAnimator"/> tính bằng code từ trạng thái và các sự kiện <see cref="Jumped"/>, <see cref="Landed"/>.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(CapsuleCollider2D))]
 public class ZodiacPlayerController : MonoBehaviour
 {
-    static readonly int SpeedParam = Animator.StringToHash("Speed");
-    static readonly int RunningParam = Animator.StringToHash("Running");
-    static readonly int GroundedParam = Animator.StringToHash("Grounded");
-    static readonly int VerticalSpeedParam = Animator.StringToHash("VerticalSpeed");
-
     [Tooltip("Danh sách 12 con giáp — lấy nhân vật đang chọn (ZodiacSelection) khi vào game.")]
     public ZodiacRoster roster;
     [Tooltip("Nhân vật dùng khi không có roster.")]
@@ -59,6 +55,9 @@ public class ZodiacPlayerController : MonoBehaviour
     [Min(1f)] public float fallGravityMultiplier = 1.6f;
     [Tooltip("Tốc độ rơi tối đa (unit/s) — tránh rơi quá nhanh xuyên nền mỏng.")]
     [Min(1f)] public float maxFallSpeed = 20f;
+    [Tooltip("Ở gần đỉnh cú nhảy (|vận tốc dọc| nhỏ hơn giá trị này) mà còn giữ Space thì trọng lực nhẹ đi — lơ lửng một chút như Celeste.")]
+    [Min(0f)] public float apexThreshold = 2.2f;
+    [Range(0.1f, 1f)] public float apexGravityMultiplier = 0.55f;
 
     [Header("Bị đánh (cần component Health)")]
     [Tooltip("Vận tốc bị đẩy ra xa nguồn sát thương (x) và bật lên (y).")]
@@ -74,10 +73,9 @@ public class ZodiacPlayerController : MonoBehaviour
     [Min(0f)] public float dropThroughTime = 0.3f;
 
     [Header("Hiển thị")]
-    [Tooltip("Object con được lật trái/phải; Animator nằm ở object con của nó.")]
+    [Tooltip("Object con được lật trái/phải; Visual (ảnh) nằm ở object con của nó.")]
     public Transform facing;
     public SpriteRenderer spriteRenderer;
-    public Animator animator;
 
     /// <summary>Người chơi duy nhất trong màn (quái, đồng xu, camera dùng).</summary>
     public static ZodiacPlayerController Current { get; private set; }
@@ -100,6 +98,11 @@ public class ZodiacPlayerController : MonoBehaviour
     Collider2D droppedPlatform;
     float dropUntil;
 
+    /// <summary>Vừa bật nhảy (true = nhảy trên không).</summary>
+    public event Action<bool> Jumped;
+    /// <summary>Vừa chạm đất, kèm tốc độ rơi lúc chạm (unit/s, dương).</summary>
+    public event Action<float> Landed;
+
     public bool ControlEnabled => controlEnabled;
     public bool IsGrounded { get; private set; }
     public bool IsRunning { get; private set; }
@@ -111,6 +114,12 @@ public class ZodiacPlayerController : MonoBehaviour
     public ZodiacCharacter Character => character;
     public Rigidbody2D Body => rb;
     public CapsuleCollider2D BodyCollider => body;
+    public Vector2 Velocity => rb.linearVelocity;
+    /// <summary>Collider đang đứng lên (null khi trên không).</summary>
+    public Collider2D GroundCollider { get; private set; }
+    public bool IsOverridden => overridden;
+    /// <summary>Trục dọc của phím di chuyển (↑ = 1, ↓ = -1) — dùng cho đánh lên/xuống.</summary>
+    public float InputY => inputY;
 
     /// <summary>Vận tốc nhảy ban đầu để đạt đúng jumpHeight với bước vật lý hiện tại.</summary>
     public float JumpVelocity
@@ -227,6 +236,11 @@ public class ZodiacPlayerController : MonoBehaviour
 
     void OnDamaged(Hit hit)
     {
+        ScreenFader.Flash(new Color(0.8f, 0.05f, 0.05f, 0.35f), 0.35f);
+        GameFeel.HitStop(0.07f);
+        GameFeel.Shake(0.3f);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.hurt, 0.9f);
         if (hit.knockback <= 0f) return;
         float away = transform.position.x >= hit.source.x ? 1f : -1f;
         float k = hit.knockback * (1f - knockbackResistance);
@@ -262,13 +276,14 @@ public class ZodiacPlayerController : MonoBehaviour
                 else if (inputX < 0f) SetFacing(-1f);
             }
         }
-        UpdateAnimator();
     }
 
     void FixedUpdate()
     {
         float dt = Time.fixedDeltaTime;
         Vector2 v = rb.linearVelocity;
+        bool wasGrounded = IsGrounded;
+        float fallSpeed = -v.y;
 
         if (droppedPlatform != null && Time.time >= dropUntil)
         {
@@ -281,6 +296,8 @@ public class ZodiacPlayerController : MonoBehaviour
         if (ground != null && ground.TryGetComponent(out MovingPlatform platform)) platformVelocity = platform.Velocity;
         // Đang bay lên (so với bục dưới chân) thì không tính là đứng trên đất.
         IsGrounded = ground != null && v.y - platformVelocity.y <= 0.1f;
+        GroundCollider = IsGrounded ? ground : null;
+        if (IsGrounded && !wasGrounded && controlEnabled) Landed?.Invoke(Mathf.Max(0f, fallSpeed));
         if (IsGrounded)
         {
             coyoteCounter = coyoteTime;
@@ -329,12 +346,14 @@ public class ZodiacPlayerController : MonoBehaviour
             // Nhảy thường: đang đất (hoặc vừa rời mép trong coyote time) và chưa nhảy.
             v.y = JumpVelocity + Mathf.Max(0f, platformVelocity.y);
             StartJump();
+            Jumped?.Invoke(false);
         }
         else if (jumpBufferCounter > 0f && coyoteCounter <= 0f && airJumpsLeft > 0)
         {
             v.y = JumpVelocity;
             airJumpsLeft--;
             StartJump();
+            Jumped?.Invoke(true);
         }
         else
         {
@@ -355,7 +374,9 @@ public class ZodiacPlayerController : MonoBehaviour
         }
         v.y = Mathf.Max(v.y, -fallLimit);
         rb.linearVelocity = v;
-        rb.gravityScale = v.y < 0f ? gravityScale * fallGravityMultiplier : gravityScale;
+        float g = v.y < 0f ? gravityScale * fallGravityMultiplier : gravityScale;
+        if (!IsGrounded && jumping && jumpHeld && Mathf.Abs(v.y) < apexThreshold) g = gravityScale * apexGravityMultiplier;
+        rb.gravityScale = g;
     }
 
     void StartJump()
@@ -400,15 +421,6 @@ public class ZodiacPlayerController : MonoBehaviour
     {
         FacingDirection = direction >= 0f ? 1f : -1f;
         if (facing != null) facing.localScale = new Vector3(FacingDirection, 1f, 1f);
-    }
-
-    void UpdateAnimator()
-    {
-        if (animator == null) return;
-        animator.SetFloat(SpeedParam, Mathf.Abs(rb.linearVelocity.x));
-        animator.SetBool(RunningParam, IsRunning);
-        animator.SetBool(GroundedParam, IsGrounded);
-        animator.SetFloat(VerticalSpeedParam, rb.linearVelocity.y);
     }
 
     void OnValidate()

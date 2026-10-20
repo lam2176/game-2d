@@ -63,6 +63,8 @@ public class EnemyTurret : EnemyBase
         shot.range = shotRange;
         shot.owner = transform;
         ZodiacFx.Ring(origin, 0.6f, shotColor, 0.2f);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.fireball, 0.7f, 0.1f, origin);
     }
 
     protected override void Interrupt()

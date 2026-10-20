@@ -5,7 +5,8 @@ using UnityEngine;
 /// Tạo prefab quái trong Assets/Zodiac/Prefabs (chưa có sprite thật — ghép từ hình vuông/tròn placeholder):
 ///   Lính Đất Nung (đi bộ, đuổi, cắn) · Bọ Gai (tuần tra, lưng gai — không đạp được) · Ma Trơi (bay, lao tới)
 ///   Cóc Tía (nhảy cóc) · Thạch Sư (tượng phun lửa) · Hồ Tinh (boss).
-/// Prefab đã có thì giữ nguyên (không mất chỉnh sửa trong Inspector). Xoá prefab rồi dựng lại để lấy bản mới.
+/// Prefab được tạo lại mỗi lần dựng prototype — chỉnh thông số quái ngay trong file này.
+/// Thân quái chịu ánh sáng 2D; mắt, lửa, quầng sáng tự phát sáng (thấy rõ trong hang tối).
 /// </summary>
 public static class ZodiacEnemyFactory
 {
@@ -48,8 +49,6 @@ public static class ZodiacEnemyFactory
     static GameObject Ensure(string name, System.Func<GameObject> build)
     {
         string path = $"{PrefabFolder}/{name}.prefab";
-        var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        if (existing != null) return existing;
         var root = build();
         root.name = name;
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -119,6 +118,8 @@ public static class ZodiacEnemyFactory
         Shape(v, "Flame", true, new Vector2(-0.12f, 0.12f), new Vector2(0.5f, 0.75f), new Color(0.45f, 0.95f, 0.95f), 8, 20f);
         Shape(v, "Core", true, Vector2.zero, new Vector2(0.75f, 0.75f), new Color(0.75f, 1f, 1f), 9);
         Eyes(v, new Vector2(0.1f, 0.05f), 0.12f, new Color(0.1f, 0.2f, 0.35f));
+        foreach (var part in new[] { glow, v.Find("Flame").gameObject, v.Find("Core").gameObject }) Unlit(part);
+        ZodiacLights.AddPoint(root, new Color(0.45f, 0.95f, 1f), 3.5f, 1f);
         var ai = root.AddComponent<EnemyFlyer>();
         Common(ai, v);
         ai.glow = glow.GetComponent<SpriteRenderer>();
@@ -164,6 +165,8 @@ public static class ZodiacEnemyFactory
         Shape(v, "Face", true, new Vector2(0.3f, 1.12f), new Vector2(0.6f, 0.55f), new Color(0.65f, 0.65f, 0.7f), 9);
         Eyes(v, new Vector2(0.35f, 1.25f), 0.1f, new Color(1f, 0.5f, 0.2f));
         var mouth = Shape(v, "Mouth", true, new Vector2(0.55f, 1f), new Vector2(0.35f, 0.35f), new Color(0.3f, 0.1f, 0.08f), 10);
+        Unlit(mouth);
+        ZodiacLights.AddPoint(mouth, new Color(1f, 0.5f, 0.2f), 2.5f, 0.6f);
         var ai = root.AddComponent<EnemyTurret>();
         Common(ai, v);
         ai.mouth = mouth.GetComponent<SpriteRenderer>();
@@ -194,7 +197,9 @@ public static class ZodiacEnemyFactory
             var t = Shape(pivot, "Fur", true, new Vector2(-0.9f, 0f), new Vector2(1.9f, 0.5f), new Color(1f, 0.85f, 0.6f), 6);
             Shape(pivot, "Tip", true, new Vector2(-1.7f, 0f), new Vector2(0.45f, 0.4f), Color.white, 6);
             tails[i] = t.GetComponent<SpriteRenderer>();
+            Unlit(t);
         }
+        ZodiacLights.AddPoint(tailRoot.gameObject, new Color(0.6f, 0.85f, 1f), 5f, 0.7f);
         Shape(v, "Body", true, new Vector2(-0.1f, 0.85f), new Vector2(1.9f, 1.5f), fur, 8);
         Shape(v, "Chest", true, new Vector2(0.4f, 0.9f), new Vector2(0.8f, 1f), new Color(1f, 0.95f, 0.85f), 9);
         Shape(v, "LegBack", false, new Vector2(-0.55f, 0.2f), new Vector2(0.35f, 0.4f), new Color(0.6f, 0.3f, 0.12f), 7);
@@ -204,7 +209,7 @@ public static class ZodiacEnemyFactory
         Shape(v, "Nose", true, new Vector2(1.45f, 1.65f), new Vector2(0.15f, 0.12f), new Color(0.15f, 0.1f, 0.1f), 12);
         Shape(v, "EarBack", false, new Vector2(0.4f, 2.2f), new Vector2(0.35f, 0.35f), new Color(0.85f, 0.4f, 0.15f), 9, 45f);
         Shape(v, "EarFront", false, new Vector2(0.85f, 2.25f), new Vector2(0.35f, 0.35f), new Color(0.85f, 0.4f, 0.15f), 9, 45f);
-        Shape(v, "Eye", false, new Vector2(0.95f, 1.85f), new Vector2(0.22f, 0.08f), new Color(0.3f, 0.95f, 1f), 12, -12f);
+        Unlit(Shape(v, "Eye", false, new Vector2(0.95f, 1.85f), new Vector2(0.22f, 0.08f), new Color(0.3f, 0.95f, 1f), 12, -12f));
         Shape(v, "Mark", true, new Vector2(0.6f, 2.05f), new Vector2(0.14f, 0.14f), new Color(0.8f, 0.1f, 0.15f), 12);
 
         var ai = root.AddComponent<BossFoxSpirit>();
@@ -278,13 +283,21 @@ public static class ZodiacEnemyFactory
         sr.sprite = round ? circle : square;
         sr.color = color;
         sr.sortingOrder = order;
+        sr.sharedMaterial = ZodiacVisualSetup.LitMaterial;
         return go;
     }
 
+    static GameObject Unlit(GameObject go)
+    {
+        go.GetComponent<SpriteRenderer>().sharedMaterial = ZodiacVisualSetup.UnlitMaterial;
+        return go;
+    }
+
+    /// <summary>Hai mắt tự phát sáng — nhìn thấy quái trong bóng tối.</summary>
     static void Eyes(Transform v, Vector2 front, float size, Color color)
     {
-        Shape(v, "EyeFront", true, front, Vector2.one * size, color, 10);
-        Shape(v, "EyeBack", true, front + new Vector2(-size * 1.4f, 0f), Vector2.one * size, color, 10);
+        Unlit(Shape(v, "EyeFront", true, front, Vector2.one * size, color, 10));
+        Unlit(Shape(v, "EyeBack", true, front + new Vector2(-size * 1.4f, 0f), Vector2.one * size, color, 10));
     }
 
     /// <summary>Thanh máu trên đầu: không nằm trong Visual nên không bị lật; ẩn khi máu đầy.</summary>
@@ -305,5 +318,6 @@ public static class ZodiacEnemyFactory
         healthBar.fill = fillPivot;
         healthBar.hideWhenFull = true;
         healthBar.visualRoot = bar.gameObject;
+        foreach (var sr in bar.GetComponentsInChildren<SpriteRenderer>(true)) sr.sharedMaterial = ZodiacVisualSetup.UnlitMaterial;
     }
 }

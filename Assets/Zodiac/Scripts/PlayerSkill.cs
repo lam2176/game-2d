@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -35,6 +36,8 @@ public class PlayerSkill : MonoBehaviour
     public float CooldownNormalized => Config == null ? 0f : Mathf.Clamp01(CooldownRemaining / Config.cooldown);
     /// <summary>Tổng số lần đã tung chiêu (để kiểm tra).</summary>
     public int UseCount { get; private set; }
+    /// <summary>Vừa tung chiêu (animation, âm thanh).</summary>
+    public event Action<SkillType> Used;
 
     void Awake()
     {
@@ -72,6 +75,8 @@ public class PlayerSkill : MonoBehaviour
         UseCount++;
         readyTime = float.PositiveInfinity;   // tính hồi chiêu khi chiêu kết thúc
         hitThisSkill.Clear();
+        if (controller.Character != null) ZodiacAudio.Play(controller.Character.skillSound, 0.9f, 0.03f);
+        Used?.Invoke(cfg.type);
         switch (cfg.type)
         {
             case SkillType.Dash: StartCoroutine(Dash(cfg)); break;
@@ -141,7 +146,8 @@ public class PlayerSkill : MonoBehaviour
         {
             var target = col.GetComponentInParent<Health>();
             if (target == null || target.IsDead || !hitThisSkill.Add(target)) continue;
-            target.TakeDamage(new Hit(cfg.damage, transform.position, cfg.knockback, cfg.stunTime));
+            if (target.TakeDamage(new Hit(cfg.damage, transform.position, cfg.knockback, cfg.stunTime)))
+                GameFeel.Impact(col.ClosestPoint(BodyCenter), Theme, cfg.damage >= 3);
             any = true;
         }
         return any;
@@ -182,6 +188,8 @@ public class PlayerSkill : MonoBehaviour
 
     void Burst(SkillConfig cfg, Vector2 center)
     {
+        GameFeel.Shake(0.2f + cfg.radius * 0.04f);
+        ZodiacParticles.Sparkle(center, Theme, 18, cfg.radius * 0.6f);
         ZodiacFx.Ring(center, cfg.radius, new Color(Theme.r, Theme.g, Theme.b, 0.6f), 0.4f);
         ZodiacFx.Ring(center, cfg.radius * 0.6f, new Color(1f, 1f, 1f, 0.5f), 0.25f);
         var filter = new ContactFilter2D { useTriggers = false };
@@ -230,6 +238,7 @@ public class PlayerSkill : MonoBehaviour
         if (!interrupted && controller.ControlEnabled)
         {
             health.Heal(cfg.healAmount);
+            ZodiacParticles.Sparkle(BodyCenter, new Color(0.5f, 1f, 0.6f), 20, 0.8f);
             ZodiacFx.Ring(BodyCenter, 2.5f, new Color(0.4f, 1f, 0.5f, 0.8f), 0.45f);
             Finish(cfg);
         }
@@ -308,6 +317,11 @@ public class PlayerSkill : MonoBehaviour
         health?.SetInvulnerable(0.25f);
         Vector2 feet = new Vector2(transform.position.x, transform.position.y + 0.3f);
         ZodiacFx.Puff(feet, new Color(0.7f, 0.55f, 0.4f, 0.8f), 2.5f);
+        ZodiacParticles.Dust(feet, Vector2.left, 10);
+        ZodiacParticles.Dust(feet, Vector2.right, 10);
+        ZodiacParticles.Debris(feet, new Color(0.55f, 0.42f, 0.3f), 10, 0.8f);
+        GameFeel.HitStop(0.06f);
+        GameFeel.Shake(0.45f);
         Burst(cfg, feet);
         Finish(cfg);
     }

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.Animations;
 using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -12,14 +11,13 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 /// <summary>
-/// Menu "Tools/Zodiac/Dựng prototype": tạo asset (placeholder, 12 con giáp + roster, animation, vật liệu vật lý,
-/// prefab quái) nếu chưa có, dựng màn hình chọn nhân vật Zodiac_Start và 3 màn chơi Zodiac_Level01..03 từ bản đồ ký tự
-/// (<see cref="ZodiacLevelData"/>), rồi đưa chúng lên đầu Build Settings.
-/// Asset đã có thì giữ nguyên (không mất chỉnh sửa tay); scene đã có thì hỏi trước khi ghi đè.
+/// Menu "Tools/Zodiac/Dựng prototype": chuyển URP sang 2D Renderer (ánh sáng 2D), tạo asset (placeholder, 12 con giáp + roster,
+/// âm thanh, vật liệu, hậu kỳ, vật liệu vật lý) nếu chưa có, tạo lại prefab quái, dựng màn hình chọn nhân vật Zodiac_Start
+/// và 3 màn chơi Zodiac_Level01..03 từ bản đồ ký tự (<see cref="ZodiacLevelData"/>), rồi đưa chúng lên đầu Build Settings.
+/// Asset nhân vật/âm thanh đã có thì giữ nguyên (không mất chỉnh sửa tay); scene đã có thì hỏi trước khi ghi đè.
 /// Không đụng tới ảnh gốc trong Assets/Characters.
 ///
-/// Animation Idle/Walk/Run/Jump chỉ biến đổi transform (nhún, nghiêng, co giãn) trên ảnh tĩnh duy nhất —
-/// không có frame vẽ thêm, dùng chung cho cả 12 con giáp. Khi có sprite frame thật, thay clip trong Animator Controller là xong.
+/// Nhân vật chỉ có một ảnh tĩnh → animation tính bằng code (<see cref="CharacterAnimator"/>): co giãn, nghiêng, nhịp bước.
 /// </summary>
 public static class ZodiacPrototypeBuilder
 {
@@ -29,8 +27,6 @@ public static class ZodiacPrototypeBuilder
     const string PlaceholderFolder = Root + "/Art/Placeholder";
     internal const string SquarePath = PlaceholderFolder + "/Square.png";
     internal const string CirclePath = PlaceholderFolder + "/Circle.png";
-    const string AnimationFolder = Root + "/Animations";
-    const string ControllerPath = AnimationFolder + "/ZodiacCharacter.controller";
     const string PhysicsFolder = Root + "/Physics";
     internal const string NoFrictionPath = PhysicsFolder + "/NoFriction.physicsMaterial2D";
 
@@ -74,11 +70,12 @@ public static class ZodiacPrototypeBuilder
             return;
         }
 
+        ZodiacVisualSetup.Ensure2DRenderer();
         var ctx = new ZodiacLevelBuilder.Context
         {
             square = EnsurePlaceholderSprite(SquarePath, 4, circle: false),
             circle = EnsurePlaceholderSprite(CirclePath, 64, circle: true),
-            controller = EnsureAnimatorController(),
+            resources = ZodiacVisualSetup.EnsureResources(),
             noFriction = EnsureNoFriction(),
             roster = ZodiacCharacterDefs.EnsureRoster(),
             groundLayer = groundLayer,
@@ -90,6 +87,7 @@ public static class ZodiacPrototypeBuilder
             Debug.LogError("Thiếu asset hoặc sprite nhân vật — xem lỗi phía trên.");
             return;
         }
+        ctx.particleMaterial = ZodiacVisualSetup.EnsureParticleMaterial(ctx.circle.texture);
         ctx.prefabs = ZodiacEnemyFactory.EnsurePrefabs(ctx.square, ctx.circle, ctx.noFriction, groundLayer, playerLayer, enemyLayer);
 
         foreach (var level in ZodiacLevelData.Levels)
@@ -116,6 +114,7 @@ public static class ZodiacPrototypeBuilder
         var menu = new GameObject("StartMenu").AddComponent<ZodiacStartMenu>();
         menu.roster = roster;
         menu.levelSceneName = ZodiacLevelData.Levels[0].sceneName;
+        ZodiacLights.AddGlobal(new GameObject("GlobalLight"), Color.white, 1f);
         var canvas = CreateCanvas();
 
         CreateText(canvas, "Title", "12 CON GIÁP", 96, TitleColor, new Vector2(0.5f, 1f), new Vector2(0f, -30f),
@@ -343,111 +342,6 @@ public static class ZodiacPrototypeBuilder
         mat = new PhysicsMaterial2D("NoFriction") { friction = 0f, bounciness = 0f };
         AssetDatabase.CreateAsset(mat, NoFrictionPath);
         return mat;
-    }
-
-    /// <summary>
-    /// Animator Controller dùng chung: 4 state Idle/Walk/Run/Jump, tham số Speed, Running, Grounded, VerticalSpeed.
-    /// Clip chỉ chỉnh transform của object Visual (pivot ở chân nên co giãn không làm nhân vật lơ lửng).
-    /// </summary>
-    static AnimatorController EnsureAnimatorController()
-    {
-        var existing = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
-        if (existing != null) return existing;
-        EnsureFolder(AnimationFolder);
-
-        var idle = CreateClip("Idle", 1.2f, loop: true,
-            ("m_LocalPosition.y", new[] { 0f, 0.6f, 1.2f }, new[] { 0f, 0.03f, 0f }),
-            ("m_LocalScale.x", new[] { 0f, 0.6f, 1.2f }, new[] { 1f, 0.99f, 1f }),
-            ("m_LocalScale.y", new[] { 0f, 0.6f, 1.2f }, new[] { 1f, 1.025f, 1f }));
-        var walk = CreateClip("Walk", 0.5f, loop: true,
-            ("m_LocalPosition.y", new[] { 0f, 0.125f, 0.25f, 0.375f, 0.5f }, new[] { 0f, 0.07f, 0f, 0.07f, 0f }),
-            ("localEulerAnglesRaw.z", new[] { 0f, 0.25f, 0.5f }, new[] { 2f, -2f, 2f }));
-        var run = CreateClip("Run", 0.36f, loop: true,
-            ("m_LocalPosition.y", new[] { 0f, 0.09f, 0.18f, 0.27f, 0.36f }, new[] { 0f, 0.12f, 0f, 0.12f, 0f }),
-            ("m_LocalScale.y", new[] { 0f, 0.09f, 0.18f, 0.27f, 0.36f }, new[] { 0.97f, 1.04f, 0.97f, 1.04f, 0.97f }),
-            ("localEulerAnglesRaw.z", new[] { 0f, 0.18f, 0.36f }, new[] { -6f, -10f, -6f }));
-        var jump = CreateClip("Jump", 0.25f, loop: false,
-            ("m_LocalScale.x", new[] { 0f, 0.12f }, new[] { 1f, 0.92f }),
-            ("m_LocalScale.y", new[] { 0f, 0.12f }, new[] { 1f, 1.08f }),
-            ("localEulerAnglesRaw.z", new[] { 0f, 0.12f }, new[] { 0f, -6f }));
-
-        var controller = AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
-        controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
-        controller.AddParameter("Running", AnimatorControllerParameterType.Bool);
-        controller.AddParameter("Grounded", AnimatorControllerParameterType.Bool);
-        controller.AddParameter("VerticalSpeed", AnimatorControllerParameterType.Float);
-
-        var sm = controller.layers[0].stateMachine;
-        var sIdle = sm.AddState("Idle", new Vector3(300f, 0f));
-        var sWalk = sm.AddState("Walk", new Vector3(550f, 0f));
-        var sRun = sm.AddState("Run", new Vector3(800f, 0f));
-        var sJump = sm.AddState("Jump", new Vector3(550f, 150f));
-        sIdle.motion = idle;
-        sWalk.motion = walk;
-        sRun.motion = run;
-        sJump.motion = jump;
-        sm.defaultState = sIdle;
-
-        Transition(sIdle, sWalk, AnimatorConditionMode.Greater, "Speed", 0.1f);
-        Transition(sWalk, sIdle, AnimatorConditionMode.Less, "Speed", 0.1f);
-        Transition(sWalk, sRun, AnimatorConditionMode.If, "Running");
-        Transition(sRun, sWalk, AnimatorConditionMode.IfNot, "Running");
-        Transition(sRun, sIdle, AnimatorConditionMode.Less, "Speed", 0.1f);
-        Transition(sJump, sIdle, AnimatorConditionMode.If, "Grounded", duration: 0.05f);
-
-        var toJump = sm.AddAnyStateTransition(sJump);
-        toJump.AddCondition(AnimatorConditionMode.IfNot, 0f, "Grounded");
-        toJump.hasExitTime = false;
-        toJump.duration = 0.05f;
-        toJump.canTransitionToSelf = false;
-
-        AssetDatabase.SaveAssets();
-        return controller;
-    }
-
-    static void Transition(AnimatorState from, AnimatorState to, AnimatorConditionMode mode, string param,
-                           float threshold = 0f, float duration = 0.1f)
-    {
-        var t = from.AddTransition(to);
-        t.AddCondition(mode, threshold, param);
-        t.hasExitTime = false;
-        t.duration = duration;
-    }
-
-    /// <summary>Tạo clip transform. Thuộc tính không liệt kê được giữ ở tư thế gốc để các state không "dính" tư thế của nhau.</summary>
-    static AnimationClip CreateClip(string name, float length, bool loop, params (string property, float[] times, float[] values)[] curves)
-    {
-        var defaults = new Dictionary<string, float>
-        {
-            { "m_LocalPosition.x", 0f }, { "m_LocalPosition.y", 0f }, { "m_LocalPosition.z", 0f },
-            { "m_LocalScale.x", 1f }, { "m_LocalScale.y", 1f }, { "m_LocalScale.z", 1f },
-            { "localEulerAnglesRaw.x", 0f }, { "localEulerAnglesRaw.y", 0f }, { "localEulerAnglesRaw.z", 0f },
-        };
-
-        var clip = new AnimationClip { name = name, frameRate = 60f };
-        foreach (var (property, defaultValue) in defaults)
-        {
-            AnimationCurve curve;
-            var custom = curves.FirstOrDefault(c => c.property == property);
-            if (custom.property != null)
-            {
-                curve = new AnimationCurve();
-                for (int i = 0; i < custom.times.Length; i++) curve.AddKey(custom.times[i], custom.values[i]);
-            }
-            else
-            {
-                curve = AnimationCurve.Constant(0f, length, defaultValue);
-            }
-            AnimationUtility.SetEditorCurve(clip, EditorCurveBinding.FloatCurve("", typeof(Transform), property), curve);
-        }
-
-        var settings = AnimationUtility.GetAnimationClipSettings(clip);
-        settings.loopTime = loop;
-        settings.stopTime = length;
-        AnimationUtility.SetAnimationClipSettings(clip, settings);
-
-        AssetDatabase.CreateAsset(clip, $"{AnimationFolder}/{name}.anim");
-        return clip;
     }
 
     /// <summary>Ảnh placeholder trắng (ô vuông hoặc hình tròn) 1×1 unit, tô màu bằng SpriteRenderer.color.</summary>

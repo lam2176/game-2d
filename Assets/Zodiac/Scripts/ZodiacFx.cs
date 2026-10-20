@@ -6,10 +6,52 @@ using UnityEngine;
 /// </summary>
 public static class ZodiacFx
 {
-    static Sprite circle, square;
+    static Sprite circle, square, crescent, ring;
 
     public static Sprite Circle => circle != null ? circle : circle = MakeSprite(64, true);
     public static Sprite Square => square != null ? square : square = MakeSprite(4, false);
+    /// <summary>Lưỡi liềm 1×1 unit (vệt chém), mũi nhọn hai đầu, dày ở giữa phía trước (+x).</summary>
+    public static Sprite Crescent => crescent != null ? crescent : crescent = MakeCrescent(128);
+    /// <summary>Vành khuyên 1×1 unit (sóng âm, sóng chấn) — rỗng giữa để không che nhân vật.</summary>
+    public static Sprite RingSprite => ring != null ? ring : ring = MakeRing(128, 0.16f);
+
+    static Sprite MakeRing(int size, float thickness)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+        var pixels = new Color32[size * size];
+        float r = size / 2f, w = r * thickness;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(r, r));
+            float edge = Mathf.Clamp01(r - d) * Mathf.Clamp01(d - (r - w));          // viền mịn hai mép
+            float inner = Mathf.Clamp01((d - (r - w * 3f)) / (w * 2f)) * 0.25f;      // quầng mờ phía trong
+            pixels[y * size + x] = new Color32(255, 255, 255, (byte)(Mathf.Max(edge, inner * Mathf.Clamp01(r - d)) * 255));
+        }
+        tex.SetPixels32(pixels);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+    }
+
+    static Sprite MakeCrescent(int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+        var pixels = new Color32[size * size];
+        float r = size / 2f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            Vector2 p = new Vector2(x + 0.5f, y + 0.5f);
+            float outer = r - Vector2.Distance(p, new Vector2(r, r));                  // trong hình tròn lớn
+            float inner = Vector2.Distance(p, new Vector2(r - size * 0.22f, r)) - r * 0.92f;   // ngoài hình tròn lệch
+            float a = Mathf.Clamp01(Mathf.Min(outer, inner) / 2f);
+            float glow = Mathf.Clamp01(1f - Mathf.Abs(y + 0.5f - r) / r);               // sáng ở giữa, mờ ở hai mũi
+            pixels[y * size + x] = new Color32(255, 255, 255, (byte)(a * Mathf.Lerp(0.35f, 1f, glow) * 255));
+        }
+        tex.SetPixels32(pixels);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+    }
 
     static Sprite MakeSprite(int size, bool round)
     {
@@ -43,13 +85,22 @@ public static class ZodiacFx
         sr.sprite = round ? Circle : Square;
         sr.color = color;
         sr.sortingOrder = sortingOrder;
+        UseUnlit(sr);
         return sr;
+    }
+
+    /// <summary>Hiệu ứng tự phát sáng: không bị ánh sáng 2D làm tối.</summary>
+    public static void UseUnlit(SpriteRenderer sr)
+    {
+        var res = ZodiacResources.Get;
+        if (res != null && res.spriteUnlit != null) sr.sharedMaterial = res.spriteUnlit;
     }
 
     /// <summary>Vòng sóng lan rộng rồi mờ dần (sóng âm, sóng chấn).</summary>
     public static void Ring(Vector2 position, float radius, Color color, float duration = 0.35f)
     {
         var sr = Shape("FxRing", true, position, Vector2.one * 0.3f, color, 14);
+        sr.sprite = RingSprite;
         sr.gameObject.AddComponent<FxFade>().Init(Vector2.one * 0.3f, Vector2.one * radius * 2f, duration);
     }
 
@@ -72,6 +123,7 @@ public static class ZodiacFx
         sr.flipX = source.flipX;
         sr.color = color;
         sr.sortingOrder = source.sortingOrder - 1;
+        UseUnlit(sr);
         go.AddComponent<FxFade>().Init(go.transform.localScale, go.transform.localScale, 0.25f);
     }
 }

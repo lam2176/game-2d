@@ -67,6 +67,7 @@ public class BossFoxSpirit : EnemyBase
     {
         if (state != State.Dormant || health.IsDead) return;
         EnterIdle(1.2f);
+        Roar();
     }
 
     protected override void Think()
@@ -75,6 +76,7 @@ public class BossFoxSpirit : EnemyBase
         {
             phase2 = true;
             ZodiacFx.Ring(body.bounds.center, 5f, tailCharge, 0.6f);
+            Roar();
             PhaseChanged?.Invoke();
         }
 
@@ -185,6 +187,12 @@ public class BossFoxSpirit : EnemyBase
         SetHorizontalVelocity(0f);
         Vector2 feet = new Vector2(transform.position.x, transform.position.y + 0.4f);
         ZodiacFx.Ring(feet, 3f, tailCharge, 0.35f);
+        ZodiacParticles.Dust(feet, Vector2.left, 12);
+        ZodiacParticles.Dust(feet, Vector2.right, 12);
+        ZodiacParticles.Debris(feet, new Color(0.45f, 0.4f, 0.5f), 10, 1f);
+        GameFeel.Shake(0.55f);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.bossSlam, 1f, 0.05f, feet);
         int count = phase2 ? 2 : 1;
         for (int i = 0; i < count; i++)
         {
@@ -215,6 +223,15 @@ public class BossFoxSpirit : EnemyBase
             shot.range = 16f;
         }
         ZodiacFx.Ring(origin, 1.2f, fireColor, 0.25f);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.fireball, 0.9f, 0.1f, origin);
+    }
+
+    void Roar()
+    {
+        GameFeel.Shake(0.4f);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.bossRoar, 1f, 0f, transform.position);
     }
 
     void SummonMinions()

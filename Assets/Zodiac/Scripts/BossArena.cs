@@ -15,6 +15,7 @@ public class BossArena : MonoBehaviour
     public Rect cameraBounds;
     public GameObject bossBar;
     public Text bossNameText;
+    public AudioClip bossMusic;
 
     ZodiacCameraFollow follow;
     Rect savedBounds;
@@ -45,6 +46,7 @@ public class BossArena : MonoBehaviour
         }
         if (bossBar != null) bossBar.SetActive(true);
         if (bossNameText != null) bossNameText.text = boss.bossName;
+        ZodiacAudio.PlayMusic(bossMusic, 0.6f);
         boss.Activate();
     }
 
@@ -53,6 +55,7 @@ public class BossArena : MonoBehaviour
         SetGates(false);
         if (follow != null && started) follow.bounds = savedBounds;
         if (bossBar != null) bossBar.SetActive(false);
+        if (started && ZodiacGameManager.Instance != null) ZodiacAudio.PlayMusic(ZodiacGameManager.Instance.music);
     }
 
     void SetGates(bool closed)
