@@ -6,6 +6,12 @@ Cả 12 nhân vật đều cầm một nhạc cụ dân tộc, nên chiêu thứ
 Dựng lại toàn bộ: **Tools ▸ Zodiac ▸ Dựng prototype** (tạo 12 nhân vật, prefab quái, 4 scene, Build Settings).
 Bấm Play ở `Zodiac_Start`.
 
+**Chơi thử bản riêng (không cần mở Unity)**: tắt Unity Editor rồi bấm đúp `ChoiThu.bat` ở thư mục gốc
+(hoặc chạy `.	ools\choi-thu.ps1` trong PowerShell) — build ra `Builds\Windows
+ConGiap.exe` rồi mở game trong cửa sổ 1600×900.
+`-Rebuild`: dựng lại scene trước khi build (sau khi sửa bản đồ / chỉ số / builder) · `-SkipBuild`: mở lại bản cũ · `-NoRun`: chỉ build.
+Lần build đầu lâu (biên dịch shader), các lần sau nhanh hơn. Đang mở Unity thì dùng menu **Tools ▸ Zodiac ▸ Xuất bản chơi thử (Windows)**.
+
 ## Điều khiển
 
 Tay phải mũi tên, tay trái Space/Shift + QWER (như game hành động online):
