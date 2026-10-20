@@ -12,6 +12,12 @@ using UnityEngine;
 public static class ZodiacTextureFactory
 {
     const string Folder = "Assets/Zodiac/Art/Generated";
+    /// <summary>Hệ số lấy mẫu: hàm vẽ tính trên lưới gốc, ảnh lưu ra lớn gấp Scale lần (toạ độ thực, không phóng pixel).</summary>
+    const int Scale = 2;
+
+    /// <summary>Gọi hàm vẽ ở toạ độ thực (x/scale) — hàm nhiễu liên tục nên chi tiết mịn hơn chứ không vỡ hạt.</summary>
+    static System.Func<int, int, Color> Up(System.Func<float, float, Color> f, int scale = Scale) =>
+        (x, y) => f((x + 0.5f) / scale - 0.5f, (y + 0.5f) / scale - 0.5f);
 
     public class Set
     {
@@ -23,12 +29,13 @@ public static class ZodiacTextureFactory
         ZodiacPrototypeBuilder.EnsureFolder(Folder);
         return new Set
         {
-            soil = Ensure("Soil", 128, 128, 64, Soil, tile: true),
-            brick = Ensure("Brick", 128, 128, 64, Brick, tile: true),
-            grass = Ensure("GrassEdge", 128, 48, 64, GrassEdge, tile: true, tileVertical: false),
-            plank = Ensure("BambooPlank", 128, 24, 64, Plank, tile: true, tileVertical: false),
-            ridge = Ensure("MountainRidge", 512, 256, 32, (x, y) => Ridge(x, y, 512, 256, 0.55f, 4, 11), tile: true, tileVertical: false),
-            hills = Ensure("Hills", 512, 128, 32, (x, y) => Ridge(x, y, 512, 128, 0.35f, 2, 23), tile: true, tileVertical: false),
+            // Vẽ ở lưới gốc (128px…) rồi lấy mẫu dày gấp Scale lần → texture nét khi hiển thị (~100–200 px/unit)
+            soil = Ensure("Soil", 128 * Scale, 128 * Scale, 64 * Scale, Up(Soil), tile: true),
+            brick = Ensure("Brick", 128 * Scale, 128 * Scale, 64 * Scale, Up(Brick), tile: true),
+            grass = Ensure("GrassEdge", 128 * Scale, 48 * Scale, 64 * Scale, Up(GrassEdge), tile: true, tileVertical: false),
+            plank = Ensure("BambooPlank", 128 * Scale, 24 * Scale, 64 * Scale, Up(Plank), tile: true, tileVertical: false),
+            ridge = Ensure("MountainRidge", 1024, 512, 64, Up((x, y) => Ridge(x, y, 512, 256, 0.55f, 4, 11), 2), tile: true, tileVertical: false),
+            hills = Ensure("Hills", 1024, 256, 64, Up((x, y) => Ridge(x, y, 512, 128, 0.35f, 2, 23), 2), tile: true, tileVertical: false),
             fog = Ensure("Fog", 8, 128, 16, (x, y) => new Color(1f, 1f, 1f, Mathf.SmoothStep(1f, 0f, y / 127f)), tile: false),
         };
     }
@@ -46,12 +53,12 @@ public static class ZodiacTextureFactory
 
     // ───────────────────────────── Từng texture ─────────────────────────────
 
-    static Color Soil(int x, int y)
+    static Color Soil(float x, float y)
     {
         float n = Fbm(x, y, 128, 16, 4, 1);
         float strata = Mathf.Sin((y + n * 24f) * 0.2f) * 0.06f;               // vân đất nằm ngang, uốn lượn
         float v = 0.78f + (n - 0.5f) * 0.35f + strata;
-        float speck = Hash(x + y * 131, 5);                                    // hạt đất li ti
+        float speck = Hash(Mathf.FloorToInt(x) + Mathf.FloorToInt(y) * 131, 5);  // hạt đất li ti
         if (speck > 0.97f) v -= 0.12f;
         else if (speck < 0.02f) v += 0.08f;
         // Sỏi nhỏ, thưa: < PebbleSize là nằm trong viên sỏi (khoảng cách đã chuẩn hoá theo bán kính ô)
@@ -66,16 +73,16 @@ public static class ZodiacTextureFactory
         return Gray(v);
     }
 
-    static Color Brick(int x, int y)
+    static Color Brick(float x, float y)
     {
         const int rowH = 32, brickW = 64, mortar = 3;
-        int row = y / rowH;
-        int bx = (x + (row % 2) * brickW / 2) % 128;
-        int lx = bx % brickW, ly = y % rowH;
+        int row = Mathf.FloorToInt(y / rowH);
+        float bx = ((x + (row % 2) * brickW / 2f) % 128f + 128f) % 128f;
+        float lx = bx % brickW, ly = ((y % rowH) + rowH) % rowH;
         bool isMortar = lx < mortar || ly < mortar;
         float n = Fbm(x, y, 128, 16, 3, 7);
         if (isMortar) return Gray(0.45f + n * 0.1f);
-        int brickId = row * 7 + (x + (row % 2) * brickW / 2) / brickW;
+        int brickId = row * 7 + Mathf.FloorToInt((x + (row % 2) * brickW / 2f) / brickW) % 2;
         float tone = 0.8f + (Hash(brickId, 3) - 0.5f) * 0.14f;
         float bevel = (ly > rowH - 6 ? 0.08f : 0f) + (lx < mortar + 4 ? 0.04f : 0f) - (ly < mortar + 4 ? 0.07f : 0f);
         float wear = (Fbm(x, y, 128, 4, 2, brickId) - 0.5f) * 0.08f;           // bề mặt đá sần
@@ -84,7 +91,7 @@ public static class ZodiacTextureFactory
     }
 
     /// <summary>Viền cỏ: dải cỏ dày ở đáy, ngọn cỏ nhọn chĩa lên với độ cao ngẫu nhiên (alpha), sáng dần về ngọn.</summary>
-    static Color GrassEdge(int x, int y)
+    static Color GrassEdge(float x, float y)
     {
         const int band = 16;
         float baseTop = band + (Fbm(x, 0, 128, 16, 2, 5) - 0.5f) * 6f;
@@ -93,7 +100,7 @@ public static class ZodiacTextureFactory
         // ngọn cỏ: mỗi 5px một ngọn, cao thấp khác nhau, nghiêng nhẹ
         for (int k = -1; k <= 1; k++)
         {
-            int blade = x / 5 + k;
+            int blade = Mathf.FloorToInt(x / 5f) + k;
             float height = baseTop + 6f + Hash(blade, 1) * 22f;
             float lean = (Hash(blade, 2) - 0.5f) * 0.5f;
             float cx = ((blade * 5 + 2.5f) % 128 + 128) % 128 + lean * (y - baseTop);
@@ -104,12 +111,12 @@ public static class ZodiacTextureFactory
         return Color.clear;
     }
 
-    static Color Plank(int x, int y)
+    static Color Plank(float x, float y)
     {
         float t = y / 23f;
         float tube = 0.7f + 0.3f * Mathf.Sin(t * Mathf.PI);                    // ống tre tròn: sáng giữa, tối mép
         if (y > 15 && y < 18) tube += 0.12f;                                    // vệt bóng
-        int lx = x % 64;
+        float lx = ((x % 64f) + 64f) % 64f;
         if (lx < 3 || lx > 61) tube -= 0.25f;                                   // đốt tre
         else if (lx < 5 || lx > 59) tube += 0.08f;
         tube += (Fbm(x, y, 128, 32, 2, 13) - 0.5f) * 0.06f;
@@ -117,7 +124,7 @@ public static class ZodiacTextureFactory
     }
 
     /// <summary>Dãy núi/đồi: đường sống lưng bằng nhiễu fBm 1 chiều tuần hoàn; sáng hơn ở đỉnh (sương), có vân.</summary>
-    static Color Ridge(int x, int y, int w, int h, float amplitude, int octaves, int seed)
+    static Color Ridge(float x, float y, int w, int h, float amplitude, int octaves, int seed)
     {
         float ridge = Fbm(x, 0, w, w / 4, octaves, seed);
         float top = h * (0.35f + amplitude * ridge);
@@ -171,7 +178,7 @@ public static class ZodiacTextureFactory
     }
 
     /// <summary>Khoảng cách (chuẩn hoá) tới tâm ô Voronoi gần nhất — dùng vẽ sỏi.</summary>
-    static float Cells(int x, int y, int size, int cells, int seed)
+    static float Cells(float x, float y, int size, int cells, int seed)
     {
         float cellSize = (float)size / cells, best = 9f;
         int cx = Mathf.FloorToInt(x / cellSize), cy = Mathf.FloorToInt(y / cellSize);
@@ -207,7 +214,7 @@ public static class ZodiacTextureFactory
         if (!overwrite && File.Exists(path))
         {
             var existing = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            if (existing != null)
+            if (existing != null && existing.texture.width == w && existing.texture.height == h)
             {
                 ApplyWrap(path, tile, tileVertical);
                 return existing;

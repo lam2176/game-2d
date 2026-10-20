@@ -8,14 +8,17 @@ Bấm Play ở `Zodiac_Start`.
 
 ## Điều khiển
 
+Tay phải mũi tên, tay trái Space/Shift + QWER (như game hành động online):
+
 | Phím | Hành động |
 |---|---|
-| A/D, ←/→ | Đi (giữ Shift để chạy) |
-| Space | Nhảy (giữ lâu thì nhảy cao, thả sớm thì nhảy thấp). ↓ + Space: rơi xuống qua bục tre |
-| J / chuột trái | Đánh thường (chém tan được đạn của quái) |
-| K / chuột phải / RB | Chiêu riêng của con giáp (tốn Khí) |
-| L / Ctrl trái / LB | Lăn né — bất tử, xuyên qua quái và đạn; trên không né được 1 lần |
-| R | Chơi lại màn |
+| ← → (hoặc A/D) | Đi — giữ Shift để chạy |
+| Space | Nhảy (giữ lâu nhảy cao). ↓ + Space: rơi xuống qua bục tre |
+| **Q** (J, chuột trái) | Đánh — bấm liên tiếp ra combo 3 đòn; ↑ + Q chém lên; trên không ↓ + Q chém xuống (nảy) |
+| **W** (L, Ctrl trái, LB) | Lướt né — bất tử, xuyên quái và đạn |
+| **E** (K, chuột phải, RB) | Chiêu riêng của con giáp (tốn Khí) |
+| **R** (RT) | **Tuyệt kỹ** — cần đầy 6 ô Khí, tốn hết |
+| F5 | Chơi lại màn |
 
 ## Luật chung (tham khảo)
 
@@ -135,3 +138,24 @@ Nguyên nhân hình mờ và cách sửa:
 Texture vẽ bằng code (`ZodiacTextureFactory`, lưu ở `Assets/Zodiac/Art/Generated`), tô màu theo từng màn:
 đất có vân và sỏi, gạch đá có mạch vữa/vết sứt, viền cỏ có ngọn (chân nhân vật lẫn trong cỏ), bục tre có đốt,
 dãy núi và đồi có đường sống lưng tự nhiên + lớp mù chân núi, sương mù rừng trúc, vách hang xếp gạch, bầu trời chuyển màu.
+
+## Thanh chiêu & Tuyệt kỹ (đợt 4)
+
+- **HUD kiểu game online** (Ngọc Rồng…): góc trái trên là chân dung tròn + tên + máu + 6 ô Khí + nội tại;
+  giữa đáy là 4 ô tròn **Q Đánh · W Lướt · E Chiêu · R Tuyệt kỹ** — biểu tượng, nhãn phím, số Khí cần,
+  lớp tối quét tròn theo thời gian hồi, ô nảy lên khi bấm; ô R viền vàng nhấp nháy khi đầy Khí.
+- **Tuyệt kỹ** = bản cường hoá của chiêu (`SkillConfig.Empowered`): sát thương ×2, vùng ×1.7, nhiều đạn hơn, lướt xa hơn,
+  choáng lâu hơn, hồi đầy máu (Dê), tàng hình lâu + đánh lén ×5 (Rắn). Khi tung có cảnh cắt: dải đen chéo màn hình,
+  chân dung trượt vào, tên tuyệt kỹ chữ lớn, thời gian chậm lại 0.75 giây.
+
+  | Con giáp | Tuyệt kỹ | | Con giáp | Tuyệt kỹ |
+  |---|---|---|---|---|
+  | Chuột | Vạn Ảnh Thử | | Ngựa | Thiên Mã Hành Không |
+  | Trâu | Đại Hồng Chung | | Dê | Xuân Hồi Đại Địa |
+  | Hổ | Mãnh Hổ Hạ Sơn | | Khỉ | Tề Thiên Đại Thánh |
+  | Mèo | Cửu Mệnh Huyền Âm | | Gà | Kim Kê Báo Hiểu |
+  | Rồng | Long Thần Hoả | | Chó | Thiên Cẩu Hống |
+  | Rắn | Vạn Xà Ẩn Hình | | Heo | Bát Giới Trấn Sơn |
+
+- **Độ nét**: ảnh nhân vật 2048px; texture vẽ bằng code lấy mẫu dày gấp đôi (trước bị phóng to 1.5–3 lần khi hiển thị);
+  hình tròn placeholder 256px (trước 64px bị kéo ra vài trăm px).

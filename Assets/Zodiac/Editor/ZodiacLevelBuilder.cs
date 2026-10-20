@@ -502,8 +502,8 @@ public static class ZodiacLevelBuilder
 
         // Thanh máu boss trên HUD
         var bar = ZodiacPrototypeBuilder.CreateImage(canvas, "BossBar", BarBackColor);
-        bar.rectTransform.pivot = new Vector2(0.5f, 0f);
-        ZodiacPrototypeBuilder.Place(bar.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(900f, 34f));
+        bar.rectTransform.pivot = new Vector2(0.5f, 1f);
+        ZodiacPrototypeBuilder.Place(bar.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -70f), new Vector2(900f, 34f));
         bar.raycastTarget = false;
         var fill = ZodiacPrototypeBuilder.CreateImage(bar.transform, "Fill", BossBarColor);
         ZodiacPrototypeBuilder.Stretch(fill.rectTransform);
@@ -861,48 +861,33 @@ public static class ZodiacLevelBuilder
     {
         var canvas = ZodiacPrototypeBuilder.CreateCanvas();
 
-        // Góc trái trên: ô chiêu + chân dung, tên, máu, đồng xu
-        var frame = ZodiacPrototypeBuilder.CreateImage(canvas, "SkillFrame", Color.white);
-        frame.rectTransform.pivot = new Vector2(0f, 1f);
-        ZodiacPrototypeBuilder.Place(frame.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -20f), new Vector2(150f, 150f));
-        frame.raycastTarget = false;
-        var slotBack = ZodiacPrototypeBuilder.CreateImage(frame.transform, "Back", new Color(0.12f, 0.08f, 0.06f, 0.9f));
-        ZodiacPrototypeBuilder.Stretch(slotBack.rectTransform);
-        slotBack.rectTransform.offsetMin = new Vector2(6f, 6f);
-        slotBack.rectTransform.offsetMax = new Vector2(-6f, -6f);
-        var icon = ZodiacPrototypeBuilder.CreateImage(slotBack.transform, "Portrait", Color.white);
-        ZodiacPrototypeBuilder.Stretch(icon.rectTransform);
-        icon.rectTransform.offsetMin = new Vector2(6f, 6f);
-        icon.rectTransform.offsetMax = new Vector2(-6f, -6f);
-        icon.preserveAspect = true;
-        var cooldown = ZodiacPrototypeBuilder.CreateImage(slotBack.transform, "Cooldown", new Color(0f, 0f, 0f, 0.65f));
-        ZodiacPrototypeBuilder.Stretch(cooldown.rectTransform);
-        cooldown.rectTransform.pivot = new Vector2(0.5f, 0f);
-        var cdText = ZodiacPrototypeBuilder.CreateText(slotBack.transform, "CooldownText", "", 44, Color.white,
-            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(130f, 60f), TextAnchor.MiddleCenter);
+        // Góc trái trên: chân dung tròn + tên + máu + Khí + nội tại
+        var portraitRing = UiCircle(canvas, "PortraitRing", Color.white, new Vector2(0f, 1f), new Vector2(84f, -84f), 132f);
+        var portraitMask = UiCircle(portraitRing.transform, "Mask", new Color(0.12f, 0.08f, 0.06f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, 120f);
+        portraitMask.gameObject.AddComponent<Mask>().showMaskGraphic = true;
+        var portrait = ZodiacPrototypeBuilder.CreateImage(portraitMask.transform, "Portrait", Color.white);
+        ZodiacPrototypeBuilder.Place(portrait.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -18f), new Vector2(150f, 150f));
+        portrait.raycastTarget = false;
 
         var characterText = ZodiacPrototypeBuilder.CreateText(canvas, "CharacterText", "", 32, Color.white,
-            new Vector2(0f, 1f), new Vector2(190f, -22f), new Vector2(700f, 44f), TextAnchor.UpperLeft);
-        var skillName = ZodiacPrototypeBuilder.CreateText(canvas, "SkillName", "", 26, new Color(1f, 0.92f, 0.6f),
-            new Vector2(0f, 1f), new Vector2(190f, -130f), new Vector2(700f, 36f), TextAnchor.UpperLeft);
-        skillName.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
+            new Vector2(0f, 1f), new Vector2(165f, -18f), new Vector2(700f, 44f), TextAnchor.UpperLeft);
         var passive = ZodiacPrototypeBuilder.CreateText(canvas, "PassiveText", "", 22, Color.white,
-            new Vector2(0f, 1f), new Vector2(190f, -162f), new Vector2(700f, 32f), TextAnchor.UpperLeft);
+            new Vector2(0f, 1f), new Vector2(165f, -128f), new Vector2(700f, 32f), TextAnchor.UpperLeft);
 
         var hud = canvas.gameObject.AddComponent<SkillHud>();
         hud.skill = player.GetComponent<PlayerSkill>();
-        hud.icon = icon;
-        hud.cooldownFill = cooldown.rectTransform;
-        hud.cooldownText = cdText;
-        hud.nameText = skillName;
-        hud.passiveText = passive;
+        hud.attack = player.GetComponent<PlayerMeleeAttack>();
+        hud.dodge = player.GetComponent<PlayerDodge>();
+        hud.energy = player.GetComponent<PlayerEnergy>();
+        hud.portrait = portrait;
+        hud.portraitRing = portraitRing;
         hud.characterText = characterText;
-        hud.readyFrame = frame;
+        hud.passiveText = passive;
 
         // Thanh máu
         var back = ZodiacPrototypeBuilder.CreateImage(canvas, "PlayerHealthBar", BarBackColor);
         back.rectTransform.pivot = new Vector2(0f, 1f);
-        ZodiacPrototypeBuilder.Place(back.rectTransform, new Vector2(0f, 1f), new Vector2(190f, -70f), new Vector2(360f, 36f));
+        ZodiacPrototypeBuilder.Place(back.rectTransform, new Vector2(0f, 1f), new Vector2(165f, -62f), new Vector2(360f, 34f));
         back.raycastTarget = false;
         var fill = ZodiacPrototypeBuilder.CreateImage(back.transform, "Fill", PlayerBarColor);
         ZodiacPrototypeBuilder.Stretch(fill.rectTransform);
@@ -911,7 +896,7 @@ public static class ZodiacLevelBuilder
         fill.rectTransform.offsetMax = new Vector2(-3f, -3f);
         fill.raycastTarget = false;
         var label = ZodiacPrototypeBuilder.CreateText(back.transform, "Label", "Máu", 24, Color.white,
-            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(360f, 36f), TextAnchor.MiddleCenter);
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(360f, 34f), TextAnchor.MiddleCenter);
         var bar = back.gameObject.AddComponent<HealthBar>();
         bar.health = player.GetComponent<Health>();
         bar.fill = fill.rectTransform;
@@ -923,17 +908,22 @@ public static class ZodiacLevelBuilder
         {
             var pip = ZodiacPrototypeBuilder.CreateImage(canvas, $"EnergyPip {i + 1}", new Color(0.45f, 0.85f, 1f));
             pip.rectTransform.pivot = new Vector2(0f, 1f);
-            ZodiacPrototypeBuilder.Place(pip.rectTransform, new Vector2(0f, 1f), new Vector2(190f + i * 30f, -112f), new Vector2(24f, 12f));
+            ZodiacPrototypeBuilder.Place(pip.rectTransform, new Vector2(0f, 1f), new Vector2(165f + i * 32f, -104f), new Vector2(26f, 14f));
             pip.raycastTarget = false;
             pips[i] = pip;
         }
-        hud.energy = player.GetComponent<PlayerEnergy>();
         hud.energyPips = pips;
+
+        // Thanh chiêu giữa đáy màn hình: Q Đánh · W Lướt · E Chiêu · R Tuyệt kỹ
+        hud.attackSlot = SkillSlot(canvas, "Slot Q", new Vector2(-310f, 105f), 96f, false, false);
+        hud.dodgeSlot = SkillSlot(canvas, "Slot W", new Vector2(-175f, 105f), 96f, false, false);
+        hud.skillSlot = SkillSlot(canvas, "Slot E", new Vector2(-20f, 112f), 112f, false, true);
+        hud.ultimateSlot = SkillSlot(canvas, "Slot R", new Vector2(175f, 120f), 128f, true, true);
 
         manager.collectText = ZodiacPrototypeBuilder.CreateText(canvas, "CollectText", "Đồng xu: 0/0", 30, Color.white,
             new Vector2(0f, 1f), new Vector2(570f, -72f), new Vector2(400f, 40f), TextAnchor.UpperLeft);
 
-        ZodiacPrototypeBuilder.CreateText(canvas, "HintText", "A/D đi · Shift chạy · Space nhảy · J đánh · K chiêu · L lăn né · R chơi lại", 24, Color.white,
+        ZodiacPrototypeBuilder.CreateText(canvas, "HintText", "← → đi · Shift chạy · Space nhảy · ↑/↓ + Q đánh lên/xuống · F5 chơi lại", 24, Color.white,
             new Vector2(1f, 1f), new Vector2(-24f, -22f), new Vector2(1000f, 40f), TextAnchor.UpperRight);
 
         var banner = ZodiacPrototypeBuilder.CreateText(canvas, "LevelBanner", $"{def.title}\n<size=34>{def.subtitle}</size>", 64,
@@ -943,6 +933,60 @@ public static class ZodiacLevelBuilder
         BuildResultPanels(canvas, manager);
         ZodiacPrototypeBuilder.CreateEventSystem(null);
         return canvas;
+    }
+
+    /// <summary>Hình tròn UI (dùng hình tròn placeholder 256px).</summary>
+    static Image UiCircle(Transform parent, string name, Color color, Vector2 anchor, Vector2 position, float size)
+    {
+        var img = ZodiacPrototypeBuilder.CreateImage(parent, name, color);
+        img.sprite = ctx.circle;
+        img.raycastTarget = false;
+        ZodiacPrototypeBuilder.Place(img.rectTransform, anchor, position, new Vector2(size, size));
+        return img;
+    }
+
+    /// <summary>
+    /// Một ô chiêu tròn: viền (đổi màu khi sẵn sàng) → nền tối → biểu tượng (cắt tròn) → lớp tối quét tròn theo hồi chiêu,
+    /// nhãn phím ở góc dưới trái, số Khí ở góc trên phải, tên chiêu bên dưới. Ô tuyệt kỹ viền vàng dày hơn.
+    /// </summary>
+    static SkillHud.Slot SkillSlot(Transform canvas, string name, Vector2 position, float size, bool ultimate, bool portraitIcon)
+    {
+        var root = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
+        root.SetParent(canvas, false);
+        ZodiacPrototypeBuilder.Place(root, new Vector2(0.5f, 0f), position, new Vector2(size, size));
+
+        float border = ultimate ? 9f : 6f;
+        var ring = UiCircle(root, "Ring", Color.white, new Vector2(0.5f, 0.5f), Vector2.zero, size);
+        var bg = UiCircle(root, "Back", new Color(0.08f, 0.06f, 0.1f, 0.92f), new Vector2(0.5f, 0.5f), Vector2.zero, size - border * 2f);
+        bg.gameObject.AddComponent<Mask>().showMaskGraphic = true;
+        var icon = ZodiacPrototypeBuilder.CreateImage(bg.transform, "Icon", Color.white);
+        icon.raycastTarget = false;
+        // Biểu tượng là chân dung nhân vật thì phóng to, lấy phần đầu + thân trên (ô tròn cắt bớt phần dưới)
+        if (portraitIcon)
+            ZodiacPrototypeBuilder.Place(icon.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -size * 0.42f), new Vector2(size * 1.7f, size * 1.7f));
+        else
+            ZodiacPrototypeBuilder.Place(icon.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 0.72f, size * 0.72f));
+        var cd = UiCircle(bg.transform, "Cooldown", new Color(0f, 0f, 0f, 0.62f), new Vector2(0.5f, 0.5f), Vector2.zero, size - border * 2f);
+        cd.type = Image.Type.Filled;
+        cd.fillMethod = Image.FillMethod.Radial360;
+        cd.fillOrigin = (int)Image.Origin360.Top;
+        cd.fillClockwise = false;
+        cd.fillAmount = 0f;
+
+        var keyBadge = UiCircle(root, "KeyBadge", new Color(0.12f, 0.1f, 0.16f, 0.95f), new Vector2(0f, 0f), new Vector2(size * 0.12f, size * 0.12f), size * 0.38f);
+        var key = ZodiacPrototypeBuilder.CreateText(keyBadge.transform, "Key", "", Mathf.RoundToInt(size * 0.22f), Color.white,
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 0.38f, size * 0.38f), TextAnchor.MiddleCenter);
+        key.fontStyle = FontStyle.Bold;
+
+        var costBadge = UiCircle(root, "CostBadge", new Color(0.2f, 0.55f, 0.85f, 0.95f), new Vector2(1f, 1f), new Vector2(-size * 0.1f, -size * 0.1f), size * 0.32f);
+        var cost = ZodiacPrototypeBuilder.CreateText(costBadge.transform, "Cost", "", Mathf.RoundToInt(size * 0.18f), Color.white,
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 0.32f, size * 0.32f), TextAnchor.MiddleCenter);
+
+        var label = ZodiacPrototypeBuilder.CreateText(root, "Label", "", ultimate ? 20 : 18, ultimate ? new Color(1f, 0.85f, 0.4f) : Color.white,
+            new Vector2(0.5f, 0f), new Vector2(0f, -28f), new Vector2(size * 1.6f, 26f), TextAnchor.UpperCenter);
+        label.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.9f);
+
+        return new SkillHud.Slot { root = root, icon = icon, cooldown = cd, ring = ring, key = key, label = label, cost = cost };
     }
 
     static void BuildResultPanels(Transform canvas, ZodiacGameManager manager)

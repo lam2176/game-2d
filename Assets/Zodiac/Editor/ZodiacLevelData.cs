@@ -48,9 +48,9 @@ public static class ZodiacLevelData
     };
     static readonly string[] Level1Hints =
     {
-        "A/D: đi · Shift: chạy · Space: nhảy · L: lăn né (bất tử)\nJ: đánh (bấm liên tiếp ra combo 3 đòn) · Đạp lên đầu quái để hạ chúng!",
-        "Bọ Gai có gai trên lưng — đừng đạp!\nHãy đánh (J) hoặc dùng chiêu (K).",
-        "K: chiêu riêng, tốn Khí (ô xanh dưới thanh máu) — đánh trúng quái để nạp Khí.\nĐèn lồng: điểm hồi sinh + hồi 1 máu. Rơi vực chỉ mất 1 máu.",
+        "← →: đi · Shift: chạy · Space: nhảy · Q: đánh (bấm liên tiếp ra combo)\nW: lướt né (bất tử) · Đạp lên đầu quái để hạ chúng!",
+        "Bọ Gai có gai trên lưng — đừng đạp!\nHãy đánh (Q) hoặc dùng chiêu (E).",
+        "E: chiêu riêng (tốn Khí) · R: TUYỆT KỸ khi đầy 6 ô Khí — đánh trúng quái để nạp.\nĐèn lồng: điểm hồi sinh + hồi 1 máu. Rơi vực chỉ mất 1 máu.",
     };
     // 196 x 26
     static readonly string[] Level2 =
@@ -85,7 +85,7 @@ public static class ZodiacLevelData
     static readonly string[] Level2Hints =
     {
         "Bục tre (=): nhảy xuyên từ dưới lên được.\nGiữ ↓ rồi bấm Space để rơi xuống qua bục.",
-        "Lính Khiên đỡ mọi đòn phía trước!\nLăn (L) ra sau lưng, chém xuống (↓ + J trên không) hoặc làm choáng bằng chiêu.",
+        "Lính Khiên đỡ mọi đòn phía trước!\nLướt (W) ra sau lưng, chém xuống (↓ + Q trên không) hoặc làm choáng bằng chiêu.",
     };
     // 178 x 19
     static readonly string[] Level3 =
@@ -112,7 +112,7 @@ public static class ZodiacLevelData
     };
     static readonly string[] Level3Hints =
     {
-        "Thạch Sư phun lửa: nấp sau địa hình hoặc phá tượng.\nĐòn đánh thường (J) chém tan được cầu lửa!",
+        "Thạch Sư phun lửa: nấp sau địa hình hoặc phá tượng.\nĐòn đánh thường (Q) chém tan được cầu lửa!",
         "Hồ Tinh ở phía trước… Cổng sẽ đóng sau lưng bạn.\nQuan sát đuôi sáng lên để đoán đòn.",
     };
 

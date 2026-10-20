@@ -11,6 +11,8 @@ using UnityEngine.InputSystem;
 /// Trong lúc chiêu chiếm quyền di chuyển (lướt, dậm đất, gồng hồi máu) controller ngừng điều khiển vận tốc
 /// và đòn đánh thường bị khoá. Hồi chiêu tính từ lúc chiêu kết thúc.
 /// Mỗi lần tung tốn <see cref="SkillConfig.energyCost"/> Khí (<see cref="PlayerEnergy"/>) — thiếu Khí thì không tung được.
+/// Tuyệt kỹ (action Player/Ultimate — R, RT): bản cường hoá của chiêu (<see cref="SkillConfig.Empowered"/>),
+/// cần đầy thanh Khí và tốn hết; có cảnh cắt chân dung + chậm thời gian (<see cref="UltimateCutIn"/>).
 /// </summary>
 [RequireComponent(typeof(ZodiacPlayerController))]
 public class PlayerSkill : MonoBehaviour
@@ -23,9 +25,10 @@ public class PlayerSkill : MonoBehaviour
     PlayerEnergy energy;
     Health health;
     HitFlash flash;
-    InputAction skillAction;
+    InputAction skillAction, ultimateAction;
     float readyTime;
     bool hidden;
+    float backstab = 1f;
     readonly List<Collider2D> overlaps = new List<Collider2D>();
     readonly HashSet<Health> hitThisSkill = new HashSet<Health>();
 
@@ -42,6 +45,12 @@ public class PlayerSkill : MonoBehaviour
     public int UseCount { get; private set; }
     /// <summary>Vừa tung chiêu (animation, âm thanh).</summary>
     public event Action<SkillType> Used;
+    /// <summary>Vừa tung tuyệt kỹ.</summary>
+    public event Action UltimateUsed;
+    /// <summary>Đủ Khí (đầy thanh) và đang rảnh để tung tuyệt kỹ.</summary>
+    public bool UltimateReady => Config != null && IsReady && (energy == null || energy.Current >= energy.max);
+    /// <summary>Tổng số lần tung tuyệt kỹ (để kiểm tra).</summary>
+    public int UltimateCount { get; private set; }
 
     void Awake()
     {
@@ -50,6 +59,7 @@ public class PlayerSkill : MonoBehaviour
         health = GetComponent<Health>();
         flash = GetComponent<HitFlash>();
         skillAction = InputSystem.actions.FindAction("Player/Skill");
+        ultimateAction = InputSystem.actions.FindAction("Player/Ultimate");
         if (skillAction == null)
         {
             Debug.LogError("Thiếu action Player/Skill trong InputSystem_Actions.", this);
@@ -57,7 +67,11 @@ public class PlayerSkill : MonoBehaviour
         }
     }
 
-    void OnEnable() => skillAction?.Enable();
+    void OnEnable()
+    {
+        skillAction?.Enable();
+        ultimateAction?.Enable();
+    }
 
     void Update()
     {
@@ -67,6 +81,7 @@ public class PlayerSkill : MonoBehaviour
             return;
         }
         if (skillAction.WasPressedThisFrame()) TryUse();
+        if (ultimateAction != null && ultimateAction.WasPressedThisFrame()) TryUseUltimate();
     }
 
     /// <summary>Tung chiêu nếu đã hồi. Trả về false nếu chưa hồi / đang bận / không đủ điều kiện.</summary>
@@ -79,6 +94,30 @@ public class PlayerSkill : MonoBehaviour
 
         energy?.TrySpend(cfg.energyCost);
         UseCount++;
+        Execute(cfg);
+        return true;
+    }
+
+    /// <summary>Tung tuyệt kỹ nếu đầy Khí. Trả về false nếu chưa đủ / đang bận.</summary>
+    public bool TryUseUltimate()
+    {
+        var baseCfg = Config;
+        if (baseCfg == null || !UltimateReady || !controller.ControlEnabled || controller.IsOverridden) return false;
+        if (baseCfg.type == SkillType.Heal && (!controller.IsGrounded || health == null || health.Current >= health.maxHealth))
+            return false;
+        var cfg = baseCfg.Empowered();
+        energy?.TrySpend(energy.max);
+        UltimateCount++;
+        var c = controller.Character;
+        UltimateCutIn.Show(c, Theme);
+        GameFeel.Shake(0.5f);
+        Execute(cfg);
+        UltimateUsed?.Invoke();
+        return true;
+    }
+
+    void Execute(SkillConfig cfg)
+    {
         readyTime = float.PositiveInfinity;   // tính hồi chiêu khi chiêu kết thúc
         hitThisSkill.Clear();
         if (controller.Character != null) ZodiacAudio.Play(controller.Character.skillSound, 0.9f, 0.03f);
@@ -92,7 +131,6 @@ public class PlayerSkill : MonoBehaviour
             case SkillType.Stealth: StartCoroutine(Stealth(cfg)); break;
             case SkillType.GroundPound: StartCoroutine(GroundPound(cfg)); break;
         }
-        return true;
     }
 
     void Finish(SkillConfig cfg)
@@ -260,6 +298,7 @@ public class PlayerSkill : MonoBehaviour
     IEnumerator Stealth(SkillConfig cfg)
     {
         hidden = true;
+        backstab = cfg.backstabMultiplier;
         controller.IsHidden = true;
         health?.SetInvulnerable(cfg.stealthDuration);
         if (flash != null) flash.tint = new Color(0.6f, 1f, 0.8f, 0.3f);
@@ -283,9 +322,9 @@ public class PlayerSkill : MonoBehaviour
     /// </summary>
     public float ConsumeBackstab()
     {
-        if (!hidden || Config == null) return 1f;
+        if (!hidden) return 1f;
         EndStealth();
-        return Config.backstabMultiplier;
+        return backstab;
     }
 
     // ───────── Dậm đất ─────────

@@ -6,12 +6,37 @@ using UnityEngine;
 /// </summary>
 public static class ZodiacFx
 {
-    static Sprite circle, square, crescent, ring;
+    static Sprite circle, square, crescent, ring, chevrons;
 
-    public static Sprite Circle => circle != null ? circle : circle = MakeSprite(64, true);
+    public static Sprite Circle => circle != null ? circle : circle = MakeSprite(128, true);
     public static Sprite Square => square != null ? square : square = MakeSprite(4, false);
     /// <summary>Lưỡi liềm 1×1 unit (vệt chém), mũi nhọn hai đầu, dày ở giữa phía trước (+x).</summary>
     public static Sprite Crescent => crescent != null ? crescent : crescent = MakeCrescent(128);
+    /// <summary>Hai mũi tên "»" (biểu tượng lướt trên HUD).</summary>
+    public static Sprite Chevrons => chevrons != null ? chevrons : chevrons = MakeChevrons(128);
+
+    static Sprite MakeChevrons(int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+        var pixels = new Color32[size * size];
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float py = Mathf.Abs(y + 0.5f - size / 2f) / size;           // 0 ở giữa
+            float a = 0f;
+            foreach (float start in new[] { 0.18f, 0.48f })
+            {
+                // mũi tên ">": đỉnh ở giữa phải, hai cạnh chéo; dày 0.11
+                float d = (x + 0.5f) / size - (start + (0.25f - py));
+                if (py < 0.3f) a = Mathf.Max(a, Mathf.Clamp01((0.11f - Mathf.Abs(d - 0.055f) * 2f) * size * 0.5f));
+            }
+            pixels[y * size + x] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(a) * 255));
+        }
+        tex.SetPixels32(pixels);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+    }
+
     /// <summary>Vành khuyên 1×1 unit (sóng âm, sóng chấn) — rỗng giữa để không che nhân vật.</summary>
     public static Sprite RingSprite => ring != null ? ring : ring = MakeRing(128, 0.16f);
 

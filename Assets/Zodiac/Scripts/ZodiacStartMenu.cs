@@ -83,7 +83,8 @@ public class ZodiacStartMenu : MonoBehaviour
                              $"Nhảy {Bar(Mathf.RoundToInt((c.jumpHeight - 2f) * 2f), 8)}   Sức đánh {Bar(c.attackDamage * 2, 8)}";
         if (passiveText != null) passiveText.text = $"<b>Nội tại — {c.passiveName}</b>\n{c.passiveDescription}";
         if (skillText != null)
-            skillText.text = $"<b>Chiêu [K] — {c.skill.name}</b>  <i>(hồi {c.skill.cooldown:0.#}s)</i>\n{c.skill.description}";
+            skillText.text = $"<b>Chiêu [E] — {c.skill.name}</b>  <i>({c.skill.energyCost} Khí, hồi {c.skill.cooldown:0.#}s)</i>\n{c.skill.description}\n" +
+                             $"<b>Tuyệt kỹ [R] — {c.ultimateName}</b>  <i>(đầy 6 Khí)</i>\n{c.ultimateDescription}";
     }
 
     static string Bar(int value, int max)
