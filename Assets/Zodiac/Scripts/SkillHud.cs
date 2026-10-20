@@ -1,53 +1,111 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Ô chiêu thức trên HUD: tên chiêu + phím, lớp phủ tối co dần theo thời gian hồi chiêu, viền sáng khi sẵn sàng.
-/// Kèm dòng nội tại của nhân vật và các ô Khí (sáng = còn, tối = đã dùng; các ô sẽ bị tốn khi tung chiêu nhấp nháy).
+/// HUD chiêu thức kiểu game hành động online (Ngọc Rồng…): thanh 4 ô tròn giữa đáy màn hình —
+/// Q Đánh · W Lướt · E Chiêu · R Tuyệt kỹ. Mỗi ô có biểu tượng, phím, số Khí cần,
+/// lớp tối quét tròn theo thời gian hồi chiêu, nảy lên khi bấm; ô Tuyệt kỹ viền vàng, sáng nhấp nháy khi đầy Khí.
+/// Góc trái trên: chân dung tròn, tên, nội tại, thanh máu (HealthBar riêng) và các ô Khí.
 /// </summary>
 public class SkillHud : MonoBehaviour
 {
+    [Serializable]
+    public class Slot
+    {
+        public RectTransform root;
+        public Image icon;
+        [Tooltip("Image kiểu Filled / Radial 360 phủ lên biểu tượng.")]
+        public Image cooldown;
+        public Image ring;
+        public Text key;
+        public Text label;
+        public Text cost;
+        [NonSerialized] public float punch;
+    }
+
     public PlayerSkill skill;
-    public Image icon;
-    [Tooltip("Lớp phủ tối, co trục Y theo phần trăm hồi chiêu (pivot dưới).")]
-    public RectTransform cooldownFill;
-    public Text nameText;
-    public Text cooldownText;
-    public Text passiveText;
-    public Text characterText;
-    public Image readyFrame;
+    public PlayerMeleeAttack attack;
+    public PlayerDodge dodge;
     public PlayerEnergy energy;
+
+    [Header("Thanh chiêu")]
+    public Slot attackSlot;
+    public Slot dodgeSlot;
+    public Slot skillSlot;
+    public Slot ultimateSlot;
+
+    [Header("Thông tin nhân vật (góc trái trên)")]
+    public Image portrait;
+    public Image portraitRing;
+    public Text characterText;
+    public Text passiveText;
     [Tooltip("Mỗi ô ứng với 1 Khí.")]
     public Image[] energyPips;
     public Color energyFull = new Color(0.45f, 0.85f, 1f);
     public Color energyEmpty = new Color(0.15f, 0.2f, 0.3f, 0.8f);
 
+    static readonly Color Gold = new Color(1f, 0.82f, 0.3f);
+    static readonly Color RingIdle = new Color(0.85f, 0.85f, 0.9f, 0.9f);
+    ZodiacCharacter character;
+
     void Start()
     {
         var player = skill != null ? skill.GetComponent<ZodiacPlayerController>() : null;
-        var c = player != null ? player.Character : null;
-        if (c == null) return;
-        if (icon != null)
+        character = player != null ? player.Character : null;
+        if (character == null) return;
+
+        if (portrait != null) { portrait.sprite = character.sprite; portrait.preserveAspect = true; }
+        if (portraitRing != null) portraitRing.color = character.themeColor;
+        if (characterText != null) characterText.text = $"{character.displayName} · Tuổi {character.zodiacName}";
+        if (passiveText != null) passiveText.text = $"Nội tại — {character.passiveName}";
+
+        Setup(attackSlot, ZodiacFx.Crescent, "Q", "Đánh", "");
+        Setup(dodgeSlot, ZodiacFx.Chevrons, "W", "Lướt", "");
+        Setup(skillSlot, character.sprite, "E", character.skill.name, $"{character.skill.energyCost}");
+        Setup(ultimateSlot, character.sprite, "R", character.ultimateName, energy != null ? $"{energy.max}" : "");
+        if (ultimateSlot.icon != null) ultimateSlot.icon.color = new Color(1f, 0.9f, 0.6f);
+
+        if (attack != null) attack.Swung += (_, __) => attackSlot.punch = 1f;
+        if (dodge != null) dodge.Dodged += _ => dodgeSlot.punch = 1f;
+        if (skill != null)
         {
-            icon.sprite = c.sprite;
-            icon.preserveAspect = true;
+            skill.Used += _ => skillSlot.punch = 1f;
+            skill.UltimateUsed += () => ultimateSlot.punch = 1.5f;
         }
-        if (nameText != null) nameText.text = $"[K] {c.skill.name}  ·  {c.skill.energyCost} Khí";
-        if (passiveText != null) passiveText.text = $"Nội tại — {c.passiveName}";
-        if (characterText != null) characterText.text = $"{c.displayName} · Tuổi {c.zodiacName}";
-        if (readyFrame != null) readyFrame.color = c.themeColor;
+    }
+
+    static void Setup(Slot s, Sprite icon, string key, string label, string cost)
+    {
+        if (s == null || s.root == null) return;
+        if (s.icon != null) { s.icon.sprite = icon; s.icon.preserveAspect = true; }
+        if (s.key != null) s.key.text = key;
+        if (s.label != null) s.label.text = label;
+        if (s.cost != null)
+        {
+            s.cost.text = cost;
+            s.cost.transform.parent.gameObject.SetActive(!string.IsNullOrEmpty(cost));
+        }
     }
 
     void Update()
     {
         if (skill == null) return;
-        float n = skill.CooldownNormalized;
-        if (cooldownFill != null) cooldownFill.localScale = new Vector3(1f, skill.IsBusy ? 1f : n, 1f);
         bool enough = skill.HasEnergy;
-        if (cooldownText != null)
-            cooldownText.text = skill.IsBusy ? "…" : !skill.IsReady ? skill.CooldownRemaining.ToString("0.0") : enough ? "" : "Khí";
-        if (readyFrame != null) readyFrame.enabled = skill.IsReady && enough;
-        if (icon != null) icon.color = enough ? Color.white : new Color(0.45f, 0.45f, 0.5f);
+
+        UpdateSlot(attackSlot, attack != null ? attack.CooldownNormalized : 0f, true, RingIdle);
+        UpdateSlot(dodgeSlot, dodge != null ? dodge.CooldownNormalized : 0f, dodge == null || dodge.IsReady, RingIdle);
+        float skillCd = skill.IsBusy ? 1f : skill.CooldownNormalized;
+        UpdateSlot(skillSlot, skillCd, skill.IsReady && enough, character != null ? character.themeColor : RingIdle);
+        if (skillSlot.icon != null) skillSlot.icon.color = enough ? Color.white : new Color(0.45f, 0.45f, 0.5f);
+
+        // Tuyệt kỹ: lớp tối = phần Khí còn thiếu; đầy Khí thì viền vàng sáng nhấp nháy
+        float missing = energy != null ? 1f - energy.Normalized : 0f;
+        bool ultReady = skill.UltimateReady;
+        Color gold = ultReady ? Color.Lerp(Gold, Color.white, 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)) : Gold * 0.6f;
+        UpdateSlot(ultimateSlot, missing, ultReady, gold);
+        if (ultReady && ultimateSlot.root != null)
+            ultimateSlot.root.localScale *= 1f + 0.04f * Mathf.Sin(Time.unscaledTime * 6f);
 
         if (energy == null || energyPips == null) return;
         int cost = skill.Config != null ? skill.Config.energyCost : 0;
@@ -55,10 +113,19 @@ public class SkillHud : MonoBehaviour
         {
             if (energyPips[i] == null) continue;
             bool filled = i < energy.Current;
-            // Ô sẽ bị tốn nếu tung chiêu: nhấp nháy nhẹ
-            bool willSpend = filled && enough && i >= energy.Current - cost;
+            bool willSpend = filled && enough && i >= energy.Current - cost;   // các ô sẽ bị tốn khi tung chiêu: nhấp nháy
             float pulse = willSpend ? 0.75f + 0.25f * Mathf.Sin(Time.time * 6f) : 1f;
             energyPips[i].color = filled ? new Color(energyFull.r * pulse, energyFull.g * pulse, energyFull.b * pulse, 1f) : energyEmpty;
         }
+    }
+
+    static void UpdateSlot(Slot s, float cooldown, bool ready, Color ringColor)
+    {
+        if (s == null || s.root == null) return;
+        if (s.cooldown != null) s.cooldown.fillAmount = cooldown;
+        if (s.ring != null) s.ring.color = ready ? ringColor : new Color(0.35f, 0.35f, 0.4f, 0.9f);
+        s.punch = Mathf.MoveTowards(s.punch, 0f, Time.unscaledDeltaTime * 5f);
+        float p = Mathf.Sin(Mathf.Min(1f, s.punch) * Mathf.PI) * 0.18f;
+        s.root.localScale = Vector3.one * (1f + p);
     }
 }

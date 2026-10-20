@@ -66,6 +66,32 @@ public class SkillConfig
     public float channelTime = 0.6f;
     public float stealthDuration = 2.5f;
     public float backstabMultiplier = 3f;
+
+    /// <summary>
+    /// Bản cường hoá cho Tuyệt kỹ: sát thương ×2, vùng ảnh hưởng ×1.7, nhiều đạn hơn, lướt xa hơn, choáng lâu hơn,
+    /// hồi đầy máu, tàng hình lâu và đánh lén ×5.
+    /// </summary>
+    public SkillConfig Empowered()
+    {
+        var c = (SkillConfig)MemberwiseClone();
+        c.damage = Mathf.Max(2, damage * 2);
+        c.radius = radius * 1.7f;
+        c.forwardOffset = forwardOffset * 1.3f;
+        c.projectileCount = projectileCount == 1 ? 3 : projectileCount * 2 - 1;
+        c.spreadAngle = Mathf.Max(spreadAngle * 1.4f, projectileCount == 1 ? 24f : 0f);
+        c.projectileSize = projectileSize * 1.4f;
+        c.projectileRange = projectileRange * 1.3f;
+        c.stunTime = stunTime * 1.5f + 0.5f;
+        c.knockback = knockback * 1.5f;
+        c.dashTime = dashTime * 1.6f;
+        c.dashSpeed = dashSpeed * 1.15f;
+        c.healAmount = 99;
+        c.channelTime = channelTime * 0.6f;
+        c.stealthDuration = stealthDuration * 1.8f;
+        c.backstabMultiplier = 5f;
+        c.diveSpeed = diveSpeed * 1.2f;
+        return c;
+    }
 }
 
 /// <summary>
@@ -118,6 +144,10 @@ public class ZodiacCharacter : ScriptableObject
     public SkillConfig skill = new SkillConfig();
     [Tooltip("Tiếng nhạc cụ khi tung chiêu.")]
     public AudioClip skillSound;
+
+    [Header("Tuyệt kỹ (phím R) — bản cường hoá của chiêu, tốn đầy Khí")]
+    public string ultimateName = "Tuyệt Kỹ";
+    [TextArea] public string ultimateDescription;
 
     [Tooltip("Phiên bản số liệu do builder điền — thấp hơn bản hiện tại thì builder điền lại.")]
     public int dataVersion;

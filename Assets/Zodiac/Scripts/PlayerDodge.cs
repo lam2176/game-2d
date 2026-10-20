@@ -26,6 +26,8 @@ public class PlayerDodge : MonoBehaviour
 
     public bool IsDodging { get; private set; }
     public bool IsReady => !IsDodging && Time.time >= readyTime && (controller.IsGrounded || !airDodgeUsed);
+    /// <summary>0 = lăn được, 1 = vừa lăn (cho ô W trên HUD).</summary>
+    public float CooldownNormalized => IsDodging ? 1f : Mathf.Clamp01((readyTime - Time.time) / Mathf.Max(0.01f, cooldown));
     /// <summary>Vừa bắt đầu lăn (hướng: -1/1).</summary>
     public event Action<float> Dodged;
 

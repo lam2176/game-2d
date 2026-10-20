@@ -14,6 +14,7 @@ Cột "Ai làm": **Code** (lập trình), **Art** (hoạ sĩ), **Audio** (âm th
   hậu kỳ, hạt môi trường), 5.1–5.5 âm thanh (Kenney CC0 + tổng hợp bằng code). Animation nhân vật làm bằng code (không có hoạ sĩ).
 - [x] **Đợt 2** (nhánh `feature/chieu-va-quai-dot-2`): 2.3 Khí, 2.4 lăn né, 2.5 quái phản ứng + Lính Khiên.
 - [x] **Đợt 3** (nhánh `feature/do-hoa-dot-3`): sửa hình mờ (bloom, mipmap, MSAA, zoom), 4.5–4.6 bằng texture vẽ bằng code.
+- [x] **Đợt 4** (nhánh `feature/hud-qwer-dot-4`): phím QWER, HUD thanh chiêu kiểu Ngọc Rồng, Tuyệt kỹ + cảnh cắt, ảnh/texture độ phân giải cao.
 - [ ] Còn lại: 2.6 cân bằng, 4.7 vật thể sống, Giai đoạn 6–7. Giai đoạn 3 (rig xương) cần ảnh tách lớp — tạm thay bằng `CharacterAnimator`.
 
 ## 1. Hiện trạng — vì sao game chưa "thật"

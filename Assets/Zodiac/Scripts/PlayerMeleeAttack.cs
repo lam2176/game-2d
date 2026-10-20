@@ -76,6 +76,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public bool IsHitboxActive => phase == Phase.Active;
     public float CooldownRemaining => Mathf.Max(0f, nextAttackTime - Time.time);
+    /// <summary>0 = đánh được, 1 = vừa ra đòn (cho ô Q trên HUD).</summary>
+    public float CooldownNormalized => current.recovery > 0f ? Mathf.Clamp01(CooldownRemaining / current.recovery) : 0f;
     /// <summary>Tổng số đòn đã ra (để kiểm tra).</summary>
     public int SwingCount { get; private set; }
     /// <summary>Chỉ số đòn trong combo của đòn gần nhất (0..2), -1 = đòn lên/xuống.</summary>

@@ -74,7 +74,7 @@ public static class ZodiacPrototypeBuilder
         var ctx = new ZodiacLevelBuilder.Context
         {
             square = EnsurePlaceholderSprite(SquarePath, 4, circle: false),
-            circle = EnsurePlaceholderSprite(CirclePath, 64, circle: true),
+            circle = EnsurePlaceholderSprite(CirclePath, 256, circle: true),
             resources = ZodiacVisualSetup.EnsureResources(),
             noFriction = EnsureNoFriction(),
             roster = ZodiacCharacterDefs.EnsureRoster(),
@@ -175,7 +175,7 @@ public static class ZodiacPrototypeBuilder
                                     new Vector2(440f, 120f), TextAnchor.UpperLeft);
         menu.passiveText = CreateText(panel.transform, "Passive", "", 26, InkColor, new Vector2(0f, 1f), new Vector2(30f, -300f),
                                       new Vector2(700f, 150f), TextAnchor.UpperLeft);
-        menu.skillText = CreateText(panel.transform, "Skill", "", 26, InkColor, new Vector2(0f, 1f), new Vector2(30f, -450f),
+        menu.skillText = CreateText(panel.transform, "Skill", "", 24, InkColor, new Vector2(0f, 1f), new Vector2(30f, -440f),
                                     new Vector2(700f, 250f), TextAnchor.UpperLeft);
         foreach (var t in new[] { menu.passiveText, menu.skillText }) t.horizontalOverflow = HorizontalWrapMode.Wrap;
 
@@ -189,7 +189,7 @@ public static class ZodiacPrototypeBuilder
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
         }
 
-        CreateText(canvas, "Controls", "Mũi tên / chuột: chọn con giáp · Enter: xác nhận · Trong màn: A/D đi · Shift chạy · Space nhảy · J đánh · K chiêu",
+        CreateText(canvas, "Controls", "Mũi tên / chuột: chọn con giáp · Enter: xác nhận · Trong màn: ← → đi · Space nhảy · Q đánh · W lướt · E chiêu · R tuyệt kỹ",
                    24, InkColor, new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(1800f, 40f), TextAnchor.MiddleCenter);
 
         CreateEventSystem(menu.slots.Length > 0 ? menu.slots[0].gameObject : play.gameObject);
@@ -349,7 +349,7 @@ public static class ZodiacPrototypeBuilder
     static Sprite EnsurePlaceholderSprite(string path, int pixels, bool circle)
     {
         var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-        if (sprite != null) return sprite;
+        if (sprite != null && sprite.texture.width == pixels) return sprite;   // khác cỡ (bản cũ 64px) thì vẽ lại, giữ GUID
 
         EnsureFolder(PlaceholderFolder);
         var tex = new Texture2D(pixels, pixels, TextureFormat.RGBA32, false);
@@ -362,7 +362,7 @@ public static class ZodiacPrototypeBuilder
             if (circle)
             {
                 float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(r, r));
-                alpha = Mathf.Clamp01(r - d);   // viền mịn 1 pixel
+                alpha = Mathf.Clamp01((r - d) / (pixels / 128f));   // viền mịn ~1 pixel khi hiển thị
             }
             pixelData[y * pixels + x] = new Color32(255, 255, 255, (byte)(alpha * 255));
         }

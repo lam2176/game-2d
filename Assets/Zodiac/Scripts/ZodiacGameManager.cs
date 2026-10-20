@@ -11,7 +11,7 @@ using UnityEngine.UI;
 /// (như Hollow Knight / Celeste) — chỉ thua khi hết máu.
 /// Thua có thể "Hồi sinh tại đèn lồng": tải lại màn và đặt người chơi ở đèn lồng đã thắp xa nhất.
 /// Màn có boss thì cổng đích chỉ hiện khi boss bị hạ.
-/// Đếm đồng xu, cập nhật HUD, hiện bảng thắng/thua. Phím R chơi lại nhanh.
+/// Đếm đồng xu, cập nhật HUD, hiện bảng thắng/thua. Phím F5 chơi lại nhanh (R là Tuyệt kỹ).
 /// </summary>
 public class ZodiacGameManager : MonoBehaviour
 {
@@ -111,7 +111,7 @@ public class ZodiacGameManager : MonoBehaviour
     {
         if (Current == State.Playing && !respawning && player.transform.position.y < fallLimitY)
             HazardHit(1, player.transform.position);
-        if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) Restart();
+        if (Keyboard.current != null && Keyboard.current.f5Key.wasPressedThisFrame) Restart();
     }
 
     void OnCollected(Collectible item)
