@@ -123,8 +123,9 @@ public static class ZodiacPrototypeBuilder
         CreateText(canvas, "Subtitle", "Chọn con giáp của bạn — mỗi con một nội tại và một chiêu riêng", 32, InkColor,
                    new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(1400f, 50f), TextAnchor.MiddleCenter);
 
-        // Lưới 6 × 2 ô bên trái
-        const float slotW = 165f, slotH = 215f, gap = 14f;
+        // Bố cục (toạ độ chuẩn 1920×1080, gốc giữa màn hình) — hai khối không chồng nhau:
+        //   lưới 6 × 2 ô: x −900 → +60, y +230 → −182 | bảng thông tin: x +160 → +880, y +300 → −340 (dưới dòng tiêu đề)
+        const float slotW = 150f, slotH = 200f, gap = 12f, gridLeft = -900f, gridTop = 230f;
         int count = roster.Count;
         menu.slots = new Button[count];
         menu.slotFrames = new Image[count];
@@ -134,7 +135,7 @@ public static class ZodiacPrototypeBuilder
             int col = i % 6, row = i / 6;
             var frame = CreateImage(canvas, $"Slot {i + 1}", new Color(0.35f, 0.2f, 0.12f, 0.6f));
             Place(frame.rectTransform, new Vector2(0.5f, 0.5f),
-                  new Vector2(-880f + slotW / 2f + col * (slotW + gap), 150f - row * (slotH + gap)), new Vector2(slotW, slotH));
+                  new Vector2(gridLeft + slotW / 2f + col * (slotW + gap), gridTop - slotH / 2f - row * (slotH + gap)), new Vector2(slotW, slotH));
             var inner = CreateImage(frame.transform, "Inner", PanelColor);
             Stretch(inner.rectTransform);
             inner.rectTransform.offsetMin = new Vector2(5f, 5f);
@@ -143,8 +144,8 @@ public static class ZodiacPrototypeBuilder
             portrait.sprite = c.sprite;
             portrait.preserveAspect = true;
             portrait.raycastTarget = false;
-            Place(portrait.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(slotW - 20f, 150f));
-            CreateText(inner.transform, "Label", $"{c.zodiacName} · {c.displayName}", 24, InkColor,
+            Place(portrait.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -72f), new Vector2(slotW - 16f, 140f));
+            CreateText(inner.transform, "Label", $"{c.zodiacName} · {c.displayName}", 22, InkColor,
                        new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(slotW, 36f), TextAnchor.LowerCenter);
 
             var button = frame.gameObject.AddComponent<Button>();
@@ -160,28 +161,29 @@ public static class ZodiacPrototypeBuilder
 
         // Bảng thông tin bên phải
         var panel = CreateImage(canvas, "InfoPanel", PanelColor);
-        Place(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(520f, 40f), new Vector2(760f, 720f));
+        Place(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(520f, -20f), new Vector2(720f, 640f));
         panel.raycastTarget = false;
         var big = CreateImage(panel.transform, "Portrait", Color.white);
         big.preserveAspect = true;
         big.raycastTarget = false;
-        Place(big.rectTransform, new Vector2(0f, 1f), new Vector2(150f, -150f), new Vector2(260f, 260f));
+        // Trong bảng: chân dung trái trên, tên/nhạc cụ/chỉ số bên phải chân dung, nội tại và chiêu ở dưới
+        Place(big.rectTransform, new Vector2(0f, 1f), new Vector2(125f, -130f), new Vector2(220f, 220f));
         menu.portrait = big;
-        menu.nameText = CreateText(panel.transform, "Name", "", 44, InkColor, new Vector2(0f, 1f), new Vector2(300f, -30f),
-                                   new Vector2(440f, 60f), TextAnchor.UpperLeft);
-        menu.instrumentText = CreateText(panel.transform, "Instrument", "", 26, InkColor, new Vector2(0f, 1f), new Vector2(300f, -95f),
-                                         new Vector2(440f, 40f), TextAnchor.UpperLeft);
-        menu.statsText = CreateText(panel.transform, "Stats", "", 24, InkColor, new Vector2(0f, 1f), new Vector2(300f, -145f),
-                                    new Vector2(440f, 120f), TextAnchor.UpperLeft);
-        menu.passiveText = CreateText(panel.transform, "Passive", "", 26, InkColor, new Vector2(0f, 1f), new Vector2(30f, -300f),
-                                      new Vector2(700f, 150f), TextAnchor.UpperLeft);
-        menu.skillText = CreateText(panel.transform, "Skill", "", 24, InkColor, new Vector2(0f, 1f), new Vector2(30f, -440f),
-                                    new Vector2(700f, 250f), TextAnchor.UpperLeft);
+        menu.nameText = CreateText(panel.transform, "Name", "", 42, InkColor, new Vector2(0f, 1f), new Vector2(255f, -25f),
+                                   new Vector2(440f, 56f), TextAnchor.UpperLeft);
+        menu.instrumentText = CreateText(panel.transform, "Instrument", "", 26, InkColor, new Vector2(0f, 1f), new Vector2(255f, -88f),
+                                         new Vector2(440f, 36f), TextAnchor.UpperLeft);
+        menu.statsText = CreateText(panel.transform, "Stats", "", 24, InkColor, new Vector2(0f, 1f), new Vector2(255f, -132f),
+                                    new Vector2(440f, 100f), TextAnchor.UpperLeft);
+        menu.passiveText = CreateText(panel.transform, "Passive", "", 24, InkColor, new Vector2(0f, 1f), new Vector2(28f, -255f),
+                                      new Vector2(664f, 110f), TextAnchor.UpperLeft);
+        menu.skillText = CreateText(panel.transform, "Skill", "", 22, InkColor, new Vector2(0f, 1f), new Vector2(28f, -370f),
+                                    new Vector2(664f, 260f), TextAnchor.UpperLeft);
         foreach (var t in new[] { menu.passiveText, menu.skillText }) t.horizontalOverflow = HorizontalWrapMode.Wrap;
 
-        var play = CreateButton(canvas, "PlayButton", "Bắt đầu", new Vector2(-380f, 110f));
+        var play = CreateButton(canvas, "PlayButton", "Bắt đầu", new Vector2(-585f, 110f));
         UnityEventTools.AddPersistentListener(play.onClick, new UnityAction(menu.Play));
-        var quit = CreateButton(canvas, "QuitButton", "Thoát", new Vector2(-50f, 110f));
+        var quit = CreateButton(canvas, "QuitButton", "Thoát", new Vector2(-255f, 110f));
         UnityEventTools.AddPersistentListener(quit.onClick, new UnityAction(menu.Quit));
         foreach (var b in new[] { play, quit })
         {
