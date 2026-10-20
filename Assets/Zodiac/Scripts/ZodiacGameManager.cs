@@ -32,6 +32,11 @@ public class ZodiacGameManager : MonoBehaviour
     public BossFoxSpirit boss;
     [Min(0f)] public float respawnDelay = 0.45f;
 
+    [Header("Âm thanh")]
+    public AudioClip music;
+    [Tooltip("Tiếng bước chân trên đá (màn hang) thay vì cỏ.")]
+    public bool stoneFootsteps;
+
     [Header("UI")]
     public Text collectText;
     public GameObject winPanel;
@@ -99,6 +104,7 @@ public class ZodiacGameManager : MonoBehaviour
         winPanel.SetActive(false);
         losePanel.SetActive(false);
         RefreshHud();
+        ZodiacAudio.PlayMusic(music);
     }
 
     void Update()
@@ -139,6 +145,8 @@ public class ZodiacGameManager : MonoBehaviour
     public void HazardHit(int damage, Vector2 source)
     {
         if (Current != State.Playing || respawning) return;
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.spike, 0.9f);
         if (playerHealth != null)
         {
             playerHealth.TakeDamage(new Hit(damage, source, 0f));
@@ -151,15 +159,22 @@ public class ZodiacGameManager : MonoBehaviour
     {
         respawning = true;
         player.SetControlEnabled(false);
-        yield return new WaitForSeconds(respawnDelay);
-        if (Current == State.Playing)
+        yield return new WaitForSeconds(respawnDelay * 0.4f);
+        bool done = false;
+        // Mờ đen → dịch chuyển về đèn lồng → sáng lại
+        ScreenFader.Blink(() =>
         {
-            player.SetControlEnabled(true);
-            player.Teleport(ActiveCheckpoint != null ? ActiveCheckpoint.SpawnPosition : startPosition);
-            playerHealth?.SetInvulnerable(1f);
-            var follow = FindAnyObjectByType<ZodiacCameraFollow>();
-            if (follow != null) follow.SnapToTarget();
-        }
+            if (Current == State.Playing)
+            {
+                player.SetControlEnabled(true);
+                player.Teleport(ActiveCheckpoint != null ? ActiveCheckpoint.SpawnPosition : startPosition);
+                playerHealth?.SetInvulnerable(1.2f);
+                var follow = FindAnyObjectByType<ZodiacCameraFollow>();
+                if (follow != null) follow.SnapToTarget();
+            }
+            done = true;
+        }, respawnDelay * 0.3f);
+        while (!done) yield return null;
         respawning = false;
     }
 
@@ -168,6 +183,9 @@ public class ZodiacGameManager : MonoBehaviour
         if (Current != State.Playing) return;
         Current = result;
         player.SetControlEnabled(false);
+        var res = ZodiacResources.Get;
+        ZodiacAudio.PlayMusic(null, 0.6f);
+        if (res != null) ZodiacAudio.Play(result == State.Won ? res.win : res.lose, 1f, 0f);
         if (result == State.Won)
         {
             winDetailText.text = $"Thu được {collected}/{total} đồng xu";
@@ -187,7 +205,7 @@ public class ZodiacGameManager : MonoBehaviour
         if (collectText != null) collectText.text = $"Đồng xu: {collected}/{total}";
     }
 
-    public void Restart() => SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    public void Restart() => ScreenFader.LoadScene(SceneManager.GetActiveScene().name);
 
     /// <summary>Tải lại màn và bắt đầu ở đèn lồng đã thắp xa nhất (không có thì như chơi lại).</summary>
     public void ContinueFromCheckpoint()
@@ -201,7 +219,7 @@ public class ZodiacGameManager : MonoBehaviour
     }
 
     public void NextLevel() =>
-        SceneManager.LoadScene(string.IsNullOrEmpty(nextSceneName) ? startSceneName : nextSceneName);
+        ScreenFader.LoadScene(string.IsNullOrEmpty(nextSceneName) ? startSceneName : nextSceneName);
 
-    public void BackToMenu() => SceneManager.LoadScene(startSceneName);
+    public void BackToMenu() => ScreenFader.LoadScene(startSceneName);
 }

@@ -87,3 +87,18 @@ Quy ước độ khó (nhảy cao 3.2 ô, chạy 8.5 ô/s): bậc leo ≤ 3 ô, 
 - Quái kế thừa `EnemyBase` (va chạm, đạp đầu, choáng, chết); mỗi loại chỉ viết AI trong `Think()`.
 - Prefab quái và asset nhân vật đã có thì builder giữ nguyên chỉnh sửa tay. Muốn lấy lại mặc định: xoá prefab, hoặc dùng
   **Tools ▸ Zodiac ▸ Ghi đè chỉ số 12 con giáp**.
+
+## Âm thanh & hình ảnh (đợt 1 — game feel)
+
+- **Âm thanh hiệu ứng**: [Kenney.nl](https://kenney.nl) — gói *Impact Sounds*, *RPG Audio* — giấy phép **CC0** (dùng tự do, không cần ghi công)
+  → `Assets/Zodiac/Audio/SFX`.
+- **Tiếng nhạc cụ khi tung chiêu, nhạc nền ngũ cung** (5 bài: menu, làng, rừng trúc, hang, boss): **tổng hợp bằng code**
+  (numpy: chiêng, kèn, đàn nhị, đàn tranh, sáo, trống…) → `Assets/Zodiac/Audio/Synth`, `Assets/Zodiac/Audio/Music`.
+  Không vướng bản quyền; muốn thay bằng bản thu thật chỉ cần thay file cùng tên.
+- **Ánh sáng**: URP **2D Renderer** + Light2D — đèn lồng chập chờn, cầu lửa và ma trơi tự phát sáng, hang tối có đèn quanh người.
+- **Hậu kỳ**: bloom, vignette, chỉnh màu riêng từng màn (`Assets/Zodiac/Settings/Volume_*.asset`).
+- **Game feel**: đứng hình khi trúng đòn (hitstop), rung camera theo trauma, bụi chân / tia lửa / mảnh vỡ (Particle System),
+  màn mờ khi chuyển cảnh và hồi sinh, loé đỏ khi bị thương, trọng lực nhẹ ở đỉnh cú nhảy (apex hang).
+- **Animation bằng code** (`CharacterAnimator`): nhịp bước khớp tốc độ, nghiêng theo gia tốc, co giãn khi nhảy/đáp,
+  vung người theo đòn, lộn vòng khi nhảy đôi, chao khi lượn.
+- **Chiến đấu**: combo 3 đòn (đòn 3 gấp đôi sát thương), ↑ + J chém lên, trên không ↓ + J chém xuống — trúng quái/gai thì nảy lên (pogo).

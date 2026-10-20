@@ -165,6 +165,15 @@ public static class ZodiacCharacterDefs
         },
     };
 
+    /// <summary>Tiếng nhạc cụ của chiêu (Assets/Zodiac/Audio/Synth).</summary>
+    static readonly System.Collections.Generic.Dictionary<string, string> SkillSounds = new System.Collections.Generic.Dictionary<string, string>
+    {
+        { "Rat_Ty", "skill_rat_nguyet" }, { "Ox_Suu", "skill_ox_gong" }, { "Tiger_Dan", "skill_tiger_drum" },
+        { "Cat_Mao", "skill_cat_nhi" }, { "Dragon_Thin", "skill_dragon_tranh" }, { "Snake_Ty", "skill_snake_cloak" },
+        { "Horse_Ngo", "skill_horse_tam" }, { "Goat_Mui", "skill_goat_tyba" }, { "Monkey_Than", "skill_monkey_cymbal" },
+        { "Rooster_Dau", "skill_rooster_ken" }, { "Dog_Tuat", "skill_dog_day" }, { "Pig_Hoi", "skill_pig_flute" },
+    };
+
     static SkillConfig Hold(SkillConfig s, System.Action<SkillConfig> setup)
     {
         setup(s);
@@ -217,6 +226,11 @@ public static class ZodiacCharacterDefs
             AssetDatabase.CreateAsset(data, path);
         }
         if (created || overwrite || string.IsNullOrEmpty(data.passiveName)) Fill(data, d, sprite);
+        if (data.skillSound == null && SkillSounds.TryGetValue(d.file, out string sound))
+        {
+            data.skillSound = ZodiacVisualSetup.Clip("Synth/" + sound);
+            EditorUtility.SetDirty(data);
+        }
         return data;
     }
 

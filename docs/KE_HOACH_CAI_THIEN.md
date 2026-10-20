@@ -8,6 +8,12 @@ Cột "Ai làm": **Code** (lập trình), **Art** (hoạ sĩ), **Audio** (âm th
 
 ---
 
+## Tiến độ
+
+- [x] **Đợt 1** (nhánh `feature/game-feel-dot-1`): toàn bộ Giai đoạn 1 (game feel), 2.1 combo + 2.2 pogo, 4.1–4.4 (2D Renderer, Light2D,
+  hậu kỳ, hạt môi trường), 5.1–5.5 âm thanh (Kenney CC0 + tổng hợp bằng code). Animation nhân vật làm bằng code (không có hoạ sĩ).
+- [ ] Còn lại: 2.3–2.6, 4.5–4.7, Giai đoạn 6–7. Giai đoạn 3 (rig xương) cần ảnh tách lớp — tạm thay bằng `CharacterAnimator`.
+
 ## 1. Hiện trạng — vì sao game chưa "thật"
 
 | Vấn đề | Nguyên nhân trong code/asset hiện tại | Ảnh hưởng |

@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using UnityEditor;
-using UnityEditor.Animations;
 using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 using static ZodiacLevelData;
 
@@ -13,6 +14,8 @@ using static ZodiacLevelData;
 /// địa hình (gộp thành một CompositeCollider2D để nhân vật không vấp ở chỗ nối các khối), cỏ, bục tre một chiều,
 /// gai, bục di động, đồng xu, đèn lồng, biển hướng dẫn, cổng đích, quái, đấu trường boss,
 /// nền parallax theo chủ đề màn (làng quê / rừng trúc / hang động), người chơi, camera và HUD.
+/// Ánh sáng 2D theo màn (trời chiều / rừng sương / hang tối + đèn lồng, lửa, ma trơi tự phát sáng),
+/// hậu kỳ (bloom, vignette, chỉnh màu), hạt môi trường (lá rơi, đom đóm, bụi hang), nhạc nền.
 /// </summary>
 public static class ZodiacLevelBuilder
 {
@@ -20,13 +23,16 @@ public static class ZodiacLevelBuilder
     {
         public Sprite square, circle;
         public ZodiacRoster roster;
-        public AnimatorController controller;
+        public ZodiacResources resources;
+        public Material particleMaterial;
         public PhysicsMaterial2D noFriction;
         public ZodiacEnemyFactory.Prefabs prefabs;
         public int groundLayer, playerLayer, enemyLayer;
     }
 
     const string SceneFolder = "Assets/Zodiac/Scenes";
+    /// <summary>Độ sâu kéo thêm xuống dưới đáy bản đồ cho các khối đất (unit).</summary>
+    const float GroundDepthBelow = 8f;
 
     static readonly Color CoinColor = new Color(1f, 0.80f, 0.15f);
     static readonly Color WoodColor = new Color(0.45f, 0.28f, 0.15f);
@@ -108,8 +114,14 @@ public static class ZodiacLevelBuilder
         manager.levelTitle = def.title;
         manager.fallLimitY = -6f;
         manager.boss = boss;
+        manager.music = ZodiacVisualSetup.Clip(MusicFor(def.backdrop));
+        manager.stoneFootsteps = def.backdrop == Backdrop.Cave;
         var canvas = BuildHud(manager, player);
         if (boss != null && arenaGates.Count > 0) BuildArena(boss, arenaGates[0], canvas);
+
+        BuildLighting(cam, player);
+        BuildAmbientParticles(cam);
+        ApplySpriteMaterials();
 
         ZodiacPrototypeBuilder.EnsureFolder(SceneFolder);
         EditorSceneManager.SaveScene(scene, ScenePath(def));
@@ -175,11 +187,14 @@ public static class ZodiacLevelBuilder
             Color body = ch == '#' ? def.soil : def.stone;
             foreach (var r in MergeRects(ch))
             {
+                // Khối chạm đáy bản đồ kéo sâu xuống để camera không nhìn thấy "đáy" mặt đất (vực vẫn thủng)
+                float bottom = r.y == 0 ? r.y - GroundDepthBelow : r.y;
+                float height = r.yMax - bottom;
                 var go = Block($"{(ch == '#' ? "Ground" : "Stone")} {r.x},{r.y}", level.transform,
-                               new Vector2(r.x + r.width / 2f, r.y + r.height / 2f), new Vector2(r.width, r.height), body, 0);
+                               new Vector2(r.x + r.width / 2f, bottom + height / 2f), new Vector2(r.width, height), body, 0);
                 if (ch == 'B')
-                    for (int i = 1; i < r.height; i++)   // mạch vữa giữa các hàng đá
-                        ZodiacPrototypeBuilder.CreateDecor("Mortar", go.transform, ctx.square, new Vector2(0f, -r.height / 2f + i),
+                    for (int i = 1; i < height; i++)   // mạch vữa giữa các hàng đá
+                        ZodiacPrototypeBuilder.CreateDecor("Mortar", go.transform, ctx.square, new Vector2(0f, -height / 2f + i),
                                                            new Vector2(r.width, 0.06f), Color.Lerp(def.stone, Color.black, 0.3f), 1);
             }
         }
@@ -375,6 +390,9 @@ public static class ZodiacLevelBuilder
                                            new Color(0.9f, 0.75f, 0.2f), 5);
         cp.lamp = lamp.GetComponent<SpriteRenderer>();
         cp.glow = glow;
+        Unlit(glow);
+        Unlit(lamp);
+        cp.lampLight = ZodiacLights.AddPoint(lamp, new Color(1f, 0.6f, 0.3f), 5f, 0.35f);
     }
 
     /// <summary>Cổng đích: cổng làng (màn ngoài trời) hoặc cổng đền (hang động) — hai cột đỏ, mái ngói cong.</summary>
@@ -457,6 +475,8 @@ public static class ZodiacLevelBuilder
         for (float y = -(ceiling - floor) / 2f + 0.5f; y < (ceiling - floor) / 2f; y += 1.2f)
             ZodiacPrototypeBuilder.CreateDecor("Rune", gate.transform, ctx.square, new Vector2(0f, y), new Vector2(0.3f, 0.3f),
                                                new Color(0.6f, 0.9f, 1f), 7).transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+        foreach (Transform rune in gate.transform) if (rune.name == "Rune") Unlit(rune.gameObject);
+        ZodiacLights.AddPoint(gate, new Color(0.5f, 0.85f, 1f), 4f, 0.8f);
 
         var arenaGo = new GameObject("BossArena");
         float left = gateX + 3f;
@@ -466,6 +486,7 @@ public static class ZodiacLevelBuilder
         arena.boss = boss;
         arena.gates = new[] { gate };
         arena.cameraBounds = new Rect(gateX - 0.5f, -3f, W - gateX + 1.5f, H + 3f);
+        arena.bossMusic = ZodiacVisualSetup.Clip("Music/music_boss");
 
         // Thanh máu boss trên HUD
         var bar = ZodiacPrototypeBuilder.CreateImage(canvas, "BossBar", BarBackColor);
@@ -486,6 +507,124 @@ public static class ZodiacLevelBuilder
         arena.bossBar = bar.gameObject;
         arena.bossNameText = name;
         bar.transform.SetSiblingIndex(1);
+    }
+
+    // ───────────────────────────── Ánh sáng, hậu kỳ, hạt môi trường ─────────────────────────────
+
+    static string MusicFor(Backdrop b) => b switch
+    {
+        Backdrop.Village => "Music/music_village",
+        Backdrop.Bamboo => "Music/music_bamboo",
+        _ => "Music/music_cave",
+    };
+
+    static void BuildLighting(Camera cam, ZodiacPlayerController player)
+    {
+        var lights = new GameObject("Lighting");
+        // Ánh sáng toàn cục: chiều vàng ấm (làng), xanh sương (rừng), tối tím (hang)
+        switch (def.backdrop)
+        {
+            case Backdrop.Village: ZodiacLights.AddGlobal(lights, new Color(1f, 0.93f, 0.82f), 1f); break;
+            case Backdrop.Bamboo: ZodiacLights.AddGlobal(lights, new Color(0.8f, 0.95f, 0.88f), 0.78f); break;
+            default: ZodiacLights.AddGlobal(lights, new Color(0.55f, 0.5f, 0.85f), 0.32f); break;
+        }
+
+        // Hậu kỳ
+        cam.gameObject.AddComponent<UniversalAdditionalCameraData>().renderPostProcessing = true;
+        var volume = new GameObject("PostProcess").AddComponent<Volume>();
+        volume.isGlobal = true;
+        volume.sharedProfile = def.backdrop switch
+        {
+            Backdrop.Village => ZodiacVisualSetup.EnsureVolumeProfile("Village", 0.5f, 0.22f, 8f, 6f, new Color(1f, 0.97f, 0.9f)),
+            Backdrop.Bamboo => ZodiacVisualSetup.EnsureVolumeProfile("Bamboo", 0.7f, 0.3f, -8f, 4f, new Color(0.92f, 1f, 0.95f)),
+            _ => ZodiacVisualSetup.EnsureVolumeProfile("Cave", 1.1f, 0.4f, -5f, 12f, new Color(0.92f, 0.9f, 1f)),
+        };
+    }
+
+    /// <summary>Hạt môi trường bám theo camera: lá vàng bay (làng), đom đóm (rừng trúc), bụi lơ lửng (hang).</summary>
+    static void BuildAmbientParticles(Camera cam)
+    {
+        var go = new GameObject("AmbientParticles");
+        go.transform.SetParent(cam.transform, false);
+        go.transform.localPosition = new Vector3(0f, 0f, 10f);
+        var ps = go.AddComponent<ParticleSystem>();
+        var main = ps.main;
+        main.loop = true;
+        main.playOnAwake = true;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.maxParticles = 120;
+        var shape = ps.shape;
+        shape.shapeType = ParticleSystemShapeType.Box;
+        shape.scale = new Vector3(26f, 14f, 1f);
+        var emission = ps.emission;
+        var noise = ps.noise;
+        noise.enabled = true;
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        var fade = new Gradient();
+        fade.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                     new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.2f), new GradientAlphaKey(1f, 0.8f), new GradientAlphaKey(0f, 1f) });
+        col.color = fade;
+        var vel = ps.velocityOverLifetime;
+        vel.enabled = true;
+
+        switch (def.backdrop)
+        {
+            case Backdrop.Village:   // lá/hoa vàng bay theo gió
+                emission.rateOverTime = 4f;
+                main.startLifetime = 8f;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.1f, 0.2f);
+                main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.8f, 0.3f, 0.85f), new Color(0.95f, 0.55f, 0.3f, 0.85f));
+                vel.x = new ParticleSystem.MinMaxCurve(-1.5f, -0.6f);
+                vel.y = new ParticleSystem.MinMaxCurve(-0.8f, -0.3f);
+                vel.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+                noise.strength = 0.6f;
+                noise.frequency = 0.3f;
+                break;
+            case Backdrop.Bamboo:    // đom đóm
+                emission.rateOverTime = 6f;
+                main.startLifetime = 6f;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.16f);
+                main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.8f, 1f, 0.4f, 1f), new Color(1f, 0.95f, 0.5f, 1f));
+                vel.x = new ParticleSystem.MinMaxCurve(-0.2f, 0.2f);
+                vel.y = new ParticleSystem.MinMaxCurve(-0.1f, 0.3f);
+                vel.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+                noise.strength = 1f;
+                noise.frequency = 0.5f;
+                break;
+            default:                 // bụi hang
+                emission.rateOverTime = 8f;
+                main.startLifetime = 7f;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.04f, 0.1f);
+                main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.8f, 0.7f, 1f, 0.5f), new Color(1f, 1f, 1f, 0.4f));
+                vel.x = new ParticleSystem.MinMaxCurve(-0.1f, 0.1f);
+                vel.y = new ParticleSystem.MinMaxCurve(-0.15f, 0.05f);
+                vel.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+                noise.strength = 0.3f;
+                noise.frequency = 0.4f;
+                break;
+        }
+        var renderer = go.GetComponent<ParticleSystemRenderer>();
+        renderer.sharedMaterial = ctx.particleMaterial;
+        renderer.sortingOrder = 25;
+    }
+
+    static void Unlit(GameObject go)
+    {
+        var sr = go.GetComponent<SpriteRenderer>();
+        if (sr != null) sr.sharedMaterial = ZodiacVisualSetup.UnlitMaterial;
+    }
+
+    /// <summary>Mọi sprite trong scene (trừ thứ tự phát sáng và prefab quái — đã đặt sẵn) dùng vật liệu chịu ánh sáng 2D.</summary>
+    static void ApplySpriteMaterials()
+    {
+        var lit = ZodiacVisualSetup.LitMaterial;
+        var unlit = ZodiacVisualSetup.UnlitMaterial;
+        foreach (var sr in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include))
+        {
+            if (sr.sharedMaterial == unlit || PrefabUtility.IsPartOfPrefabInstance(sr)) continue;
+            sr.sharedMaterial = lit;
+        }
     }
 
     // ───────────────────────────── Nền parallax ─────────────────────────────
@@ -511,8 +650,8 @@ public static class ZodiacLevelBuilder
             case Backdrop.Village:
             {
                 var sky = Layer("Sun", 0.95f, 0.9f);
-                Circle(sky, "Sun", new Vector2(14f, 11f), Vector2.one * 3.2f, new Color(1f, 0.75f, 0.45f), -60);
-                Circle(sky, "SunGlow", new Vector2(14f, 11f), Vector2.one * 5f, new Color(1f, 0.85f, 0.6f, 0.4f), -61);
+                Unlit(Circle(sky, "Sun", new Vector2(14f, 11f), Vector2.one * 3.2f, new Color(1f, 0.75f, 0.45f), -60));
+                Unlit(Circle(sky, "SunGlow", new Vector2(14f, 11f), Vector2.one * 5f, new Color(1f, 0.85f, 0.6f, 0.4f), -61));
                 var clouds = Layer("Clouds", 0.85f, 0.8f);
                 for (float x = -10f; x < span * 0.3f; x += R(9f, 15f))
                     for (int i = 0; i < 3; i++)
@@ -560,8 +699,9 @@ public static class ZodiacLevelBuilder
                 for (float x = -10f; x < span * 0.5f; x += R(4f, 8f))
                 {
                     float y = R(3f, H - 4f);
-                    Circle(crystals, "Glow", new Vector2(x, y), Vector2.one * 2.2f, new Color(0.6f, 0.4f, 1f, 0.2f), -51);
-                    Diamond(crystals, "Crystal", new Vector2(x, y), R(0.5f, 0.9f), new Color(0.7f, 0.55f, 1f), -50);
+                    var crystal = Diamond(crystals, "Crystal", new Vector2(x, y), R(0.5f, 0.9f), new Color(0.7f, 0.55f, 1f), -50);
+                    Unlit(crystal);
+                    ZodiacLights.AddPoint(crystal, new Color(0.6f, 0.45f, 1f), 3f, 0.35f);
                 }
                 var drips = Layer("Stalactites", 0.35f, 0.25f);
                 for (float x = -10f; x < span * 0.7f; x += R(2f, 5f))
@@ -617,7 +757,7 @@ public static class ZodiacLevelBuilder
         health.maxHealth = fallback.maxHealth;
         health.invulnerableTime = 0.8f;
 
-        // Player (vật lý) → Facing (lật trái/phải) → Visual (ảnh + Animator chỉnh transform)
+        // Player (vật lý) → Facing (lật trái/phải) → Visual (ảnh + CharacterAnimator co giãn/nghiêng bằng code)
         var facing = new GameObject("Facing").transform;
         facing.SetParent(go.transform, false);
         var visual = new GameObject("Visual");
@@ -625,8 +765,6 @@ public static class ZodiacLevelBuilder
         var sr = visual.AddComponent<SpriteRenderer>();
         sr.sprite = fallback.sprite;
         sr.sortingOrder = 10;
-        var animator = visual.AddComponent<Animator>();
-        animator.runtimeAnimatorController = ctx.controller;
 
         var flash = go.AddComponent<HitFlash>();
         flash.renderers = new[] { sr };
@@ -638,7 +776,6 @@ public static class ZodiacLevelBuilder
         pc.groundLayer = 1 << ctx.groundLayer;
         pc.facing = facing;
         pc.spriteRenderer = sr;
-        pc.animator = animator;
 
         // Hitbox là con của Facing → tự lật theo hướng nhìn. Để tắt: script chỉ dùng hình dạng để quét.
         var hitboxGo = new GameObject("AttackHitbox");
@@ -652,9 +789,11 @@ public static class ZodiacLevelBuilder
         slash.transform.SetParent(hitboxGo.transform, false);
         slash.transform.localScale = new Vector3(hitbox.size.x, hitbox.size.y, 1f);
         var slashSr = slash.AddComponent<SpriteRenderer>();
-        slashSr.sprite = ctx.circle;
+        slashSr.sprite = ctx.circle;   // PlayerMeleeAttack đổi sang hình lưỡi liềm khi chạy
         slashSr.color = SlashColor;
         slashSr.sortingOrder = 11;
+        slash.AddComponent<SlashEffect>();
+        Unlit(slash);
         slash.SetActive(false);
 
         var attack = go.AddComponent<PlayerMeleeAttack>();
@@ -665,6 +804,14 @@ public static class ZodiacLevelBuilder
         var skill = go.AddComponent<PlayerSkill>();
         skill.targetLayers = 1 << ctx.enemyLayer;
         skill.groundLayer = 1 << ctx.groundLayer;
+        visual.AddComponent<CharacterAnimator>();   // sau attack/skill để đăng ký sự kiện
+        if (def.backdrop == Backdrop.Cave)          // đèn quanh người trong hang tối
+        {
+            var aura = new GameObject("Aura");
+            aura.transform.SetParent(go.transform, false);
+            aura.transform.localPosition = Vector3.up;
+            ZodiacLights.AddPoint(aura, new Color(1f, 0.9f, 0.75f), 6f, 0.75f, 0.8f);
+        }
         return pc;
     }
 

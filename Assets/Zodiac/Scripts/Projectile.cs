@@ -41,6 +41,8 @@ public class Projectile : MonoBehaviour
         var sr = ZodiacFx.Shape(hostile ? "EnemyShot" : "PlayerShot", true, position, Vector2.one * size, color, 16);
         var core = ZodiacFx.Shape("Core", true, position, Vector2.one * 0.5f, new Color(1f, 1f, 0.9f, 0.9f), 17, sr.transform);
         core.transform.localScale = Vector3.one * 0.5f;
+        // Đạn tự phát sáng soi địa hình xung quanh (cần URP 2D Renderer)
+        ZodiacLights.AddPoint(sr.gameObject, color, 1.6f + size, 0.9f);
         var p = sr.gameObject.AddComponent<Projectile>();
         p.velocity = velocity;
         p.radius = size * 0.45f;
@@ -94,7 +96,13 @@ public class Projectile : MonoBehaviour
         {
             var target = col.GetComponentInParent<Health>();
             if (target == null || target.IsDead || !hits.Add(target)) continue;
-            target.TakeDamage(new Hit(damage, transform.position - (Vector3)velocity.normalized, knockback, stun));
+            if (target.TakeDamage(new Hit(damage, transform.position - (Vector3)velocity.normalized, knockback, stun)) && !hostile)
+            {
+                var sr = GetComponent<SpriteRenderer>();
+                ZodiacParticles.Sparks(col.ClosestPoint(transform.position), sr != null ? sr.color : Color.white, 7);
+                var res = ZodiacResources.Get;
+                if (res != null) ZodiacAudio.Play(res.hit, 0.6f, 0.1f, transform.position);
+            }
             if (pierce >= 0 && hits.Count > pierce)
             {
                 if (boomerang) { returning = true; continue; }

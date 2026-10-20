@@ -46,6 +46,9 @@ public class Collectible : MonoBehaviour
     {
         if (ZodiacPlayerController.FromCollider(other) == null) return;
         gameObject.SetActive(false);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.coin, 0.5f, 0.05f);
+        ZodiacParticles.Sparkle(transform.position, new Color(1f, 0.85f, 0.3f), 6, 0.2f);
         Collected?.Invoke(this);
     }
 }

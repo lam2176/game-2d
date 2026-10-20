@@ -5,6 +5,8 @@ using UnityEngine;
 /// Trục X: nhìn trước theo hướng chạy. Trục Y: giữ khung hình đứng yên khi nhảy bình thường,
 /// chỉ dời theo khi tiếp đất ở độ cao mới, khi rơi xuống thấp hơn, hoặc khi lên quá cao.
 /// Không lộ ra ngoài vùng <see cref="bounds"/>.
+/// Rung màn hình theo "trauma" (Squirrel Eiserloh, GDC 2016): độ rung = trauma², nhiễu Perlin, giảm dần theo thời gian;
+/// phần rung cộng lên trên vị trí bám theo nên không làm lệch camera về lâu dài.
 /// </summary>
 [RequireComponent(typeof(Camera))]
 public class ZodiacCameraFollow : MonoBehaviour
@@ -26,13 +28,39 @@ public class ZodiacCameraFollow : MonoBehaviour
     [Tooltip("Vùng thế giới camera được phép nhìn thấy.")]
     public Rect bounds = new Rect(-13f, -4f, 72f, 20f);
 
+    [Header("Rung")]
+    [Tooltip("Độ lệch tối đa khi trauma = 1 (unit).")]
+    public float maxShakeOffset = 0.6f;
+    [Tooltip("Góc nghiêng tối đa khi trauma = 1 (độ).")]
+    public float maxShakeAngle = 2.5f;
+    [Tooltip("Trauma giảm bao nhiêu mỗi giây.")]
+    public float traumaDecay = 1.6f;
+
+    /// <summary>Camera chính của màn (để GameFeel gọi rung).</summary>
+    public static ZodiacCameraFollow Main { get; private set; }
+
     Camera cam;
     Rigidbody2D targetBody;
     ZodiacPlayerController targetPlayer;
     float velocityX, velocityY;
     float currentLookAhead, focusY;
+    Vector3 followPosition;
+    float trauma;
 
-    void Awake() => cam = GetComponent<Camera>();
+    void Awake()
+    {
+        cam = GetComponent<Camera>();
+        Main = this;
+        followPosition = transform.position;
+    }
+
+    void OnDestroy()
+    {
+        if (Main == this) Main = null;
+    }
+
+    /// <summary>Thêm độ rung (0..1, cộng dồn, tối đa 1).</summary>
+    public void AddTrauma(float amount) => trauma = Mathf.Clamp01(trauma + amount);
 
     void Start()
     {
@@ -48,7 +76,8 @@ public class ZodiacCameraFollow : MonoBehaviour
         if (target == null) return;
         focusY = target.position.y;
         velocityX = velocityY = 0f;
-        transform.position = DesiredPosition();
+        followPosition = DesiredPosition();
+        transform.position = followPosition;
     }
 
     void LateUpdate()
@@ -65,10 +94,18 @@ public class ZodiacCameraFollow : MonoBehaviour
         else if (y > focusY + jumpFollowMargin) focusY = y - jumpFollowMargin;
 
         Vector3 desired = DesiredPosition();
-        Vector3 p = transform.position;
+        Vector3 p = followPosition;
         p.x = Mathf.SmoothDamp(p.x, desired.x, ref velocityX, smoothTimeX);
         p.y = Mathf.SmoothDamp(p.y, desired.y, ref velocityY, smoothTimeY);
-        transform.position = p;
+        followPosition = p;
+
+        // Rung: dùng thời gian thực để vẫn rung trong lúc hitstop
+        float shake = trauma * trauma;
+        float t = Time.unscaledTime * 25f;
+        Vector3 offset = new Vector3(Mathf.PerlinNoise(t, 1.7f) - 0.5f, Mathf.PerlinNoise(3.3f, t) - 0.5f, 0f) * (2f * maxShakeOffset * shake);
+        transform.SetPositionAndRotation(p + offset,
+            Quaternion.Euler(0f, 0f, (Mathf.PerlinNoise(t, 7.1f) - 0.5f) * 2f * maxShakeAngle * shake));
+        trauma = Mathf.Max(0f, trauma - traumaDecay * Time.unscaledDeltaTime);
     }
 
     Vector3 DesiredPosition()

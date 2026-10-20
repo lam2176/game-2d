@@ -161,6 +161,11 @@ public abstract class EnemyBase : MonoBehaviour
         int multiplier = target.Character != null ? target.Character.stompDamageMultiplier : 1;
         health.TakeDamage(new Hit(stompDamage * multiplier, target.transform.position, 0f, 0.4f));
         target.Bounce(stompBounce);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.stomp, 0.9f, 0.08f, transform.position);
+        GameFeel.HitStop(0.04f);
+        GameFeel.Shake(0.12f);
+        ZodiacParticles.Dust(new Vector2(body.bounds.center.x, body.bounds.max.y), Vector2.zero, 6);
         OnStomped();
     }
 
@@ -183,8 +188,23 @@ public abstract class EnemyBase : MonoBehaviour
         if (hit.stun > 0f) Stun(hit.stun);
     }
 
+    /// <summary>Màu mảnh vỡ khi chết (lấy từ hình đầu tiên của quái).</summary>
+    protected Color DebrisColor
+    {
+        get
+        {
+            var sr = (visual != null ? visual : transform).GetComponentInChildren<SpriteRenderer>();
+            return sr != null ? sr.color : Color.gray;
+        }
+    }
+
     protected virtual void OnDied()
     {
+        ZodiacParticles.Debris(body.bounds.center, DebrisColor, 14, body.bounds.extents.x);
+        ZodiacParticles.Sparks(body.bounds.center, Color.white, 10);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.enemyDeath, 0.9f, 0.1f, transform.position);
+        GameFeel.Shake(0.15f);
         rb.linearVelocity = Vector2.zero;
         rb.simulated = false;
         if (visual != null) visual.localScale = new Vector3(direction, 1f, 1f);

@@ -31,6 +31,8 @@ public class ZodiacStartMenu : MonoBehaviour
 
     void Start()
     {
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.PlayMusic(res.musicMenu);
         if (roster == null || roster.Count == 0) return;
         int index = Mathf.Clamp(ZodiacSelection.Index, 0, roster.Count - 1);
         if (slots != null && index < slots.Length && EventSystem.current != null)
@@ -90,7 +92,7 @@ public class ZodiacStartMenu : MonoBehaviour
         return new string('■', value) + new string('□', max - value);
     }
 
-    public void Play() => SceneManager.LoadScene(levelSceneName);
+    public void Play() => ScreenFader.LoadScene(levelSceneName);
 
     public void Quit()
     {

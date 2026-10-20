@@ -114,6 +114,8 @@ public class ZodiacCharacter : ScriptableObject
 
     [Header("Chiêu thức (phím K)")]
     public SkillConfig skill = new SkillConfig();
+    [Tooltip("Tiếng nhạc cụ khi tung chiêu.")]
+    public AudioClip skillSound;
 
     public string Title => $"{displayName} — Tuổi {zodiacName}";
 }
