@@ -12,78 +12,36 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 /// <summary>
-/// Menu "Tools/Zodiac/Dựng prototype": tạo asset (placeholder, nhân vật Khỉ, animation, vật liệu vật lý) nếu chưa có,
-/// dựng 2 scene Zodiac_Start và Zodiac_Level01, rồi đưa chúng lên đầu Build Settings.
+/// Menu "Tools/Zodiac/Dựng prototype": tạo asset (placeholder, 12 con giáp + roster, animation, vật liệu vật lý,
+/// prefab quái) nếu chưa có, dựng màn hình chọn nhân vật Zodiac_Start và 3 màn chơi Zodiac_Level01..03 từ bản đồ ký tự
+/// (<see cref="ZodiacLevelData"/>), rồi đưa chúng lên đầu Build Settings.
 /// Asset đã có thì giữ nguyên (không mất chỉnh sửa tay); scene đã có thì hỏi trước khi ghi đè.
 /// Không đụng tới ảnh gốc trong Assets/Characters.
 ///
 /// Animation Idle/Walk/Run/Jump chỉ biến đổi transform (nhún, nghiêng, co giãn) trên ảnh tĩnh duy nhất —
-/// không có frame vẽ thêm. Khi có sprite frame thật, thay clip trong Animator Controller là xong.
+/// không có frame vẽ thêm, dùng chung cho cả 12 con giáp. Khi có sprite frame thật, thay clip trong Animator Controller là xong.
 /// </summary>
 public static class ZodiacPrototypeBuilder
 {
     const string Root = "Assets/Zodiac";
     const string SceneFolder = Root + "/Scenes";
     const string StartScenePath = SceneFolder + "/Zodiac_Start.unity";
-    internal const string LevelScenePath = SceneFolder + "/Zodiac_Level01.unity";
     const string PlaceholderFolder = Root + "/Art/Placeholder";
     internal const string SquarePath = PlaceholderFolder + "/Square.png";
     internal const string CirclePath = PlaceholderFolder + "/Circle.png";
-    const string MonkeySpritePath = Root + "/Art/Characters/Monkey_Than.png";
-    const string CharacterFolder = Root + "/Characters";
-    const string MonkeyDataPath = CharacterFolder + "/Monkey_Than.asset";
     const string AnimationFolder = Root + "/Animations";
     const string ControllerPath = AnimationFolder + "/ZodiacCharacter.controller";
     const string PhysicsFolder = Root + "/Physics";
     internal const string NoFrictionPath = PhysicsFolder + "/NoFriction.physicsMaterial2D";
 
-    static readonly Color SkyColor = new Color(0.98f, 0.90f, 0.75f);
-    static readonly Color SoilColor = new Color(0.55f, 0.36f, 0.22f);
-    static readonly Color GrassColor = new Color(0.36f, 0.68f, 0.30f);
-    static readonly Color PlatformColor = new Color(0.80f, 0.55f, 0.30f);
-    static readonly Color WallColor = new Color(0.40f, 0.27f, 0.18f);
-    static readonly Color CoinColor = new Color(1f, 0.80f, 0.15f);
-    static readonly Color FlagColor = new Color(0.85f, 0.12f, 0.12f);
-    static readonly Color PoleColor = new Color(0.30f, 0.20f, 0.12f);
+    static readonly Color MenuSkyColor = new Color(0.98f, 0.90f, 0.75f);
     static readonly Color TitleColor = new Color(0.70f, 0.08f, 0.08f);
     static readonly Color ButtonColor = new Color(0.80f, 0.15f, 0.12f);
+    static readonly Color PanelColor = new Color(1f, 0.96f, 0.86f, 0.92f);
+    static readonly Color InkColor = new Color(0.25f, 0.15f, 0.1f);
 
-    const float GroundDepth = 4f;
-    const float PlatformThickness = 0.5f;
-    const float GrassThickness = 0.2f;
-
-    // Mặt đất: mặt trên ở y = 0. Khoảng trống giữa các đoạn là vực.
-    // Vực 1: x 12 → 15 (rộng 3). Vực 2: x 30 → 36 (rộng 6, có bậc đá ở giữa).
-    static readonly (float left, float right)[] GroundSegments =
-    {
-        (-12f, 12f),
-        (15f, 30f),
-        (36f, 58f),
-    };
-
-    // Nền tảng lơ lửng: tâm x, mặt trên y, chiều rộng.
-    static readonly (float x, float top, float width)[] Platforms =
-    {
-        (21f, 2.5f, 4f),
-        (25.5f, 4.5f, 3f),
-        (33f, 1.5f, 2f),   // bậc đá giữa vực 2
-        (42f, 3f, 4f),
-        (47.5f, 5.5f, 3f),
-    };
-
-    static readonly Vector2[] CoinPositions =
-    {
-        new Vector2(-4f, 1f), new Vector2(0f, 1f), new Vector2(4f, 1f),
-        new Vector2(13.5f, 2.5f),                    // trên vực 1
-        new Vector2(21f, 3.5f), new Vector2(25.5f, 5.5f),
-        new Vector2(33f, 2.5f),                      // trên bậc đá
-        new Vector2(39f, 1f), new Vector2(42f, 4f), new Vector2(47.5f, 6.5f),
-        new Vector2(52f, 1f),
-    };
-
-    static readonly Vector2 SpawnPoint = new Vector2(-8f, 0.05f);
-    const float GoalX = 55f;
-    static readonly Rect CameraBounds = new Rect(-13f, -4f, 72f, 20f);
+    static IEnumerable<string> ScenePaths =>
+        new[] { StartScenePath }.Concat(ZodiacLevelData.Levels.Select(ZodiacLevelBuilder.ScenePath));
 
     // Menu mờ đi trong Play mode — dựng/lưu scene lúc đó sẽ lỗi InvalidOperationException.
     [MenuItem("Tools/Zodiac/Dựng prototype", true)]
@@ -100,7 +58,7 @@ public static class ZodiacPrototypeBuilder
         if (interactive)
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-            var existing = new[] { StartScenePath, LevelScenePath }.Where(File.Exists).ToArray();
+            var existing = ScenePaths.Where(File.Exists).ToArray();
             if (existing.Length > 0 &&
                 !EditorUtility.DisplayDialog("Scene đã tồn tại",
                     string.Join("\n", existing) + "\n\nGhi đè sẽ mất mọi chỉnh sửa tay trong các scene này.", "Ghi đè", "Huỷ"))
@@ -109,270 +67,121 @@ public static class ZodiacPrototypeBuilder
 
         int groundLayer = LayerMask.NameToLayer("Ground");
         int playerLayer = LayerMask.NameToLayer("Player");
-        if (groundLayer < 0 || playerLayer < 0)
+        int enemyLayer = LayerMask.NameToLayer("Enemy");
+        if (groundLayer < 0 || playerLayer < 0 || enemyLayer < 0)
         {
-            Debug.LogError("Thiếu layer \"Ground\" hoặc \"Player\" trong Project Settings > Tags and Layers.");
+            Debug.LogError("Thiếu layer \"Ground\", \"Player\" hoặc \"Enemy\" trong Project Settings > Tags and Layers.");
             return;
         }
 
-        var monkeySprite = AssetDatabase.LoadAssetAtPath<Sprite>(MonkeySpritePath);
-        if (monkeySprite == null)
+        var ctx = new ZodiacLevelBuilder.Context
         {
-            Debug.LogError("Không tìm thấy sprite " + MonkeySpritePath);
+            square = EnsurePlaceholderSprite(SquarePath, 4, circle: false),
+            circle = EnsurePlaceholderSprite(CirclePath, 64, circle: true),
+            controller = EnsureAnimatorController(),
+            noFriction = EnsureNoFriction(),
+            roster = ZodiacCharacterDefs.EnsureRoster(),
+            groundLayer = groundLayer,
+            playerLayer = playerLayer,
+            enemyLayer = enemyLayer,
+        };
+        if (ctx.roster.Count == 0 || ctx.roster.characters.Any(c => c == null || c.sprite == null))
+        {
+            Debug.LogError("Thiếu asset hoặc sprite nhân vật — xem lỗi phía trên.");
             return;
         }
+        ctx.prefabs = ZodiacEnemyFactory.EnsurePrefabs(ctx.square, ctx.circle, ctx.noFriction, groundLayer, playerLayer, enemyLayer);
 
-        Sprite square = EnsurePlaceholderSprite(SquarePath, 4, circle: false);
-        Sprite circle = EnsurePlaceholderSprite(CirclePath, 64, circle: true);
-        ZodiacCharacter monkey = EnsureMonkeyData(monkeySprite);
-        AnimatorController controller = EnsureAnimatorController();
-        PhysicsMaterial2D noFriction = EnsureNoFriction();
-
-        BuildLevelScene(square, circle, monkey, controller, noFriction, groundLayer, playerLayer);
-        BuildStartScene(monkey);
+        foreach (var level in ZodiacLevelData.Levels)
+        {
+            EditorUtility.DisplayProgressBar("Zodiac", "Dựng " + level.title, 0.5f);
+            ZodiacLevelBuilder.Build(level, ctx);
+        }
+        EditorUtility.ClearProgressBar();
+        BuildStartScene(ctx.roster);
         UpdateBuildSettings();
 
         AssetDatabase.SaveAssets();
         EditorSceneManager.OpenScene(StartScenePath);
-        Debug.Log("Đã dựng prototype: " + StartScenePath + " và " + LevelScenePath + ". Bấm Play ở Zodiac_Start để chơi.");
+        Debug.Log("Đã dựng prototype: " + string.Join(", ", ScenePaths) + ". Bấm Play ở Zodiac_Start để chơi.");
     }
 
-    // ───────────────────────────── Màn chơi ─────────────────────────────
+    // ───────────────────────────── Màn hình chọn nhân vật ─────────────────────────────
 
-    static void BuildLevelScene(Sprite square, Sprite circle, ZodiacCharacter monkey, AnimatorController controller,
-                                PhysicsMaterial2D noFriction, int groundLayer, int playerLayer)
+    static void BuildStartScene(ZodiacRoster roster)
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
-        var cam = CreateCamera(new Vector3(SpawnPoint.x, 3f, -10f));
-
-        var level = new GameObject("Level").transform;
-        for (int i = 0; i < GroundSegments.Length; i++)
-        {
-            var (left, right) = GroundSegments[i];
-            CreateBlock($"Ground {i + 1}", level, square,
-                new Vector2((left + right) / 2f, -GroundDepth / 2f), new Vector2(right - left, GroundDepth),
-                SoilColor, groundLayer, grass: true);
-        }
-        for (int i = 0; i < Platforms.Length; i++)
-        {
-            var (x, top, width) = Platforms[i];
-            CreateBlock($"Platform {i + 1}", level, square,
-                new Vector2(x, top - PlatformThickness / 2f), new Vector2(width, PlatformThickness),
-                PlatformColor, groundLayer, grass: true);
-        }
-        float leftEdge = GroundSegments[0].left, rightEdge = GroundSegments[GroundSegments.Length - 1].right;
-        CreateBlock("Wall Left", level, square, new Vector2(leftEdge - 0.5f, 4f), new Vector2(1f, 16f), WallColor, groundLayer, grass: false);
-        CreateBlock("Wall Right", level, square, new Vector2(rightEdge + 0.5f, 4f), new Vector2(1f, 16f), WallColor, groundLayer, grass: false);
-
-        var coins = new GameObject("Collectibles").transform;
-        for (int i = 0; i < CoinPositions.Length; i++) CreateCoin($"Coin {i + 1}", coins, circle, CoinPositions[i]);
-
-        var goal = CreateGoal(square, new Vector2(GoalX, 0f));
-
-        var killZone = new GameObject("KillZone");
-        killZone.transform.position = new Vector2((leftEdge + rightEdge) / 2f, -8f);
-        killZone.AddComponent<BoxCollider2D>().size = new Vector2(rightEdge - leftEdge + 10f, 2f);
-        var killTrigger = killZone.AddComponent<PlayerTrigger>();
-
-        var player = CreatePlayer(monkey, controller, noFriction, groundLayer, playerLayer);
-
-        var follow = cam.gameObject.AddComponent<ZodiacCameraFollow>();
-        follow.target = player.transform;
-        follow.bounds = CameraBounds;
-
-        var manager = new GameObject("GameManager").AddComponent<ZodiacGameManager>();
-        manager.player = player;
-        manager.goal = goal;
-        manager.killZone = killTrigger;
-        BuildLevelUI(manager, monkey);
-        ZodiacCombatSetup.Apply();
-
-        EnsureFolder(SceneFolder);
-        EditorSceneManager.SaveScene(scene, LevelScenePath);
-    }
-
-    static ZodiacPlayerController CreatePlayer(ZodiacCharacter character, AnimatorController controller,
-                                               PhysicsMaterial2D noFriction, int groundLayer, int playerLayer)
-    {
-        var go = new GameObject("Player") { layer = playerLayer };
-        go.transform.position = SpawnPoint;
-
-        var rb = go.AddComponent<Rigidbody2D>();
-        rb.gravityScale = 3f;   // ZodiacPlayerController.gravityScale ghi đè khi vào game
-        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-        rb.interpolation = RigidbodyInterpolation2D.Interpolate;
-        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-
-        var body = go.AddComponent<CapsuleCollider2D>();
-        body.direction = CapsuleDirection2D.Vertical;
-        body.size = character.colliderSize;
-        body.offset = character.colliderOffset;
-        body.sharedMaterial = noFriction;
-
-        // Player (vật lý) → Facing (lật trái/phải) → Visual (ảnh + Animator chỉnh transform)
-        var facing = new GameObject("Facing").transform;
-        facing.SetParent(go.transform, false);
-        var visual = new GameObject("Visual");
-        visual.transform.SetParent(facing, false);
-        var sr = visual.AddComponent<SpriteRenderer>();
-        sr.sprite = character.sprite;
-        sr.sortingOrder = 10;
-        var animator = visual.AddComponent<Animator>();
-        animator.runtimeAnimatorController = controller;
-
-        var pc = go.AddComponent<ZodiacPlayerController>();
-        pc.character = character;
-        pc.groundLayer = 1 << groundLayer;
-        pc.facing = facing;
-        pc.spriteRenderer = sr;
-        pc.animator = animator;
-        return pc;
-    }
-
-    static void CreateCoin(string name, Transform parent, Sprite circle, Vector2 position)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.transform.position = position;
-        go.transform.localScale = Vector3.one * 0.6f;
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = circle;
-        sr.color = CoinColor;
-        sr.sortingOrder = 5;
-        go.AddComponent<CircleCollider2D>().radius = 0.5f;
-        go.AddComponent<Collectible>();
-    }
-
-    static PlayerTrigger CreateGoal(Sprite square, Vector2 basePosition)
-    {
-        var go = new GameObject("Goal");
-        go.transform.position = basePosition;
-        var box = go.AddComponent<BoxCollider2D>();
-        box.size = new Vector2(1.5f, 4f);
-        box.offset = new Vector2(0f, 2f);
-        var trigger = go.AddComponent<PlayerTrigger>();
-
-        CreateDecor("Pole", go.transform, square, new Vector2(0f, 2f), new Vector2(0.15f, 4f), PoleColor, 2);
-        CreateDecor("Flag", go.transform, square, new Vector2(0.65f, 3.55f), new Vector2(1.2f, 0.8f), FlagColor, 3);
-        return trigger;
-    }
-
-    static Camera CreateCamera(Vector3 position)
-    {
-        var cam = new GameObject("Main Camera").AddComponent<Camera>();
-        cam.tag = "MainCamera";
-        cam.orthographic = true;
-        cam.orthographicSize = 6f;
-        cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = SkyColor;
-        cam.transform.position = position;
-        cam.gameObject.AddComponent<AudioListener>();
-        return cam;
-    }
-
-    static void CreateBlock(string name, Transform parent, Sprite sprite, Vector2 center, Vector2 size,
-                            Color color, int layer, bool grass)
-    {
-        var go = new GameObject(name) { layer = layer };
-        go.transform.SetParent(parent, false);
-        go.transform.position = center;
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = sprite;
-        sr.drawMode = SpriteDrawMode.Tiled;
-        sr.size = size;
-        sr.color = color;
-        go.AddComponent<BoxCollider2D>().size = size;
-
-        if (grass)
-            CreateDecor("Grass", go.transform, sprite, new Vector2(0f, size.y / 2f - GrassThickness / 2f),
-                        new Vector2(size.x, GrassThickness), GrassColor, 1).layer = layer;
-    }
-
-    internal static GameObject CreateDecor(string name, Transform parent, Sprite sprite, Vector2 localPosition, Vector2 size,
-                                  Color color, int sortingOrder)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.transform.localPosition = localPosition;
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = sprite;
-        sr.drawMode = SpriteDrawMode.Tiled;
-        sr.size = size;
-        sr.color = color;
-        sr.sortingOrder = sortingOrder;
-        return go;
-    }
-
-    // ───────────────────────────── UI ─────────────────────────────
-
-    static void BuildLevelUI(ZodiacGameManager manager, ZodiacCharacter character)
-    {
-        var canvas = CreateCanvas();
-
-        manager.collectText = CreateText(canvas, "CollectText", "Đồng xu: 0/0", 40, Color.white,
-            new Vector2(0f, 1f), new Vector2(30f, -25f), new Vector2(600f, 60f), TextAnchor.UpperLeft);
-        CreateText(canvas, "CharacterText", $"Tuổi {character.zodiacName} ({character.displayName})", 30, Color.white,
-            new Vector2(0f, 1f), new Vector2(30f, -85f), new Vector2(600f, 50f), TextAnchor.UpperLeft);
-        CreateText(canvas, "HintText", "A/D: đi   Shift: chạy   Space: nhảy   R: chơi lại", 26, Color.white,
-            new Vector2(1f, 1f), new Vector2(-30f, -25f), new Vector2(900f, 50f), TextAnchor.UpperRight);
-
-        manager.winPanel = CreateResultPanel(canvas, "WinPanel", "CHIẾN THẮNG!", out Text winDetail, manager);
-        manager.winDetailText = winDetail;
-        manager.losePanel = CreateResultPanel(canvas, "LosePanel", "THUA RỒI!", out Text loseDetail, manager);
-        loseDetail.text = "Bạn đã rơi xuống vực";
-        CreateEventSystem(null);
-    }
-
-    static GameObject CreateResultPanel(Transform canvas, string name, string title, out Text detail, ZodiacGameManager manager)
-    {
-        var overlay = CreateImage(canvas, name, new Color(0f, 0f, 0f, 0.6f));
-        Stretch(overlay.rectTransform);
-
-        var box = CreateImage(overlay.transform, "Box", new Color(1f, 0.96f, 0.86f));
-        Place(box.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760f, 460f));
-
-        CreateText(box.transform, "Title", title, 72, TitleColor, new Vector2(0.5f, 1f), new Vector2(0f, -50f),
-                   new Vector2(700f, 100f), TextAnchor.MiddleCenter);
-        detail = CreateText(box.transform, "Detail", "", 36, new Color(0.25f, 0.15f, 0.1f), new Vector2(0.5f, 1f),
-                            new Vector2(0f, -170f), new Vector2(700f, 60f), TextAnchor.MiddleCenter);
-
-        var restart = CreateButton(box.transform, "RestartButton", "Chơi lại", new Vector2(-170f, 80f));
-        UnityEventTools.AddPersistentListener(restart.onClick, new UnityAction(manager.Restart));
-        var menu = CreateButton(box.transform, "MenuButton", "Màn hình chính", new Vector2(170f, 80f));
-        UnityEventTools.AddPersistentListener(menu.onClick, new UnityAction(manager.BackToMenu));
-        foreach (var b in new[] { restart, menu })
-        {
-            var rt = (RectTransform)b.transform;
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
-        }
-        return overlay.gameObject;
-    }
-
-    static void BuildStartScene(ZodiacCharacter character)
-    {
-        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        CreateCamera(new Vector3(0f, 0f, -10f));
+        CreateCamera(Vector3.zero, MenuSkyColor);
 
         var menu = new GameObject("StartMenu").AddComponent<ZodiacStartMenu>();
+        menu.roster = roster;
+        menu.levelSceneName = ZodiacLevelData.Levels[0].sceneName;
         var canvas = CreateCanvas();
 
-        CreateText(canvas, "Title", "12 CON GIÁP", 120, TitleColor, new Vector2(0.5f, 1f), new Vector2(0f, -110f),
-                   new Vector2(1400f, 160f), TextAnchor.MiddleCenter);
-        CreateText(canvas, "Subtitle", $"Prototype — Tuổi {character.zodiacName} ({character.displayName})", 40,
-                   new Color(0.35f, 0.2f, 0.1f), new Vector2(0.5f, 1f), new Vector2(0f, -220f),
-                   new Vector2(1400f, 60f), TextAnchor.MiddleCenter);
+        CreateText(canvas, "Title", "12 CON GIÁP", 96, TitleColor, new Vector2(0.5f, 1f), new Vector2(0f, -30f),
+                   new Vector2(1400f, 120f), TextAnchor.MiddleCenter);
+        CreateText(canvas, "Subtitle", "Chọn con giáp của bạn — mỗi con một nội tại và một chiêu riêng", 32, InkColor,
+                   new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(1400f, 50f), TextAnchor.MiddleCenter);
 
-        var portrait = new GameObject("Portrait", typeof(RectTransform)).AddComponent<Image>();
-        portrait.transform.SetParent(canvas, false);
-        portrait.sprite = character.sprite;
-        portrait.preserveAspect = true;
-        portrait.raycastTarget = false;
-        Place(portrait.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -10f), new Vector2(500f, 500f));
+        // Lưới 6 × 2 ô bên trái
+        const float slotW = 165f, slotH = 215f, gap = 14f;
+        int count = roster.Count;
+        menu.slots = new Button[count];
+        menu.slotFrames = new Image[count];
+        for (int i = 0; i < count; i++)
+        {
+            var c = roster.characters[i];
+            int col = i % 6, row = i / 6;
+            var frame = CreateImage(canvas, $"Slot {i + 1}", new Color(0.35f, 0.2f, 0.12f, 0.6f));
+            Place(frame.rectTransform, new Vector2(0.5f, 0.5f),
+                  new Vector2(-880f + slotW / 2f + col * (slotW + gap), 150f - row * (slotH + gap)), new Vector2(slotW, slotH));
+            var inner = CreateImage(frame.transform, "Inner", PanelColor);
+            Stretch(inner.rectTransform);
+            inner.rectTransform.offsetMin = new Vector2(5f, 5f);
+            inner.rectTransform.offsetMax = new Vector2(-5f, -5f);
+            var portrait = CreateImage(inner.transform, "Portrait", Color.white);
+            portrait.sprite = c.sprite;
+            portrait.preserveAspect = true;
+            portrait.raycastTarget = false;
+            Place(portrait.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(slotW - 20f, 150f));
+            CreateText(inner.transform, "Label", $"{c.zodiacName} · {c.displayName}", 24, InkColor,
+                       new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(slotW, 36f), TextAnchor.LowerCenter);
 
-        var play = CreateButton(canvas, "PlayButton", "Bắt đầu", new Vector2(-170f, 150f));
+            var button = frame.gameObject.AddComponent<Button>();
+            button.targetGraphic = inner;
+            var colors = button.colors;
+            colors.highlightedColor = new Color(1f, 0.95f, 0.8f);
+            colors.selectedColor = new Color(1f, 0.9f, 0.7f);
+            button.colors = colors;
+            UnityEventTools.AddIntPersistentListener(button.onClick, menu.Choose, i);
+            menu.slots[i] = button;
+            menu.slotFrames[i] = frame;
+        }
+
+        // Bảng thông tin bên phải
+        var panel = CreateImage(canvas, "InfoPanel", PanelColor);
+        Place(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(520f, 40f), new Vector2(760f, 720f));
+        panel.raycastTarget = false;
+        var big = CreateImage(panel.transform, "Portrait", Color.white);
+        big.preserveAspect = true;
+        big.raycastTarget = false;
+        Place(big.rectTransform, new Vector2(0f, 1f), new Vector2(150f, -150f), new Vector2(260f, 260f));
+        menu.portrait = big;
+        menu.nameText = CreateText(panel.transform, "Name", "", 44, InkColor, new Vector2(0f, 1f), new Vector2(300f, -30f),
+                                   new Vector2(440f, 60f), TextAnchor.UpperLeft);
+        menu.instrumentText = CreateText(panel.transform, "Instrument", "", 26, InkColor, new Vector2(0f, 1f), new Vector2(300f, -95f),
+                                         new Vector2(440f, 40f), TextAnchor.UpperLeft);
+        menu.statsText = CreateText(panel.transform, "Stats", "", 24, InkColor, new Vector2(0f, 1f), new Vector2(300f, -145f),
+                                    new Vector2(440f, 120f), TextAnchor.UpperLeft);
+        menu.passiveText = CreateText(panel.transform, "Passive", "", 26, InkColor, new Vector2(0f, 1f), new Vector2(30f, -300f),
+                                      new Vector2(700f, 150f), TextAnchor.UpperLeft);
+        menu.skillText = CreateText(panel.transform, "Skill", "", 26, InkColor, new Vector2(0f, 1f), new Vector2(30f, -450f),
+                                    new Vector2(700f, 250f), TextAnchor.UpperLeft);
+        foreach (var t in new[] { menu.passiveText, menu.skillText }) t.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+        var play = CreateButton(canvas, "PlayButton", "Bắt đầu", new Vector2(-380f, 110f));
         UnityEventTools.AddPersistentListener(play.onClick, new UnityAction(menu.Play));
-        var quit = CreateButton(canvas, "QuitButton", "Thoát", new Vector2(170f, 150f));
+        var quit = CreateButton(canvas, "QuitButton", "Thoát", new Vector2(-50f, 110f));
         UnityEventTools.AddPersistentListener(quit.onClick, new UnityAction(menu.Quit));
         foreach (var b in new[] { play, quit })
         {
@@ -380,16 +189,30 @@ public static class ZodiacPrototypeBuilder
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
         }
 
-        CreateText(canvas, "Controls", "A/D hoặc ←/→: đi   ·   Shift: chạy   ·   Space: nhảy", 28,
-                   new Color(0.35f, 0.2f, 0.1f), new Vector2(0.5f, 0f), new Vector2(0f, 50f),
-                   new Vector2(1400f, 50f), TextAnchor.MiddleCenter);
+        CreateText(canvas, "Controls", "Mũi tên / chuột: chọn con giáp · Enter: xác nhận · Trong màn: A/D đi · Shift chạy · Space nhảy · J đánh · K chiêu",
+                   24, InkColor, new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(1800f, 40f), TextAnchor.MiddleCenter);
 
-        CreateEventSystem(play.gameObject);
+        CreateEventSystem(menu.slots.Length > 0 ? menu.slots[0].gameObject : play.gameObject);
         EnsureFolder(SceneFolder);
         EditorSceneManager.SaveScene(scene, StartScenePath);
     }
 
-    static Transform CreateCanvas()
+    // ───────────────────────────── UI dùng chung ─────────────────────────────
+
+    internal static Camera CreateCamera(Vector3 position, Color background)
+    {
+        var cam = new GameObject("Main Camera").AddComponent<Camera>();
+        cam.tag = "MainCamera";
+        cam.orthographic = true;
+        cam.orthographicSize = 6f;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = background;
+        cam.transform.position = new Vector3(position.x, position.y, -10f);
+        cam.gameObject.AddComponent<AudioListener>();
+        return cam;
+    }
+
+    internal static Transform CreateCanvas()
     {
         var go = new GameObject("Canvas", typeof(RectTransform));
         var canvas = go.AddComponent<Canvas>();
@@ -402,12 +225,38 @@ public static class ZodiacPrototypeBuilder
         return go.transform;
     }
 
-    static void CreateEventSystem(GameObject firstSelected)
+    internal static void CreateEventSystem(GameObject firstSelected)
     {
         var go = new GameObject("EventSystem");
         var es = go.AddComponent<EventSystem>();
         es.firstSelectedGameObject = firstSelected;
         go.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
+    }
+
+    /// <summary>Bảng kết quả (thắng/thua): tiêu đề, dòng chi tiết và các nút "Box/Button 1", "Box/Button 2"...</summary>
+    internal static GameObject CreateResultPanel(Transform canvas, string name, string title, out Text detail,
+                                                 params (string label, UnityAction action)[] buttons)
+    {
+        var overlay = CreateImage(canvas, name, new Color(0f, 0f, 0f, 0.6f));
+        Stretch(overlay.rectTransform);
+
+        var box = CreateImage(overlay.transform, "Box", new Color(1f, 0.96f, 0.86f));
+        Place(box.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(820f, 460f));
+
+        CreateText(box.transform, "Title", title, 72, TitleColor, new Vector2(0.5f, 1f), new Vector2(0f, -50f),
+                   new Vector2(760f, 100f), TextAnchor.MiddleCenter);
+        detail = CreateText(box.transform, "Detail", "", 36, InkColor, new Vector2(0.5f, 1f),
+                            new Vector2(0f, -170f), new Vector2(760f, 60f), TextAnchor.MiddleCenter);
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            float x = (i - (buttons.Length - 1) / 2f) * 370f;
+            var button = CreateButton(box.transform, $"Button {i + 1}", buttons[i].label, new Vector2(x, 80f), 350f);
+            UnityEventTools.AddPersistentListener(button.onClick, buttons[i].action);
+            var rt = (RectTransform)button.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
+        }
+        return overlay.gameObject;
     }
 
     internal static Text CreateText(Transform parent, string name, string content, int size, Color color,
@@ -421,6 +270,7 @@ public static class ZodiacPrototypeBuilder
         text.color = color;
         text.alignment = alignment;
         text.raycastTarget = false;
+        text.supportRichText = true;
         text.horizontalOverflow = HorizontalWrapMode.Overflow;
         if (color == Color.white) text.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
         var rt = text.rectTransform;
@@ -437,17 +287,17 @@ public static class ZodiacPrototypeBuilder
         return image;
     }
 
-    static Button CreateButton(Transform parent, string name, string label, Vector2 position)
+    static Button CreateButton(Transform parent, string name, string label, Vector2 position, float width = 300f)
     {
         var image = CreateImage(parent, name, ButtonColor);
-        Place(image.rectTransform, new Vector2(0.5f, 0.5f), position, new Vector2(300f, 90f));
+        Place(image.rectTransform, new Vector2(0.5f, 0.5f), position, new Vector2(width, 90f));
         var button = image.gameObject.AddComponent<Button>();
         var colors = button.colors;
         colors.highlightedColor = new Color(1f, 0.85f, 0.6f);
         colors.selectedColor = new Color(1f, 0.85f, 0.6f);
         button.colors = colors;
-        var text = CreateText(image.transform, "Label", label, 38, Color.white, new Vector2(0.5f, 0.5f),
-                              Vector2.zero, new Vector2(300f, 90f), TextAnchor.MiddleCenter);
+        var text = CreateText(image.transform, "Label", label, 36, Color.white, new Vector2(0.5f, 0.5f),
+                              Vector2.zero, new Vector2(width, 90f), TextAnchor.MiddleCenter);
         Stretch(text.rectTransform);
         return button;
     }
@@ -468,20 +318,22 @@ public static class ZodiacPrototypeBuilder
         rt.sizeDelta = Vector2.zero;
     }
 
-    // ───────────────────────────── Asset ─────────────────────────────
-
-    static ZodiacCharacter EnsureMonkeyData(Sprite sprite)
+    internal static GameObject CreateDecor(string name, Transform parent, Sprite sprite, Vector2 localPosition, Vector2 size,
+                                  Color color, int sortingOrder)
     {
-        var data = AssetDatabase.LoadAssetAtPath<ZodiacCharacter>(MonkeyDataPath);
-        if (data != null) return data;
-        EnsureFolder(CharacterFolder);
-        data = ScriptableObject.CreateInstance<ZodiacCharacter>();
-        data.displayName = "Khỉ";
-        data.zodiacName = "Thân";
-        data.sprite = sprite;
-        AssetDatabase.CreateAsset(data, MonkeyDataPath);
-        return data;
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = localPosition;
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.drawMode = SpriteDrawMode.Tiled;
+        sr.size = size;
+        sr.color = color;
+        sr.sortingOrder = sortingOrder;
+        return go;
     }
+
+    // ───────────────────────────── Asset ─────────────────────────────
 
     static PhysicsMaterial2D EnsureNoFriction()
     {
@@ -643,12 +495,9 @@ public static class ZodiacPrototypeBuilder
 
     static void UpdateBuildSettings()
     {
-        var scenes = new List<EditorBuildSettingsScene>
-        {
-            new EditorBuildSettingsScene(StartScenePath, true),
-            new EditorBuildSettingsScene(LevelScenePath, true),
-        };
-        scenes.AddRange(EditorBuildSettings.scenes.Where(s => s.path != StartScenePath && s.path != LevelScenePath));
+        var paths = ScenePaths.ToList();
+        var scenes = paths.Select(p => new EditorBuildSettingsScene(p, true)).ToList();
+        scenes.AddRange(EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path)));
         EditorBuildSettings.scenes = scenes.ToArray();
     }
 

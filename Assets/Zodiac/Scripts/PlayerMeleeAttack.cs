@@ -11,6 +11,9 @@ using UnityEngine.InputSystem;
 /// script chỉ dùng hình dạng của nó để quét Physics2D.OverlapBox trong thời điểm tấn công hợp lệ,
 /// nên hitbox không bao giờ tự kích hoạt trigger khác (đồng xu, đích, vực).
 /// Nhân vật chưa có animation Attack → đòn đánh hiển thị bằng slashEffect trong lúc hitbox có hiệu lực.
+///
+/// Sát thương lấy từ nhân vật (Hổ đánh 2), nhân thêm khi đánh lén sau tàng hình (Rắn) và gây độc nếu có nội tại.
+/// Chém trúng đạn của quái thì đạn tan (đỡ đạn bằng đòn đánh).
 /// </summary>
 [RequireComponent(typeof(ZodiacPlayerController))]
 public class PlayerMeleeAttack : MonoBehaviour
@@ -35,6 +38,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     enum Phase { Ready, Startup, Active }
 
     ZodiacPlayerController controller;
+    PlayerSkill skill;
     InputAction attackAction;
     ContactFilter2D filter;
     readonly List<Collider2D> overlaps = new List<Collider2D>();
@@ -50,6 +54,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     void Awake()
     {
         controller = GetComponent<ZodiacPlayerController>();
+        skill = GetComponent<PlayerSkill>();
         attackAction = InputSystem.actions.FindAction("Player/Attack");
         if (attackAction == null || hitbox == null)
         {
@@ -73,7 +78,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             return;
         }
 
-        if (attackAction.WasPressedThisFrame() && Time.time >= nextAttackTime) StartSwing();
+        if (attackAction.WasPressedThisFrame() && Time.time >= nextAttackTime && (skill == null || !skill.IsBusy)) StartSwing();
 
         if (phase == Phase.Startup && Time.time >= phaseEndTime)
         {
@@ -95,6 +100,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     void StartSwing()
     {
         SwingCount++;
+        if (controller.Character != null) damage = controller.Character.attackDamage;
         hitThisSwing.Clear();
         nextAttackTime = Time.time + cooldown;
         phase = Phase.Startup;
@@ -116,7 +122,21 @@ public class PlayerMeleeAttack : MonoBehaviour
             var target = col.GetComponentInParent<Health>();
             if (target == null || target.gameObject == gameObject) continue;
             if (!hitThisSwing.Add(target)) continue;   // đã trúng trong đòn này
-            target.TakeDamage(damage, transform.position);
+            float multiplier = skill != null ? skill.ConsumeBackstab() : 1f;
+            int amount = Mathf.RoundToInt(damage * multiplier);
+            if (target.TakeDamage(amount, transform.position) && controller.Character != null)
+                Poison.Apply(target, controller.Character.poisonDamage);
+        }
+        PopEnemyShots(center, size);
+    }
+
+    void PopEnemyShots(Vector2 center, Vector2 size)
+    {
+        var area = new Rect(center - size / 2f, size);
+        for (int i = Projectile.Active.Count - 1; i >= 0; i--)
+        {
+            var shot = Projectile.Active[i];
+            if (shot.hostile && area.Contains(shot.transform.position)) shot.Pop();
         }
     }
 
