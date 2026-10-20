@@ -66,6 +66,7 @@ public static class ZodiacVisualSetup
                 list.GetArrayElementAtIndex(index).objectReferenceValue = data;
             }
             so.FindProperty("m_DefaultRendererIndex").intValue = index;
+            so.FindProperty("m_MSAA").intValue = 4;   // khử răng cưa mép sprite xoay/nghiêng
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(urp);
         }
@@ -164,20 +165,22 @@ public static class ZodiacVisualSetup
 
     // ───────────────────────────── Hậu kỳ ─────────────────────────────
 
-    /// <summary>Volume profile riêng cho từng màn: bloom (đèn lồng, lửa sáng loá), vignette, chỉnh màu.</summary>
+    /// <summary>
+    /// Volume profile riêng cho từng màn: bloom (chỉ những gì sáng hơn trắng — đèn lồng, lửa — mới loá;
+    /// ngưỡng thấp hơn 1 làm cả bầu trời sáng loá → hình bị mờ), vignette nhẹ, chỉnh màu. Tạo lại mỗi lần dựng.
+    /// </summary>
     public static VolumeProfile EnsureVolumeProfile(string name, float bloom, float vignette, float saturation, float contrast, Color filter)
     {
         string path = $"{SettingsFolder}/Volume_{name}.asset";
-        var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
-        if (profile != null) return profile;
+        AssetDatabase.DeleteAsset(path);
         ZodiacPrototypeBuilder.EnsureFolder(SettingsFolder);
-        profile = ScriptableObject.CreateInstance<VolumeProfile>();
+        var profile = ScriptableObject.CreateInstance<VolumeProfile>();
         AssetDatabase.CreateAsset(profile, path);
 
         var b = profile.Add<Bloom>(true);
-        b.threshold.Override(0.85f);
+        b.threshold.Override(1.05f);
         b.intensity.Override(bloom);
-        b.scatter.Override(0.6f);
+        b.scatter.Override(0.5f);
         var v = profile.Add<Vignette>(true);
         v.intensity.Override(vignette);
         v.smoothness.Override(0.45f);
