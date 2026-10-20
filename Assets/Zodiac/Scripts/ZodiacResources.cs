@@ -29,6 +29,8 @@ public class ZodiacResources : ScriptableObject
     public AudioClip[] hurt;
     public AudioClip[] stomp;
     public AudioClip[] enemyDeath;
+    [Tooltip("Đòn đánh vào khiên.")]
+    public AudioClip[] block;
     public AudioClip[] spike;
     public AudioClip[] fireball;
     public AudioClip[] bossRoar;

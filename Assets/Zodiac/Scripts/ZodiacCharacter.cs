@@ -24,6 +24,8 @@ public class SkillConfig
     public string name = "Chiêu";
     [TextArea] public string description;
     [Min(0.1f)] public float cooldown = 2f;
+    [Tooltip("Số Khí tốn mỗi lần tung chiêu (thanh Khí tối đa 6, đánh trúng thì nạp).")]
+    [Min(0)] public int energyCost = 3;
     [Min(0)] public int damage = 1;
 
     [Header("Dash")]
@@ -116,6 +118,9 @@ public class ZodiacCharacter : ScriptableObject
     public SkillConfig skill = new SkillConfig();
     [Tooltip("Tiếng nhạc cụ khi tung chiêu.")]
     public AudioClip skillSound;
+
+    [Tooltip("Phiên bản số liệu do builder điền — thấp hơn bản hiện tại thì builder điền lại.")]
+    public int dataVersion;
 
     public string Title => $"{displayName} — Tuổi {zodiacName}";
 }

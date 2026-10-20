@@ -102,6 +102,7 @@ public static class ZodiacVisualSetup
         Fill(ref res.hurt, "SFX/impactSoft_heavy_00*");
         Fill(ref res.stomp, "SFX/impactPlank_medium_000");
         Fill(ref res.enemyDeath, "SFX/impactMining_00*");
+        Fill(ref res.block, "SFX/impactBell_heavy_000");
         Fill(ref res.spike, "SFX/impactMetal_light_000");
         Fill(ref res.fireball, "Synth/fireball");
         Fill(ref res.bossRoar, "Synth/boss_roar");

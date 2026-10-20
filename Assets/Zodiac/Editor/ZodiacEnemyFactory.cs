@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Tạo prefab quái trong Assets/Zodiac/Prefabs (chưa có sprite thật — ghép từ hình vuông/tròn placeholder):
 ///   Lính Đất Nung (đi bộ, đuổi, cắn) · Bọ Gai (tuần tra, lưng gai — không đạp được) · Ma Trơi (bay, lao tới)
-///   Cóc Tía (nhảy cóc) · Thạch Sư (tượng phun lửa) · Hồ Tinh (boss).
+///   Cóc Tía (nhảy cóc) · Thạch Sư (tượng phun lửa) · Lính Khiên (đỡ đòn phía trước) · Hồ Tinh (boss).
 /// Prefab được tạo lại mỗi lần dựng prototype — chỉnh thông số quái ngay trong file này.
 /// Thân quái chịu ánh sáng 2D; mắt, lửa, quầng sáng tự phát sáng (thấy rõ trong hang tối).
 /// </summary>
@@ -14,7 +14,7 @@ public static class ZodiacEnemyFactory
 
     public class Prefabs
     {
-        public GameObject walker, spiky, flyer, hopper, turret, boss;
+        public GameObject walker, spiky, flyer, hopper, turret, shield, boss;
     }
 
     static readonly Color BarBackColor = new Color(0.15f, 0.1f, 0.1f, 0.85f);
@@ -42,6 +42,7 @@ public static class ZodiacEnemyFactory
         p.flyer = Ensure("Enemy_MaTroi", BuildFlyer);
         p.hopper = Ensure("Enemy_CocTia", BuildHopper);
         p.turret = Ensure("Enemy_ThachSu", BuildTurret);
+        p.shield = Ensure("Enemy_LinhKhien", BuildShieldSoldier);
         p.boss = Ensure("Boss_HoTinh", () => BuildBoss(p.flyer));
         return p;
     }
@@ -75,6 +76,45 @@ public static class ZodiacEnemyFactory
         var ai = root.AddComponent<EnemyPatrol>();
         Common(ai, v);
         HealthBar(root, 1.35f);
+        Flash(root, v);
+        return root;
+    }
+
+    /// <summary>
+    /// Lính Khiên: lính đất nung to hơn cầm khiên đồng — đỡ mọi đòn phía trước (tia lửa + tiếng "keng", người chơi bật lại).
+    /// Cách hạ: vòng ra sau lưng (lăn né qua), chém xuống/đạp từ trên đầu, hoặc làm choáng bằng chiêu để hạ khiên.
+    /// Đi chậm, gồng lâu nhưng cắn đau. Tham khảo: lính khiên của Hollow Knight (Husk Guard), Dead Cells.
+    /// </summary>
+    static GameObject BuildShieldSoldier()
+    {
+        var root = Root("ShieldSoldier", dynamic: true, hp: 4);
+        AddBox(root, new Vector2(1f, 1.2f), new Vector2(0f, 0.6f));
+        var v = Visual(root);
+        Color clay = new Color(0.6f, 0.3f, 0.22f);
+        Shape(v, "Body", false, new Vector2(-0.05f, 0.55f), new Vector2(0.95f, 1.1f), clay, 8);
+        Shape(v, "Belt", false, new Vector2(-0.05f, 0.45f), new Vector2(0.95f, 0.12f), new Color(0.3f, 0.2f, 0.15f), 9);
+        Shape(v, "Helmet", false, new Vector2(-0.05f, 1.15f), new Vector2(1.05f, 0.25f), new Color(0.75f, 0.6f, 0.25f), 9);
+        Shape(v, "Plume", true, new Vector2(-0.15f, 1.35f), new Vector2(0.3f, 0.3f), new Color(0.85f, 0.15f, 0.12f), 9);
+        Eyes(v, new Vector2(0.15f, 0.85f), 0.18f, new Color(1f, 0.6f, 0.3f));
+        var shield = new GameObject("Shield").transform;
+        shield.SetParent(v, false);
+        shield.localPosition = new Vector3(0.58f, 0.6f, 0f);
+        Shape(shield, "Plate", true, Vector2.zero, new Vector2(0.4f, 1.15f), new Color(0.8f, 0.62f, 0.25f), 11);
+        Shape(shield, "Rim", true, Vector2.zero, new Vector2(0.26f, 0.95f), new Color(0.62f, 0.45f, 0.18f), 12);
+        Shape(shield, "Boss", true, Vector2.zero, new Vector2(0.16f, 0.16f), new Color(0.95f, 0.85f, 0.45f), 13);
+        var ai = root.AddComponent<EnemyPatrol>();
+        Common(ai, v);
+        ai.guardFront = true;
+        ai.shield = shield;
+        ai.moveSpeed = 1.4f;
+        ai.chaseSpeed = 2.2f;
+        ai.windupTime = 0.6f;
+        ai.attackDamage = 2;
+        ai.attackCooldown = 1.6f;
+        ai.knockbackTaken = 0.5f;
+        ai.attackBoxOffset = new Vector2(0.85f, 0.5f);
+        ai.attackBoxSize = new Vector2(0.9f, 0.8f);
+        HealthBar(root, 1.65f);
         Flash(root, v);
         return root;
     }

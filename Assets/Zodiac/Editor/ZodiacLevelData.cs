@@ -9,7 +9,7 @@ using UnityEngine;
 ///   M  bục di động ngang, '-' phía sau = quãng đi (ô)   V  bục di động dọc, '|' phía trên = quãng đi
 ///   o  đồng xu      P  điểm xuất phát      K  đèn lồng (checkpoint)      G  cổng đích
 ///   i  biển hướng dẫn (lấy lần lượt từ mảng Hints)
-///   W  Lính Đất Nung   S  Bọ Gai   F  Ma Trơi   H  Cóc Tía   T  Thạch Sư   X  boss Hồ Tinh
+///   W  Lính Đất Nung   S  Bọ Gai   F  Ma Trơi   H  Cóc Tía   T  Thạch Sư   Q  Lính Khiên   X  boss Hồ Tinh
 ///   A  cổng đấu trường boss (đóng lại khi người chơi bước vào, đấu trường kéo tới hết bản đồ bên phải)
 ///
 /// Quy ước thiết kế (độ cao nhảy mặc định 3.2 ô, chạy 8.5 ô/giây): bậc leo ≤ 3 ô, vực đi bộ ≤ 4 ô, vực phải chạy ≤ 6 ô.
@@ -48,9 +48,9 @@ public static class ZodiacLevelData
     };
     static readonly string[] Level1Hints =
     {
-        "A/D: đi · Shift: chạy · Space: nhảy (giữ lâu nhảy cao)\nJ: đánh · K: tung chiêu · Đạp lên đầu quái để hạ chúng!",
+        "A/D: đi · Shift: chạy · Space: nhảy · L: lăn né (bất tử)\nJ: đánh (bấm liên tiếp ra combo 3 đòn) · Đạp lên đầu quái để hạ chúng!",
         "Bọ Gai có gai trên lưng — đừng đạp!\nHãy đánh (J) hoặc dùng chiêu (K).",
-        "Mỗi con giáp có một chiêu riêng (K) và một nội tại.\nĐèn lồng: điểm hồi sinh + hồi 1 máu. Rơi vực chỉ mất 1 máu.",
+        "K: chiêu riêng, tốn Khí (ô xanh dưới thanh máu) — đánh trúng quái để nạp Khí.\nĐèn lồng: điểm hồi sinh + hồi 1 máu. Rơi vực chỉ mất 1 máu.",
     };
     // 196 x 26
     static readonly string[] Level2 =
@@ -77,7 +77,7 @@ public static class ZodiacLevelData
         "                      ########################                         ###                                                                  |     #######",
         "               =====  ########################                         ######                          =====   =====   =====    ====        |     #######         ooo   =====",
         "                      ########################                         ######       ooooo                                                   |     #######",
-        "  P  i    H           ########################                         ######     H       H       K     ^^^     ^^^     ^^^       K         VVV   #######     K      W     S     H          G",
+        "  P  i    H           ########################                         ######     H       H Q     K     ^^^     ^^^     ^^^       K         VVV   #######     K  i   Q     S     H          G",
         "##############################################                         #############################################################################################################################",
         "##############################################                         #############################################################################################################################",
         "##############################################                         #############################################################################################################################",
@@ -85,6 +85,7 @@ public static class ZodiacLevelData
     static readonly string[] Level2Hints =
     {
         "Bục tre (=): nhảy xuyên từ dưới lên được.\nGiữ ↓ rồi bấm Space để rơi xuống qua bục.",
+        "Lính Khiên đỡ mọi đòn phía trước!\nLăn (L) ra sau lưng, chém xuống (↓ + J trên không) hoặc làm choáng bằng chiêu.",
     };
     // 178 x 19
     static readonly string[] Level3 =
@@ -104,7 +105,7 @@ public static class ZodiacLevelData
         "                    ooo                 BBBB                                                     BBBB                                          =====               =====        BB",
         "                                        BBBB                           ====                      BBBB  H                                                                        BB",
         "                                        BBBB           MMM---                                BBBBBBBBBBBBBB                                                                     BB",
-        "  P  i         T             W       W  BBBB                    K   S   ^^^^^^^^^        T   BBBBBBBBBBBBBB     H           K  i        A                             X    G    BB",
+        "  P  i         T             W       Q  BBBB                    K   S   ^^^^^^^^^        T   BBBBBBBBBBBBBB     H Q         K  i        A                             X    G    BB",
         "BBBBBBBBBBBBBBBBBBB    BBBBBBBBBBBBBBBBBBBBBBB MMM---          BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
         "BBBBBBBBBBBBBBBBBBB    BBBBBBBBBBBBBBBBBBBBBBB                 BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
         "BBBBBBBBBBBBBBBBBBB    BBBBBBBBBBBBBBBBBBBBBBB                 BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",

@@ -11,6 +11,10 @@ using UnityEngine;
 /// Còn lại (ngang/dưới) → sát thương tiếp xúc. Sau mỗi lần đạp có stompGrace để collider còn chồng lấn
 /// không gây thêm đạp/sát thương. Health người chơi có bất tử ngắn nên không bị trừ máu mỗi frame.
 /// Collider thân không va chạm vật lý với layer Player (Exclude Layers) để hai bên không đẩy nhau.
+///
+/// Phản hồi: khựng/bẹp người khi trúng đòn (kể cả lúc đang choáng), dấu "!" khi phát hiện người chơi,
+/// chết thì văng lên lộn vòng rồi rơi mờ dần. Quái có khiên (guardFront) chặn mọi đòn từ phía trước —
+/// phải đánh sau lưng, chém/đạp từ trên xuống, hoặc làm choáng bằng chiêu để hạ khiên.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D), typeof(Health))]
 public abstract class EnemyBase : MonoBehaviour
@@ -45,6 +49,12 @@ public abstract class EnemyBase : MonoBehaviour
     [Min(0f)] public float stunMultiplier = 1f;
     [Min(0f)] public float deathFadeTime = 0.4f;
 
+    [Header("Khiên")]
+    [Tooltip("Chặn đòn đánh từ phía trước (theo hướng nhìn). Đòn từ trên xuống / sau lưng vẫn trúng.")]
+    public bool guardFront;
+    [Tooltip("Hình khiên (nảy lên khi đỡ đòn).")]
+    public Transform shield;
+
     protected Rigidbody2D rb;
     protected Collider2D body;
     protected Health health;
@@ -56,6 +66,8 @@ public abstract class EnemyBase : MonoBehaviour
     float stunnedUntil = float.NegativeInfinity;
     float stompGraceUntil = float.NegativeInfinity;
     Transform stunIcon;
+    Vector3 visualScale = Vector3.one;
+    float punch, shieldPunch, nextAlert;
 
     public bool IsStunned => Time.time < stunnedUntil;
     public Health Health => health;
@@ -69,6 +81,11 @@ public abstract class EnemyBase : MonoBehaviour
         playerFilter.SetLayerMask(playerLayer);
         health.Damaged += OnDamaged;
         health.Died += OnDied;
+        if (guardFront)
+        {
+            health.Blocks = BlocksHit;
+            health.Blocked += OnBlocked;
+        }
     }
 
     protected virtual void Start()
@@ -111,6 +128,45 @@ public abstract class EnemyBase : MonoBehaviour
     }
 
     protected Vector2 PlayerCenter => player != null ? (Vector2)player.BodyCollider.bounds.center : Vector2.zero;
+
+    /// <summary>Dấu "!" vàng bật lên trên đầu khi phát hiện người chơi (tối đa mỗi 2.5 giây).</summary>
+    protected void Alert()
+    {
+        if (Time.time < nextAlert) return;
+        nextAlert = Time.time + 2.5f;
+        Vector2 top = new Vector2(body.bounds.center.x, body.bounds.max.y + 0.6f);
+        var mark = new GameObject("Alert");
+        mark.transform.position = top;
+        var color = new Color(1f, 0.85f, 0.2f);
+        ZodiacFx.Shape("Bar", false, top + Vector2.up * 0.12f, new Vector2(0.12f, 0.38f), color, 30, mark.transform);
+        ZodiacFx.Shape("Dot", false, top - Vector2.up * 0.18f, new Vector2(0.12f, 0.12f), color, 30, mark.transform);
+        mark.AddComponent<AlertMark>();
+    }
+
+    // ───────── Khiên ─────────
+
+    bool BlocksHit(Hit hit)
+    {
+        if (stunnedUntil - Time.time > 0.45f) return false;      // choáng do chiêu → hạ khiên
+        Bounds b = body.bounds;
+        Vector2 d = hit.source - (Vector2)b.center;
+        if (d.y > b.extents.y) return false;                      // đòn từ trên xuống (chém xuống, đạp)
+        return Mathf.Abs(d.x) > 0.01f && Mathf.Sign(d.x) == direction;
+    }
+
+    void OnBlocked(Hit hit)
+    {
+        shieldPunch = 1f;
+        Vector2 at = shield != null ? (Vector2)shield.position : (Vector2)body.bounds.center + Vector2.right * direction * 0.5f;
+        ZodiacParticles.Sparks(at, new Color(1f, 0.95f, 0.7f), 10);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.block, 0.9f, 0.1f, at);
+        GameFeel.HitStop(0.04f);
+        GameFeel.Shake(0.1f);
+        // Đánh vào khiên ở tầm gần: người chơi bị bật ngược lại
+        if (player != null && Mathf.Abs(player.transform.position.x - transform.position.x) < 2.5f)
+            player.ApplyKnockback(new Vector2(direction * 6f, 3f), 0.15f);
+    }
 
     // ───────── Va chạm với người chơi ─────────
 
@@ -161,6 +217,7 @@ public abstract class EnemyBase : MonoBehaviour
         int multiplier = target.Character != null ? target.Character.stompDamageMultiplier : 1;
         health.TakeDamage(new Hit(stompDamage * multiplier, target.transform.position, 0f, 0.4f));
         target.Bounce(stompBounce);
+        if (target.TryGetComponent(out PlayerEnergy energy)) energy.Gain(1);
         var res = ZodiacResources.Get;
         if (res != null) ZodiacAudio.Play(res.stomp, 0.9f, 0.08f, transform.position);
         GameFeel.HitStop(0.04f);
@@ -176,6 +233,7 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void OnDamaged(Hit hit)
     {
+        punch = 1f;
         float k = hit.knockback * knockbackTaken;
         if (k > 0f)
         {
@@ -207,20 +265,32 @@ public abstract class EnemyBase : MonoBehaviour
         GameFeel.Shake(0.15f);
         rb.linearVelocity = Vector2.zero;
         rb.simulated = false;
-        if (visual != null) visual.localScale = new Vector3(direction, 1f, 1f);
+        SetVisualScale(new Vector3(direction, 1f, 1f));
         if (TryGetComponent(out HitFlash flash)) flash.enabled = false;
         if (stunIcon != null) stunIcon.gameObject.SetActive(false);
-        StartCoroutine(FadeOut());
+        StartCoroutine(DeathTumble());
     }
 
-    IEnumerator FadeOut()
+    /// <summary>Văng lên, lộn vòng theo hướng bị đánh rồi rơi xuống, mờ dần (thay vì biến mất tại chỗ).</summary>
+    IEnumerator DeathTumble()
     {
-        var renderers = (visual != null ? visual : transform).GetComponentsInChildren<SpriteRenderer>();
+        var root = visual != null ? visual : transform;
+        var renderers = root.GetComponentsInChildren<SpriteRenderer>();
         var startColors = new Color[renderers.Length];
         for (int i = 0; i < renderers.Length; i++) startColors[i] = renderers[i].color;
-        for (float t = 0f; t < deathFadeTime; t += Time.deltaTime)
+        Vector3 start = root.localPosition;
+        float away = player != null ? Mathf.Sign(transform.position.x - player.transform.position.x) : -direction;
+        Vector2 velocity = new Vector2(away * 3f, 7f);
+        Vector2 offset = Vector2.zero;
+        float spin = 0f, time = Mathf.Max(0.5f, deathFadeTime + 0.3f);
+        for (float t = 0f; t < time; t += Time.deltaTime)
         {
-            float a = 1f - t / deathFadeTime;
+            velocity.y -= 25f * Time.deltaTime;
+            offset += velocity * Time.deltaTime;
+            spin += -away * 540f * Time.deltaTime;
+            root.localPosition = start + (Vector3)offset;
+            root.localRotation = Quaternion.Euler(0f, 0f, spin);
+            float a = 1f - Mathf.Clamp01((t - time * 0.4f) / (time * 0.6f));
             for (int i = 0; i < renderers.Length; i++)
                 renderers[i].color = new Color(startColors[i].r, startColors[i].g, startColors[i].b, startColors[i].a * a);
             yield return null;
@@ -230,9 +300,23 @@ public abstract class EnemyBase : MonoBehaviour
 
     // ───────── Hiển thị ─────────
 
-    protected virtual void UpdateVisual()
+    protected virtual void UpdateVisual() => SetVisualScale(new Vector3(direction, 1f, 1f));
+
+    /// <summary>Tư thế (tỉ lệ) của hình do AI đặt — phần khựng khi trúng đòn được nhân thêm ở LateUpdate.</summary>
+    protected void SetVisualScale(Vector3 scale) => visualScale = scale;
+
+    void LateUpdate()
     {
-        if (visual != null) visual.localScale = new Vector3(direction, 1f, 1f);
+        if (visual == null || health.IsDead) return;
+        // Trúng đòn: bẹp ngang rồi nảy lại (chạy cả khi đang choáng)
+        punch = Mathf.MoveTowards(punch, 0f, Time.deltaTime * 6f);
+        float p = Mathf.Sin(punch * Mathf.PI) * punch;
+        visual.localScale = Vector3.Scale(visualScale, new Vector3(1f + 0.25f * p, 1f - 0.2f * p, 1f));
+        if (shield != null)
+        {
+            shieldPunch = Mathf.MoveTowards(shieldPunch, 0f, Time.deltaTime * 5f);
+            shield.localScale = Vector3.one * (1f + 0.3f * shieldPunch);
+        }
     }
 
     /// <summary>Ba ngôi sao vàng quay trên đầu khi bị choáng do chiêu.</summary>

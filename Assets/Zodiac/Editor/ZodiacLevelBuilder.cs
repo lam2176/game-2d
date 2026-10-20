@@ -86,6 +86,7 @@ public static class ZodiacLevelBuilder
                 case 'S': Spawn(ctx.prefabs.spiky, enemies, cell + Vector2.up * 0.02f); break;
                 case 'H': Spawn(ctx.prefabs.hopper, enemies, cell + Vector2.up * 0.02f); break;
                 case 'T': Spawn(ctx.prefabs.turret, enemies, cell); break;
+                case 'Q': Spawn(ctx.prefabs.shield, enemies, cell + Vector2.up * 0.02f); break;
                 case 'F': Spawn(ctx.prefabs.flyer, enemies, new Vector2(x + 0.5f, y + 0.5f)); break;
                 case 'X': boss = Spawn(ctx.prefabs.boss, enemies, cell + Vector2.up * 0.02f).GetComponent<BossFoxSpirit>(); break;
                 case 'A': arenaGates.Add(x); break;
@@ -801,9 +802,11 @@ public static class ZodiacLevelBuilder
         attack.slashEffect = slash;
         attack.targetLayers = 1 << ctx.enemyLayer;
 
+        go.AddComponent<PlayerEnergy>();
         var skill = go.AddComponent<PlayerSkill>();
         skill.targetLayers = 1 << ctx.enemyLayer;
         skill.groundLayer = 1 << ctx.groundLayer;
+        go.AddComponent<PlayerDodge>();
         visual.AddComponent<CharacterAnimator>();   // sau attack/skill để đăng ký sự kiện
         if (def.backdrop == Backdrop.Cave)          // đèn quanh người trong hang tối
         {
@@ -844,10 +847,10 @@ public static class ZodiacLevelBuilder
         var characterText = ZodiacPrototypeBuilder.CreateText(canvas, "CharacterText", "", 32, Color.white,
             new Vector2(0f, 1f), new Vector2(190f, -22f), new Vector2(700f, 44f), TextAnchor.UpperLeft);
         var skillName = ZodiacPrototypeBuilder.CreateText(canvas, "SkillName", "", 26, new Color(1f, 0.92f, 0.6f),
-            new Vector2(0f, 1f), new Vector2(190f, -118f), new Vector2(700f, 36f), TextAnchor.UpperLeft);
+            new Vector2(0f, 1f), new Vector2(190f, -130f), new Vector2(700f, 36f), TextAnchor.UpperLeft);
         skillName.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
         var passive = ZodiacPrototypeBuilder.CreateText(canvas, "PassiveText", "", 22, Color.white,
-            new Vector2(0f, 1f), new Vector2(190f, -150f), new Vector2(700f, 32f), TextAnchor.UpperLeft);
+            new Vector2(0f, 1f), new Vector2(190f, -162f), new Vector2(700f, 32f), TextAnchor.UpperLeft);
 
         var hud = canvas.gameObject.AddComponent<SkillHud>();
         hud.skill = player.GetComponent<PlayerSkill>();
@@ -877,10 +880,23 @@ public static class ZodiacLevelBuilder
         bar.fill = fill.rectTransform;
         bar.label = label;
 
+        // Ô Khí (6) dưới thanh máu
+        var pips = new Image[6];
+        for (int i = 0; i < pips.Length; i++)
+        {
+            var pip = ZodiacPrototypeBuilder.CreateImage(canvas, $"EnergyPip {i + 1}", new Color(0.45f, 0.85f, 1f));
+            pip.rectTransform.pivot = new Vector2(0f, 1f);
+            ZodiacPrototypeBuilder.Place(pip.rectTransform, new Vector2(0f, 1f), new Vector2(190f + i * 30f, -112f), new Vector2(24f, 12f));
+            pip.raycastTarget = false;
+            pips[i] = pip;
+        }
+        hud.energy = player.GetComponent<PlayerEnergy>();
+        hud.energyPips = pips;
+
         manager.collectText = ZodiacPrototypeBuilder.CreateText(canvas, "CollectText", "Đồng xu: 0/0", 30, Color.white,
             new Vector2(0f, 1f), new Vector2(570f, -72f), new Vector2(400f, 40f), TextAnchor.UpperLeft);
 
-        ZodiacPrototypeBuilder.CreateText(canvas, "HintText", "A/D đi · Shift chạy · Space nhảy · J đánh · K chiêu · R chơi lại", 24, Color.white,
+        ZodiacPrototypeBuilder.CreateText(canvas, "HintText", "A/D đi · Shift chạy · Space nhảy · J đánh · K chiêu · L lăn né · R chơi lại", 24, Color.white,
             new Vector2(1f, 1f), new Vector2(-24f, -22f), new Vector2(1000f, 40f), TextAnchor.UpperRight);
 
         var banner = ZodiacPrototypeBuilder.CreateText(canvas, "LevelBanner", $"{def.title}\n<size=34>{def.subtitle}</size>", 64,

@@ -45,6 +45,11 @@ public class Health : MonoBehaviour
     public event Action Died;
     /// <summary>Nội tại giữ mạng vừa kích hoạt.</summary>
     public event Action LastStand;
+    /// <summary>Đòn bị chặn (khiên) — không mất máu.</summary>
+    public event Action<Hit> Blocked;
+
+    /// <summary>Trả về true nếu đòn này bị chặn (quái cầm khiên đỡ đòn phía trước).</summary>
+    public Func<Hit, bool> Blocks;
 
     float invulnerableUntil = float.NegativeInfinity;
 
@@ -64,6 +69,11 @@ public class Health : MonoBehaviour
     public bool TakeDamage(Hit hit)
     {
         if (IsDead || IsInvulnerable || hit.amount <= 0) return false;
+        if (Blocks != null && Blocks(hit))
+        {
+            Blocked?.Invoke(hit);
+            return false;
+        }
         Current = Mathf.Max(0, Current - hit.amount);
         bool lastStand = Current == 0 && lastStandCharges > 0;
         if (lastStand)
