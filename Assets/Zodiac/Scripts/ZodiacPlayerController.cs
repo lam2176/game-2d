@@ -188,6 +188,7 @@ public class ZodiacPlayerController : MonoBehaviour
         if (stats == null) stats = gameObject.AddComponent<CharacterStats>();
         stats.InitFrom(character);
         if (health != null) health.lastStandCharges = character.lastStandCharges;
+        GetComponent<PlayerPassives>()?.Apply();
     }
 
     /// <summary>Đẩy nhân vật đi với vận tốc cho trước và tạm mất điều khiển trong stunTime giây.</summary>

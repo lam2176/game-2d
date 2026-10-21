@@ -141,12 +141,7 @@ public class ZodiacGameManager : MonoBehaviour
     {
         if (Current != State.Playing) return;
         collected++;
-        var c = player.Character;
-        if (c != null && c.coinsPerHeal > 0 && playerHealth != null && ++coinsTowardHeal >= c.coinsPerHeal)
-        {
-            coinsTowardHeal = 0;
-            if (playerHealth.Heal(ZodiacBalance.Unit) > 0) ZodiacFx.Ring(player.BodyCenter, 1.5f, new Color(0.5f, 1f, 0.6f, 0.8f));
-        }
+        PlayerPassives.Current?.OnCoins(1);
         RefreshHud();
     }
 

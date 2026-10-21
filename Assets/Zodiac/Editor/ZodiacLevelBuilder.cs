@@ -1182,6 +1182,8 @@ public static class ZodiacLevelBuilder
         skill.targetLayers = 1 << ctx.enemyLayer;
         skill.groundLayer = 1 << ctx.groundLayer;
         go.AddComponent<PlayerDodge>();
+        go.AddComponent<PlayerGrab>();
+        go.AddComponent<PlayerPassives>();   // nội tại của con giáp (độc, đá bay, hút xu, hồi máu bằng xu…)   // F: túm quái đang choáng, Q thúc gối, F / Q ném
         visual.AddComponent<CharacterAnimator>();   // sau attack/skill để đăng ký sự kiện
 
         var shadowGo = new GameObject("BlobShadow");
@@ -1264,7 +1266,7 @@ public static class ZodiacLevelBuilder
         manager.collectText = ZodiacPrototypeBuilder.CreateText(canvas, "CollectText", "Đồng xu: 0/0", 30, Color.white,
             new Vector2(0f, 1f), new Vector2(570f, -72f), new Vector2(400f, 40f), TextAnchor.UpperLeft);
 
-        ZodiacPrototypeBuilder.CreateText(canvas, "HintText", "← ↑ → ↓ đi · Shift chạy · Space nhảy · Q đánh (nhảy + Q: đá bay) · F5 chơi lại", 24, Color.white,
+        ZodiacPrototypeBuilder.CreateText(canvas, "HintText", "← ↑ → ↓ đi · Shift chạy · Space nhảy · Q đánh (nhảy + Q: đá bay) · F túm quái choáng · F5 chơi lại", 24, Color.white,
             new Vector2(1f, 1f), new Vector2(-24f, -22f), new Vector2(1100f, 40f), TextAnchor.UpperRight);
 
         var go = ZodiacPrototypeBuilder.CreateText(canvas, "GoIndicator", "ĐI TIẾP →", 64, new Color(1f, 0.85f, 0.3f),

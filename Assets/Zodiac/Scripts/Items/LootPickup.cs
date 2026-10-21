@@ -106,7 +106,7 @@ public class LootPickup : MonoBehaviour
         var player = ZodiacPlayerController.Current;
         Vector3 target = player != null ? player.BodyCenter : transform.position;
         float dist = player != null ? Vector3.Distance(target, transform.position) : float.MaxValue;
-        float magnet = MagnetRadius + (player != null && player.Character != null ? player.Character.coinMagnetRadius * (item == null ? 1f : 0.5f) : 0f);
+        float magnet = MagnetRadius + PlayerPassives.CoinMagnet * (item == null ? 1f : 0.5f);
         if (age > 0.5f && Time.time >= retryAt && player != null && player.ControlEnabled && dist <= magnet) attracted = true;
 
         if (attracted)
@@ -149,6 +149,7 @@ public class LootPickup : MonoBehaviour
         if (item == null)
         {
             profile.AddCoins(coins);
+            PlayerPassives.Current?.OnCoins(coins);
             if (res != null) ZodiacAudio.Play(res.coin, 0.45f, 0.08f);
             ZodiacParticles.Sparkle(transform.position, new Color(1f, 0.85f, 0.3f), 5, 0.2f);
             Destroy(gameObject);
