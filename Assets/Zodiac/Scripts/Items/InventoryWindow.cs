@@ -77,7 +77,7 @@ public partial class InventoryWindow : MonoBehaviour
         if (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame) toggle = true;
         bool escape = kb != null && kb.escapeKey.wasPressedThisFrame;
         if (IsOpen && (toggle || escape)) Close();
-        else if (!IsOpen && toggle && !PauseMenu.IsOpen && !VillageWindow.IsOpen) Open();
+        else if (!IsOpen && toggle && !PauseMenu.IsOpen && !VillageWindow.IsOpen && !StoryUi.IsOpen) Open();
     }
 
     void Open()

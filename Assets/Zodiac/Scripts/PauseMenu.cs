@@ -36,7 +36,7 @@ public class PauseMenu : MonoBehaviour
         var kb = Keyboard.current;
         bool pressed = (kb != null && kb.escapeKey.wasPressedThisFrame) ||
                        (Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame);
-        if (!pressed || InventoryWindow.IsOpen || InventoryWindow.ClosedFrame == Time.frameCount ||
+        if (!pressed || StoryUi.IsOpen || InventoryWindow.IsOpen || InventoryWindow.ClosedFrame == Time.frameCount ||
             VillageWindow.IsOpen || VillageWindow.ClosedFrame == Time.frameCount) return;
         if (IsOpen) Close();
         else Open();

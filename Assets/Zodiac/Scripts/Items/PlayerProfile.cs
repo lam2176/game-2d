@@ -115,6 +115,10 @@ public class PlayerProfile
     public int difficulty;
     [Tooltip("Đã phá đảo màn cuối → mở Ác Mộng.")]
     public bool nightmareUnlocked;
+    [Tooltip("Đoạn truyện đã xem (tranh mở đầu, thoại từng khu theo con giáp).")]
+    public List<string> storySeen = new List<string>();
+    [Tooltip("Con giáp đã phá đảo (đã xem kết thúc riêng) — đủ 12 thì có kết thúc thật.")]
+    public List<string> endingsSeen = new List<string>();
 
     static PlayerProfile current;
 
@@ -171,6 +175,8 @@ public class PlayerProfile
         if (equipped == null || equipped.Length != EquipSlots.Length) Array.Resize(ref equipped, EquipSlots.Length);
         if (quick == null || quick.Length != QuickSlots) Array.Resize(ref quick, QuickSlots);
         characters ??= new List<CharacterProgress>();
+        storySeen ??= new List<string>();
+        endingsSeen ??= new List<string>();
         foreach (var arr in new[] { bag, equipped })
             for (int i = 0; i < arr.Length; i++)
             {
@@ -431,6 +437,27 @@ public class PlayerProfile
         unlockedLevels = Mathf.Max(unlockedLevels, index + 2);
         if (final) nightmareUnlocked = true;
         Commit();
+    }
+
+    public bool HasSeen(string key) => storySeen.Contains(key);
+
+    /// <summary>Đánh dấu đã xem một đoạn truyện (lưu ngay).</summary>
+    public void MarkSeen(string key)
+    {
+        if (string.IsNullOrEmpty(key) || storySeen.Contains(key)) return;
+        storySeen.Add(key);
+        Commit();
+    }
+
+    /// <summary>Ghi nhận phá đảo với con giáp này. Trả về true nếu giờ đã đủ cả 12 (lần đầu đủ hoặc xem lại).</summary>
+    public bool AddEnding(string character, int total)
+    {
+        if (!string.IsNullOrEmpty(character) && !endingsSeen.Contains(character))
+        {
+            endingsSeen.Add(character);
+            Commit();
+        }
+        return endingsSeen.Count >= total;
     }
 
     /// <summary>Đổi độ khó (Ác Mộng phải mở trước).</summary>

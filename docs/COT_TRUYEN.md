@@ -161,3 +161,21 @@ và **kết thúc riêng**. Nội tại và chiêu đã có trong game được 
 | **Khu đặc biệt theo truyện** | Hộ tống, tính giờ, sống sót, giữ vật | Biến thể của `EncounterZone` |
 
 Ưu tiên làm: tranh mở đầu + hội thoại chuyển khu + kết thúc riêng của 12 con. Sổ ghi chép và khu đặc biệt làm sau.
+
+---
+
+## 4. Đã đưa vào game (giai đoạn D)
+
+Nội dung ở `Assets/Zodiac/Scripts/Story/ZodiacStory.cs`, hiển thị bằng `StoryUi`, nhớ đã xem trong hồ sơ (`storySeen`, `endingsSeen`).
+
+| Phần | Khi nào | Ghi chú |
+|---|---|---|
+| Tranh mở đầu (5 khung) | Lần đầu vào Làng Trung Tâm (Chơi mới thì xem lại) | Khúc Giao Thừa → Trống Đồng → cô gái áo đỏ → 12 Âm Phù → lên đường |
+| Thoại vào khu | Khu đầu mỗi màn và một số khu giữa, mỗi con giáp xem một lần | Câu "lên đường vì…" riêng 12 con ở khu đầu màn 1; Chuột ↔ Mèo ở Suối trúc; Hồ Tinh dụ Khỉ; Rồng / Rắn đối đáp Hồ Tinh trước trận boss |
+| Lời kết màn | Thắng màn 1, 2, 3 | Âm Phù thứ nhất, thứ hai; Hồ Tinh mất ba đuôi, bỏ chạy |
+| Kết thúc riêng | Phá đảo màn 3 | Khung chung "năm mới đến muộn một khắc" + 2 khung riêng của con đang chơi |
+| Kết thúc thật | Phá đảo đủ 12 con | Mười hai con cùng tấu, bình minh, Hồ Tây, chúc mừng năm mới |
+
+Điều khiển: Space / Enter / Q / chuột (tay cầm: A) để tiếp, Esc (Start) để bỏ qua. Game dừng trong lúc hiện truyện.
+Tranh minh hoạ hiện vẽ bằng code (`StoryArt`) kèm ảnh 12 con giáp; khi có tranh vẽ tay (kiểu Đông Hồ) thì thay vào `StoryArt`.
+Chưa làm: khu đặc biệt theo truyện (hộ tống, tính giờ, sống sót, giữ nồi bánh chưng), sổ ghi chép ở Đình làng, ảnh boss Hồ Tinh.

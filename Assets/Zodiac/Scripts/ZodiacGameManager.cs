@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -130,6 +131,31 @@ public class ZodiacGameManager : MonoBehaviour
         losePanel.SetActive(false);
         RefreshHud();
         ZodiacAudio.PlayMusic(music);
+
+        // Lần đầu vào làng: tranh kể chuyện mở đầu
+        if (isHub && !PlayerProfile.Current.HasSeen("intro"))
+            StoryUi.ShowPanels(ZodiacStory.Intro, () => PlayerProfile.Current.MarkSeen("intro"));
+    }
+
+    string CharacterKey => player != null && player.Character != null ? player.Character.name : "";
+
+    /// <summary>Thoại khi vào khu (mỗi con giáp xem một lần) rồi mới bắt đầu đợt quái.</summary>
+    IEnumerator BeginRoom(EncounterZone room, int index, float delay)
+    {
+        if (delay > 0f) yield return new WaitForSecondsRealtime(delay);
+        if (Current != State.Playing || room != Room) yield break;
+        string key = $"L{levelIndex}-R{index}:{CharacterKey}";
+        var lines = ZodiacStory.Room(levelIndex, index, CharacterKey);
+        if (lines.Length == 0 || PlayerProfile.Current.HasSeen(key))
+        {
+            room.Begin();
+            yield break;
+        }
+        StoryUi.ShowDialogue(lines, () =>
+        {
+            PlayerProfile.Current.MarkSeen(key);
+            room.Begin();
+        });
     }
 
     void Update()
@@ -160,8 +186,11 @@ public class ZodiacGameManager : MonoBehaviour
         GoIndicator.Show();
     }
 
-    /// <summary>Vào khu: khoá camera vào khu, hiện tên khu, bắt đầu đợt quái.</summary>
-    public void EnterRoom(int index)
+    /// <summary>Vào khu: khoá camera vào khu, hiện tên khu, (thoại nếu có) rồi bắt đầu đợt quái.</summary>
+    public void EnterRoom(int index) => EnterRoom(index, 0f);
+
+    /// <param name="storyDelay">Chờ bao lâu (giây thật) rồi mới hiện thoại — đợi màn hình chuyển khu sáng lại.</param>
+    public void EnterRoom(int index, float storyDelay)
     {
         RoomIndex = Mathf.Clamp(index, 0, rooms.Length - 1);
         var room = rooms[RoomIndex];
@@ -176,7 +205,7 @@ public class ZodiacGameManager : MonoBehaviour
             roomBanner.text = $"Khu {RoomIndex + 1}/{rooms.Length}" + (string.IsNullOrEmpty(room.title) ? "" : $"\n<size=34>{room.title}</size>");
             if (roomBanner.TryGetComponent(out TimedFade fade)) fade.Restart();
         }
-        room.Begin();
+        StartCoroutine(BeginRoom(room, RoomIndex, storyDelay));
     }
 
     /// <summary>Đi vào lối ra của khu đã dọn: tối màn hình, chuyển sang khu kế.</summary>
@@ -193,7 +222,7 @@ public class ZodiacGameManager : MonoBehaviour
             player.Teleport(target.entry);
             player.SetFacing(1f);
             playerHealth?.SetInvulnerable(1f);
-            EnterRoom(next);
+            EnterRoom(next, 0.95f);
         }, 0.35f, "Đang tới khu tiếp theo…" + (string.IsNullOrEmpty(target.title) ? "" : $"\n<size=32>{target.title}</size>"), 0.5f);
     }
 
@@ -218,11 +247,27 @@ public class ZodiacGameManager : MonoBehaviour
         if (res != null) ZodiacAudio.Play(result == State.Won ? res.win : res.lose, 1f, 0f);
         if (result == State.Won)
         {
-            PlayerProfile.Current.CompleteLevel(levelIndex, string.IsNullOrEmpty(nextSceneName));
+            bool final = string.IsNullOrEmpty(nextSceneName);
+            PlayerProfile.Current.CompleteLevel(levelIndex, final);
             winDetailText.text = $"Thu được {collected}/{total} đồng xu";
             if (nextButtonLabel != null)
-                nextButtonLabel.text = string.IsNullOrEmpty(nextSceneName) ? "Về làng" : "Màn tiếp theo";
-            winPanel.SetActive(true);
+                nextButtonLabel.text = final ? "Về làng" : "Màn tiếp theo";
+            // Lời kết màn → (màn cuối) kết thúc riêng của con giáp → (đủ 12 con) kết thúc thật → bảng thắng
+            StoryUi.ShowDialogue(ZodiacStory.LevelWin(levelIndex, CharacterKey), () =>
+            {
+                if (!final)
+                {
+                    winPanel.SetActive(true);
+                    return;
+                }
+                int total = player.roster != null ? player.roster.Count : 12;
+                bool all = PlayerProfile.Current.AddEnding(CharacterKey, total);
+                StoryUi.ShowPanels(ZodiacStory.Ending(CharacterKey), () =>
+                {
+                    if (all) StoryUi.ShowPanels(ZodiacStory.TrueEnding, () => winPanel.SetActive(true));
+                    else winPanel.SetActive(true);
+                });
+            });
         }
         else
         {

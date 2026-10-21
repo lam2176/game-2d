@@ -32,7 +32,7 @@ public class VillageStation : MonoBehaviour
         Vector3 d = player.transform.position - transform.position;
         near = Mathf.Abs(d.x) <= radius && player.ControlEnabled;
         if (prompt != null && prompt.activeSelf != near) prompt.SetActive(near);
-        if (!near || VillageWindow.IsOpen || InventoryWindow.IsOpen || PauseMenu.IsOpen) return;
+        if (!near || VillageWindow.IsOpen || InventoryWindow.IsOpen || PauseMenu.IsOpen || StoryUi.IsOpen) return;
         if (Time.frameCount == VillageWindow.ClosedFrame) return;   // F vừa đóng cửa sổ thì không mở lại ngay
         var kb = Keyboard.current;
         bool pressed = (kb != null && kb.fKey.wasPressedThisFrame) || (interact != null && interact.WasPressedThisFrame());
