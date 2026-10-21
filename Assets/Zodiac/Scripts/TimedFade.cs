@@ -20,6 +20,15 @@ public class TimedFade : MonoBehaviour
 
     void OnEnable() => startTime = Time.time;
 
+    /// <summary>Hiện lại từ đầu (banner tên khu mỗi lần vào khu mới).</summary>
+    public void Restart()
+    {
+        if (graphic == null) Awake();
+        gameObject.SetActive(true);
+        graphic.color = baseColor;
+        startTime = Time.time;
+    }
+
     void Update()
     {
         float t = (Time.time - startTime - delay) / fadeTime;

@@ -34,6 +34,21 @@ public class HitFlash : MonoBehaviour
         };
     }
 
+    /// <summary>Thôi điều khiển màu các hình nằm dưới root (đồ quái đánh rơi tự mờ dần).</summary>
+    public void Forget(Transform root)
+    {
+        var keep = new System.Collections.Generic.List<SpriteRenderer>();
+        var keepColors = new System.Collections.Generic.List<Color>();
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] == null || renderers[i].transform.IsChildOf(root)) continue;
+            keep.Add(renderers[i]);
+            keepColors.Add(baseColors[i]);
+        }
+        renderers = keep.ToArray();
+        baseColors = keepColors.ToArray();
+    }
+
     /// <summary>Lưu lại màu gốc — gọi lại khi đổi sprite/renderer lúc chạy.</summary>
     public void CaptureRenderers()
     {

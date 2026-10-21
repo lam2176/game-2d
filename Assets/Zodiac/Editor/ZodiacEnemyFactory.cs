@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 /// <summary>
-/// Tạo prefab quái trong Assets/Zodiac/Prefabs (chưa có sprite thật — ghép từ hình vuông/tròn placeholder):
+/// Tạo prefab quái trong Assets/Zodiac/Prefabs. Có ảnh vẽ trong Assets/Zodiac/Art/Enemies (<see cref="ZodiacEnemyArt"/>) thì dùng ảnh,
+/// thiếu ảnh thì ghép tạm từ hình vuông/tròn placeholder:
 ///   Lính Đất Nung (xáp lại, gồng, lao đánh) · Lính Khiên (đỡ đòn phía trước) · Bọ Gai (lăn dọc làn)
 ///   Ma Trơi (bay, lao chéo xuống) · Cóc Tía (nhảy đè, sóng chấn) · Thạch Sư (tượng phun lửa) · Hồ Tinh (boss).
 /// Prefab được tạo lại mỗi lần dựng prototype — chỉnh thông số quái ngay trong file này.
@@ -74,6 +75,15 @@ public static class ZodiacEnemyFactory
         AddBox(root, new Vector3(0.9f, 1.2f, 0.7f));
         var v = Visual(root);
         Color clay = new Color(0.72f, 0.35f, 0.22f);
+        Transform spear;
+        if (Art(v, "LinhDatNung", 1.6f, Vector2.zero, 8) != null)
+        {
+            spear = new GameObject("Spear").transform;
+            spear.SetParent(v, false);
+            Art(spear, "Giao", 1.75f, new Vector2(0.45f, 0.85f), 12, -8f);
+        }
+        else
+        {
         Shape(v, "Body", false, new Vector2(0f, 0.55f), new Vector2(0.9f, 1.1f), clay, 8);
         Shape(v, "Belly", false, new Vector2(0.05f, 0.45f), new Vector2(0.6f, 0.5f), new Color(0.85f, 0.55f, 0.38f), 9);
         Shape(v, "LegBack", false, new Vector2(-0.2f, 0.08f), new Vector2(0.25f, 0.2f), new Color(0.4f, 0.22f, 0.15f), 7);
@@ -81,11 +91,18 @@ public static class ZodiacEnemyFactory
         Shape(v, "Helmet", false, new Vector2(0f, 1.12f), new Vector2(1f, 0.24f), new Color(0.25f, 0.2f, 0.18f), 9);
         Shape(v, "Crest", true, new Vector2(-0.05f, 1.3f), new Vector2(0.25f, 0.25f), new Color(0.85f, 0.15f, 0.12f), 9);
         Eyes(v, new Vector2(0.18f, 0.85f), 0.2f, new Color(1f, 0.9f, 0.5f));
-        Shape(v, "Spear", false, new Vector2(0.55f, 0.7f), new Vector2(0.08f, 1.3f), new Color(0.45f, 0.3f, 0.15f), 10);
-        Shape(v, "SpearTip", false, new Vector2(0.55f, 1.38f), new Vector2(0.16f, 0.16f), new Color(0.8f, 0.8f, 0.85f), 10, 45f);
+        spear = new GameObject("Spear").transform;
+        spear.SetParent(v, false);
+        Shape(spear, "Shaft", false, new Vector2(0.55f, 0.7f), new Vector2(0.08f, 1.3f), new Color(0.45f, 0.3f, 0.15f), 10);
+        Shape(spear, "Tip", false, new Vector2(0.55f, 1.38f), new Vector2(0.16f, 0.16f), new Color(0.8f, 0.8f, 0.85f), 10, 45f);
+        }
         var ai = root.AddComponent<EnemyBrawler>();
-        Common(ai, v);
-        Finish(root, v, 1.6f, 1.1f);
+        Common(ai, v, clay);
+        ai.gear = spear;   // còn nửa máu thì giáo văng → đánh tay không
+        ai.gearItem = ZodiacItemDefs.Get("giao_dong");
+        ai.loot = new[] { L("manh_gom", 0.5f), L("binh_mau_nho", 0.12f), L("kiem_tre", 0.05f) };
+        ai.coinDrop = new Vector2Int(1, 3);
+        Finish(root, v, 1.8f, 1.1f);
         return root;
     }
 
@@ -100,21 +117,37 @@ public static class ZodiacEnemyFactory
         AddBox(root, new Vector3(1f, 1.4f, 0.8f));
         var v = Visual(root);
         Color clay = new Color(0.6f, 0.3f, 0.22f);
+        Transform shield;
+        if (Art(v, "LinhKhien", 1.9f, Vector2.zero, 8) != null)
+        {
+            shield = new GameObject("Shield").transform;
+            shield.SetParent(v, false);
+            shield.localPosition = new Vector3(0.55f, 0.85f, -14 * LayerDepth);
+            Art(shield, "Khien", 1.05f, Vector2.zero, 0, 0f, true, 0.55f);   // khiên tròn nhìn nghiêng → dẹt ngang
+        }
+        else
+        {
         Shape(v, "Body", false, new Vector2(-0.05f, 0.65f), new Vector2(0.95f, 1.3f), clay, 8);
         Shape(v, "Belt", false, new Vector2(-0.05f, 0.55f), new Vector2(0.95f, 0.12f), new Color(0.3f, 0.2f, 0.15f), 9);
         Shape(v, "Helmet", false, new Vector2(-0.05f, 1.35f), new Vector2(1.05f, 0.27f), new Color(0.75f, 0.6f, 0.25f), 9);
         Shape(v, "Plume", true, new Vector2(-0.15f, 1.55f), new Vector2(0.3f, 0.3f), new Color(0.85f, 0.15f, 0.12f), 9);
         Eyes(v, new Vector2(0.15f, 1.05f), 0.18f, new Color(1f, 0.6f, 0.3f));
-        var shield = new GameObject("Shield").transform;
+        shield = new GameObject("Shield").transform;
         shield.SetParent(v, false);
         shield.localPosition = new Vector3(0.58f, 0.7f, -12 * LayerDepth);
         Shape(shield, "Plate", true, Vector2.zero, new Vector2(0.45f, 1.25f), new Color(0.8f, 0.62f, 0.25f), 0);
         Shape(shield, "Rim", true, Vector2.zero, new Vector2(0.3f, 1.05f), new Color(0.62f, 0.45f, 0.18f), 1);
         Shape(shield, "Boss", true, Vector2.zero, new Vector2(0.16f, 0.16f), new Color(0.95f, 0.85f, 0.45f), 2);
+        }
         var ai = root.AddComponent<EnemyBrawler>();
-        Common(ai, v);
+        Common(ai, v, clay);
         ai.guardFront = true;
         ai.shield = shield;
+        ai.gear = shield;
+        ai.gearDurability = 4;   // đỡ 4 đòn (hoặc còn nửa máu) thì khiên vỡ
+        ai.gearItem = ZodiacItemDefs.Get("khien_dong");
+        ai.loot = new[] { L("manh_gom", 0.6f, 1, 2), L("binh_mau_nho", 0.15f), L("ao_giap_tre", 0.08f) };
+        ai.coinDrop = new Vector2Int(2, 4);
         ai.moveSpeed = 1.9f;
         ai.windupTime = 0.65f;
         ai.attackDamage = 2 * ZodiacBalance.Unit;
@@ -123,7 +156,7 @@ public static class ZodiacEnemyFactory
         ai.knockbackTaken = 0.5f;
         ai.attackBoxOffset = new Vector3(0.85f, 0.7f, 0f);
         ai.attackBoxSize = new Vector3(1f, 1f, 1f);
-        Finish(root, v, 1.9f, 1.2f);
+        Finish(root, v, 2.1f, 1.2f);
         return root;
     }
 
@@ -133,6 +166,8 @@ public static class ZodiacEnemyFactory
         var root = Root("Roller", kinematic: false, hp: 3);
         AddBox(root, new Vector3(1f, 0.75f, 0.8f));
         var v = Visual(root);
+        if (Art(v, "BoGai", 1.05f, Vector2.zero, 8) == null)
+        {
         Shape(v, "Shell", true, new Vector2(0f, 0.42f), new Vector2(1.1f, 0.85f), new Color(0.15f, 0.3f, 0.35f), 8);
         Shape(v, "Belly", false, new Vector2(0f, 0.12f), new Vector2(1f, 0.2f), new Color(0.75f, 0.65f, 0.35f), 9);
         for (int i = 0; i < 4; i++)
@@ -140,8 +175,10 @@ public static class ZodiacEnemyFactory
                   new Color(0.95f, 0.95f, 0.85f), 7, 45f);
         Shape(v, "Head", true, new Vector2(0.48f, 0.32f), new Vector2(0.35f, 0.32f), new Color(0.2f, 0.4f, 0.45f), 9);
         Eyes(v, new Vector2(0.52f, 0.38f), 0.1f, new Color(1f, 0.4f, 0.3f));
+        }
         var ai = root.AddComponent<EnemyRoller>();
-        Common(ai, v);
+        Common(ai, v, new Color(0.15f, 0.3f, 0.35f));
+        ai.loot = new[] { L("vay_bo_gai", 0.6f), L("binh_khi", 0.15f), L("ngoc_lam", 0.05f) };
         Finish(root, v, 1.25f, 1.1f);
         return root;
     }
@@ -157,13 +194,19 @@ public static class ZodiacEnemyFactory
         col.excludeLayers = 1 << playerLayer;
         var v = Visual(root);
         var glow = Shape(v, "Glow", true, Vector2.zero, new Vector2(1.5f, 1.5f), new Color(0.4f, 0.9f, 1f, 0.35f), 7);
-        Shape(v, "Flame", true, new Vector2(-0.12f, 0.12f), new Vector2(0.5f, 0.75f), new Color(0.45f, 0.95f, 0.95f), 8, 20f);
-        Shape(v, "Core", true, Vector2.zero, new Vector2(0.75f, 0.75f), new Color(0.75f, 1f, 1f), 9);
-        Eyes(v, new Vector2(0.1f, 0.05f), 0.12f, new Color(0.1f, 0.2f, 0.35f));
-        foreach (var part in new[] { glow, v.Find("Flame").gameObject, v.Find("Core").gameObject }) Unlit(part);
+        Unlit(glow);
+        if (Art(v, "MaTroi", 1.3f, Vector2.zero, 9, 0f, lit: false) == null)
+        {
+            Shape(v, "Flame", true, new Vector2(-0.12f, 0.12f), new Vector2(0.5f, 0.75f), new Color(0.45f, 0.95f, 0.95f), 8, 20f);
+            Shape(v, "Core", true, Vector2.zero, new Vector2(0.75f, 0.75f), new Color(0.75f, 1f, 1f), 9);
+            Eyes(v, new Vector2(0.1f, 0.05f), 0.12f, new Color(0.1f, 0.2f, 0.35f));
+            foreach (var part in new[] { v.Find("Flame").gameObject, v.Find("Core").gameObject }) Unlit(part);
+        }
         ZodiacLights.AddPoint(root, new Color(0.45f, 0.95f, 1f), 4.5f, 2f);
         var ai = root.AddComponent<EnemyFlyer>();
-        Common(ai, v);
+        Common(ai, v, new Color(0.45f, 0.95f, 0.95f));
+        ai.loot = new[] { L("lua_ma_troi", 0.6f), L("binh_khi", 0.25f), L("bua_khi", 0.04f) };
+        ai.coinDrop = new Vector2Int(1, 2);
         ai.glow = glow.GetComponent<SpriteRenderer>();
         HealthBar(root, 0.8f);
         Shadow(root, 0.8f);
@@ -177,6 +220,8 @@ public static class ZodiacEnemyFactory
         var root = Root("Hopper", kinematic: false, hp: 3);
         AddBox(root, new Vector3(1.1f, 0.85f, 0.8f));
         var v = Visual(root);
+        if (Art(v, "CocTia", 1.15f, Vector2.zero, 8) == null)
+        {
         Shape(v, "Body", true, new Vector2(0f, 0.45f), new Vector2(1.2f, 0.9f), new Color(0.5f, 0.3f, 0.6f), 8);
         Shape(v, "Belly", true, new Vector2(0.1f, 0.33f), new Vector2(0.78f, 0.48f), new Color(0.85f, 0.75f, 0.5f), 9);
         Shape(v, "Spot1", true, new Vector2(-0.25f, 0.66f), new Vector2(0.18f, 0.14f), new Color(0.35f, 0.2f, 0.45f), 9);
@@ -187,8 +232,11 @@ public static class ZodiacEnemyFactory
         Shape(v, "EyeFront", true, new Vector2(0.38f, 0.93f), new Vector2(0.18f, 0.18f), new Color(1f, 0.85f, 0.2f), 9);
         Shape(v, "PupilBack", false, new Vector2(0.1f, 0.93f), new Vector2(0.05f, 0.12f), Color.black, 10);
         Shape(v, "PupilFront", false, new Vector2(0.4f, 0.93f), new Vector2(0.05f, 0.12f), Color.black, 10);
+        }
         var ai = root.AddComponent<EnemyHopper>();
-        Common(ai, v);
+        Common(ai, v, new Color(0.5f, 0.3f, 0.6f));
+        ai.loot = new[] { L("da_coc", 0.6f), L("binh_mau_nho", 0.2f), L("ngoc_luc", 0.05f) };
+        ai.coinDrop = new Vector2Int(2, 3);
         Finish(root, v, 1.35f, 1.3f);
         return root;
     }
@@ -200,19 +248,32 @@ public static class ZodiacEnemyFactory
         AddBox(root, new Vector3(1.2f, 1.6f, 1f));
         var v = Visual(root);
         Color stone = new Color(0.55f, 0.55f, 0.6f);
+        GameObject mouth;
+        var lion = Art(v, "ThachSu", 2f, Vector2.zero, 8);
+        if (lion != null)
+        {
+            // Miệng tượng (góc trên bên phải của ảnh) — đốm lửa sáng dần khi nạp
+            Vector2 size = lion.transform.localScale.x * (Vector2)lion.sprite.bounds.size;
+            mouth = Shape(v, "Mouth", true, new Vector2(size.x * 0.33f, size.y * 0.72f), new Vector2(0.3f, 0.3f), new Color(1f, 0.45f, 0.1f, 0.6f), 12);
+        }
+        else
+        {
         Shape(v, "Pedestal", false, new Vector2(0f, 0.2f), new Vector2(1.3f, 0.4f), new Color(0.4f, 0.4f, 0.45f), 8);
         Shape(v, "Body", false, new Vector2(-0.1f, 0.75f), new Vector2(0.9f, 0.8f), stone, 8);
         Shape(v, "Mane", true, new Vector2(0.15f, 1.15f), new Vector2(0.95f, 0.85f), new Color(0.42f, 0.4f, 0.48f), 9);
         Shape(v, "Face", true, new Vector2(0.3f, 1.12f), new Vector2(0.6f, 0.55f), new Color(0.65f, 0.65f, 0.7f), 10);
         Eyes(v, new Vector2(0.35f, 1.25f), 0.1f, new Color(1f, 0.5f, 0.2f));
-        var mouth = Shape(v, "Mouth", true, new Vector2(0.55f, 1f), new Vector2(0.35f, 0.35f), new Color(0.3f, 0.1f, 0.08f), 12);
+        mouth = Shape(v, "Mouth", true, new Vector2(0.55f, 1f), new Vector2(0.35f, 0.35f), new Color(0.3f, 0.1f, 0.08f), 12);
+        }
         Unlit(mouth);
         ZodiacLights.AddPoint(mouth, new Color(1f, 0.5f, 0.2f), 3f, 1.2f);
         var ai = root.AddComponent<EnemyTurret>();
-        Common(ai, v);
+        Common(ai, v, stone);
+        ai.loot = new[] { L("da_thach_su", 0.7f), L("ngoc_do", 0.1f), L("bua_ho_menh", 0.08f) };
+        ai.coinDrop = new Vector2Int(3, 5);
         ai.mouth = mouth.GetComponent<SpriteRenderer>();
         ai.knockbackTaken = 0f;
-        HealthBar(root, 1.9f);
+        HealthBar(root, 2.2f);
         Shadow(root, 1.5f);
         Flash(root, v, except: mouth.transform);
         return root;
@@ -263,7 +324,9 @@ public static class ZodiacEnemyFactory
         marker.SetActive(false);
 
         var ai = root.AddComponent<BossFoxSpirit>();
-        Common(ai, v);
+        Common(ai, v, fur);
+        ai.loot = new[] { L("duoi_ho_tinh", 1f), L("dao_rong", 1f), L("binh_mau_lon", 1f, 2, 2) };
+        ai.coinDrop = new Vector2Int(15, 25);
         ai.tails = tails;
         ai.minionPrefab = minion;
         ai.landingMarker = markerSr;
@@ -277,6 +340,10 @@ public static class ZodiacEnemyFactory
     }
 
     // ───────────────────────────── Dựng chung ─────────────────────────────
+
+    /// <summary>Một dòng bảng rơi đồ (vật phẩm theo id trong <see cref="ZodiacItemDefs"/>).</summary>
+    static LootEntry L(string id, float chance, int min = 1, int max = 1) =>
+        new LootEntry { item = ZodiacItemDefs.Get(id), chance = chance, min = min, max = max };
 
     static GameObject Root(string name, bool kinematic, int hp)
     {
@@ -312,11 +379,30 @@ public static class ZodiacEnemyFactory
         return visual;
     }
 
-    static void Common(EnemyBase ai, Transform visual)
+    static void Common(EnemyBase ai, Transform visual, Color debris)
     {
         ai.groundLayer = 1 << groundLayer;
         ai.playerLayer = 1 << playerLayer;
         ai.visual = visual;
+        ai.debrisColor = debris;
+    }
+
+    /// <summary>
+    /// Ảnh vẽ sẵn (Art/Enemies/name.png) cao height unit, chân (pivot) ở localPosition. Không có ảnh thì trả null
+    /// để nơi gọi ghép hình khối thay thế. squashX &lt; 1: dẹt ngang (khiên tròn nhìn nghiêng).
+    /// </summary>
+    static SpriteRenderer Art(Transform parent, string name, float height, Vector2 localPosition, int order, float rotation = 0f,
+                              bool lit = true, float squashX = 1f)
+    {
+        var sprite = ZodiacEnemyArt.Get(name);
+        if (sprite == null) return null;
+        var go = Shape(parent, name, false, localPosition, Vector2.one, Color.white, order, rotation);
+        var sr = go.GetComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        float s = height / sprite.bounds.size.y;
+        go.transform.localScale = new Vector3(s * squashX, s, 1f);
+        if (!lit) Unlit(go);
+        return sr;
     }
 
     /// <summary>Thanh máu + bóng tròn + nháy khi trúng đòn — phần chung của quái đứng trên đất.</summary>
@@ -333,7 +419,9 @@ public static class ZodiacEnemyFactory
         var renderers = new System.Collections.Generic.List<SpriteRenderer>(visual.GetComponentsInChildren<SpriteRenderer>());
         if (except != null) renderers.RemoveAll(r => r.transform.IsChildOf(except));
         flash.renderers = renderers.ToArray();
-        flash.flashColor = Color.white;
+        // Ảnh vẽ (màu trắng = giữ nguyên ảnh) nháy đỏ; hình khối tô màu thì nháy trắng
+        bool art = renderers.Exists(r => r.sprite != square && r.sprite != circle);
+        flash.flashColor = art ? new Color(1f, 0.45f, 0.45f) : Color.white;
     }
 
     /// <summary>Một hình phẳng; sortingOrder cao hơn = nằm trước (gần camera hơn một chút theo Z).</summary>

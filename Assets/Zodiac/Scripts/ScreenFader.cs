@@ -12,6 +12,7 @@ public class ScreenFader : MonoBehaviour
 {
     static ScreenFader host;
     Image black, flash;
+    Text message;
     Coroutine fading, flashing;
 
     static ScreenFader Host
@@ -33,6 +34,21 @@ public class ScreenFader : MonoBehaviour
         canvas.sortingOrder = 1000;
         flash = MakeImage("Flash");
         black = MakeImage("Black");
+        // Chữ giữa màn hình lúc tối hẳn (chuyển khu: "Đang tới khu tiếp theo…")
+        message = new GameObject("Message", typeof(RectTransform)).AddComponent<Text>();
+        message.transform.SetParent(transform, false);
+        message.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        message.fontSize = 46;
+        message.alignment = TextAnchor.MiddleCenter;
+        message.horizontalOverflow = HorizontalWrapMode.Overflow;
+        message.color = new Color(1f, 0.92f, 0.75f, 0f);
+        message.raycastTarget = false;
+        var scaler = gameObject.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        var mrt = message.rectTransform;
+        mrt.anchorMin = mrt.anchorMax = new Vector2(0.5f, 0.5f);
+        mrt.sizeDelta = new Vector2(1600f, 200f);
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
@@ -68,14 +84,27 @@ public class ScreenFader : MonoBehaviour
     }
 
     /// <summary>Mờ đen, chạy action (dịch chuyển người chơi…), rồi sáng lại.</summary>
-    public static void Blink(Action whileDark, float fadeTime = 0.25f)
+    public static void Blink(Action whileDark, float fadeTime = 0.25f) => Blink(whileDark, fadeTime, null, 0f);
+
+    /// <summary>
+    /// Như <see cref="Blink(Action, float)"/> nhưng hiện chữ giữa màn hình đen và giữ tối thêm hold giây
+    /// (màn chuyển khu kiểu "đang tải").
+    /// </summary>
+    public static void Blink(Action whileDark, float fadeTime, string text, float hold)
     {
         var h = Host;
+        h.message.text = text ?? "";
         h.Fade(1f, fadeTime, () =>
         {
             whileDark?.Invoke();
-            h.Fade(0f, fadeTime);
+            h.StartCoroutine(h.HoldThenFade(fadeTime, hold));
         });
+    }
+
+    IEnumerator HoldThenFade(float fadeTime, float hold)
+    {
+        if (hold > 0f) yield return new WaitForSecondsRealtime(hold);
+        Fade(0f, fadeTime);
     }
 
     /// <summary>Loé màu (đỏ khi bị thương) rồi tắt dần.</summary>
@@ -100,14 +129,24 @@ public class ScreenFader : MonoBehaviour
         for (float t = 0f; t < time; t += Time.unscaledDeltaTime)
         {
             black.color = new Color(0f, 0f, 0f, Mathf.Lerp(start, target, t / time));
+            SyncMessage();
             yield return null;
         }
         black.color = new Color(0f, 0f, 0f, target);
+        SyncMessage();
         fading = null;
         done?.Invoke();
     }
 
-    IEnumerator FlashRoutine(Color color, float duration)
+    void SyncMessage()
+    {
+        var c = message.color;
+        c.a = black.color.a;
+        message.color = c;
+        if (black.color.a <= 0f) message.text = "";
+    }
+
+        IEnumerator FlashRoutine(Color color, float duration)
     {
         for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
         {
