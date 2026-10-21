@@ -62,6 +62,8 @@ public class ZodiacGameManager : MonoBehaviour
     public EncounterZone Room => RoomIndex >= 0 && RoomIndex < rooms.Length ? rooms[RoomIndex] : null;
 
     int collected, total, coinsTowardHeal;
+    /// <summary>Chỗ hồi sinh (đèn lồng) khi tải lại màn — dịch chuyển hẳn ở Start (Rigidbody đã sẵn sàng).</summary>
+    Vector3? respawnAt;
     Checkpoint[] checkpoints;
     Health playerHealth;
 
@@ -81,8 +83,7 @@ public class ZodiacGameManager : MonoBehaviour
             {
                 foreach (var c in checkpoints) if (c.index <= cp.index) c.SetLit(true);
                 ActiveCheckpoint = cp;
-                // Chỉ dời transform (Rigidbody của người chơi có thể chưa Awake) — vật lý tự đồng bộ trước bước đầu tiên
-                player.transform.position = cp.SpawnPosition;
+                respawnAt = cp.SpawnPosition;
             }
         }
         continueScene = null;
@@ -104,6 +105,9 @@ public class ZodiacGameManager : MonoBehaviour
         if (playerHealth != null) playerHealth.Died += () => Finish(State.Lost, "Bạn đã bị hạ gục");
         foreach (var cp in checkpoints) cp.Reached += OnCheckpoint;
 
+        // Hồi sinh ở đèn lồng: dịch chuyển qua Rigidbody (chỉ gán transform thì Rigidbody nội suy kéo nhân vật
+        // về chỗ xuất phát trong khi camera khoá vào khu có đèn lồng → nhân vật "biến mất" khỏi khung hình).
+        if (respawnAt.HasValue) player.Teleport(respawnAt.Value);
         if (rooms.Length > 0)
         {
             if (goal != null) goal.gameObject.SetActive(false);
