@@ -201,7 +201,7 @@ public class BossFoxSpirit : EnemyBase
             foreach (float dir in new[] { -1f, 1f })
             {
                 var wave = Projectile.Spawn(feet + new Vector2(dir * 0.8f, 0f), new Vector2(dir * speed, 0f), 0.9f, tailCharge,
-                                            playerLayer, groundLayer, 1, true);
+                                            playerLayer, groundLayer, ZodiacBalance.Unit, true);
                 wave.range = shockwaveRange;
                 wave.transform.localScale = new Vector3(0.6f, 1.1f, 1f);
             }
@@ -219,7 +219,7 @@ public class BossFoxSpirit : EnemyBase
         {
             float a = count == 1 ? 0f : Mathf.Lerp(-fireSpread / 2f, fireSpread / 2f, i / (float)(count - 1));
             Vector2 dir = Quaternion.Euler(0f, 0f, a) * aim;
-            var shot = Projectile.Spawn(origin, dir * fireSpeed, 0.5f, fireColor, playerLayer, groundLayer, 1, true);
+            var shot = Projectile.Spawn(origin, dir * fireSpeed, 0.5f, fireColor, playerLayer, groundLayer, ZodiacBalance.Unit, true);
             shot.range = 16f;
         }
         ZodiacFx.Ring(origin, 1.2f, fireColor, 0.25f);

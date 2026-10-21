@@ -10,6 +10,8 @@ public struct Hit
     public float knockback;
     [Tooltip("Thời gian choáng thêm (giây) — quái đứng im, không tấn công.")]
     public float stun;
+    [Tooltip("Đòn chí mạng (số bay lên to hơn, rung mạnh hơn).")]
+    public bool crit;
 
     public Hit(int amount, Vector2 source, float knockback = 1f, float stun = 0f)
     {
@@ -17,6 +19,7 @@ public struct Hit
         this.source = source;
         this.knockback = knockback;
         this.stun = stun;
+        crit = false;
     }
 }
 
@@ -24,6 +27,7 @@ public struct Hit
 /// Máu dùng chung cho người chơi và quái. Sau mỗi lần trúng đòn có thể bất tử ngắn (invulnerableTime)
 /// để không bị trừ máu liên tục mỗi frame khi còn chạm nguồn sát thương.
 /// Chiêu thức có thể bật bất tử tạm (lướt, tàng hình) bằng <see cref="SetInvulnerable"/>.
+/// Giáp (defense) giảm sát thương theo <see cref="ZodiacBalance.Mitigate"/>; người chơi lấy giáp từ <see cref="CharacterStats"/>.
 /// </summary>
 public class Health : MonoBehaviour
 {
@@ -32,6 +36,8 @@ public class Health : MonoBehaviour
     [Min(0f)] public float invulnerableTime = 0f;
     [Tooltip("Số lần được giữ lại 1 máu thay vì chết (nội tại \"Chín mạng\" của Mèo).")]
     [Min(0)] public int lastStandCharges = 0;
+    [Tooltip("Giáp: 100 giáp = giảm một nửa sát thương.")]
+    [Min(0)] public int defense = 0;
 
     public int Current { get; private set; }
     public bool IsDead => Current <= 0;
@@ -40,7 +46,7 @@ public class Health : MonoBehaviour
 
     /// <summary>Máu thay đổi (trúng đòn, hồi máu hoặc khởi tạo).</summary>
     public event Action Changed;
-    /// <summary>Trúng đòn (đã trừ máu) — dùng để đẩy lùi, choáng, nháy màu.</summary>
+    /// <summary>Trúng đòn (đã trừ máu; hit.amount là lượng máu thực mất sau giáp) — dùng để đẩy lùi, choáng, nháy màu.</summary>
     public event Action<Hit> Damaged;
     public event Action Died;
     /// <summary>Nội tại giữ mạng vừa kích hoạt.</summary>
@@ -63,6 +69,20 @@ public class Health : MonoBehaviour
         Changed?.Invoke();
     }
 
+    /// <summary>
+    /// Đổi máu tối đa giữa màn (trang bị, nâng cấp): tăng thì máu hiện tại tăng theo phần chênh lệch,
+    /// giảm thì chỉ cắt phần vượt quá tối đa mới.
+    /// </summary>
+    public void SetMax(int max)
+    {
+        max = Mathf.Max(1, max);
+        if (max == maxHealth) return;
+        int gained = Mathf.Max(0, max - maxHealth);
+        maxHealth = max;
+        if (!IsDead) Current = Mathf.Clamp(Current + gained, 1, maxHealth);
+        Changed?.Invoke();
+    }
+
     public bool TakeDamage(int amount, Vector2 sourcePosition) => TakeDamage(new Hit(amount, sourcePosition));
 
     /// <summary>Trừ máu. Trả về false nếu đã chết, đang bất tử hoặc amount ≤ 0.</summary>
@@ -74,6 +94,7 @@ public class Health : MonoBehaviour
             Blocked?.Invoke(hit);
             return false;
         }
+        hit.amount = ZodiacBalance.Mitigate(hit.amount, defense);
         Current = Mathf.Max(0, Current - hit.amount);
         bool lastStand = Current == 0 && lastStandCharges > 0;
         if (lastStand)

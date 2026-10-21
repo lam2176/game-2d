@@ -15,7 +15,7 @@ using UnityEngine.InputSystem;
 /// Physics2D.OverlapBox, rồi tự dời/đổi cỡ theo hướng chém, nên hitbox không bao giờ tự kích hoạt trigger khác.
 /// Vệt chém (slashEffect) là hình lưỡi liềm quét theo hướng đòn trong lúc hitbox có hiệu lực.
 ///
-/// Sát thương lấy từ nhân vật (Hổ đánh 2), nhân thêm khi đánh lén sau tàng hình (Rắn) và gây độc nếu có nội tại.
+/// Sát thương lấy từ công của <see cref="CharacterStats"/> (có dao động, chí mạng), nhân thêm khi đánh lén sau tàng hình (Rắn) và gây độc nếu có nội tại.
 /// Chém trúng đạn của quái thì đạn tan (đỡ đạn bằng đòn đánh).
 /// </summary>
 [RequireComponent(typeof(ZodiacPlayerController))]
@@ -41,7 +41,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     public GameObject slashEffect;
 
     [Header("Đòn đánh")]
-    [Min(1)] public int damage = 1;
+    [Min(1)] public int damage = ZodiacBalance.Unit;
     [Tooltip("Đòn 1, 2, 3 của combo ngang.")]
     public Swing[] combo =
     {
@@ -60,6 +60,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     ZodiacPlayerController controller;
     PlayerSkill skill;
     PlayerEnergy energy;
+    CharacterStats stats;
     PlayerDodge dodge;
     InputAction attackAction;
     ContactFilter2D filter, anyFilter;
@@ -163,7 +164,9 @@ public class PlayerMeleeAttack : MonoBehaviour
             LastComboStep = -1;
         }
 
-        if (controller.Character != null) damage = controller.Character.attackDamage;
+        if (stats == null) stats = GetComponent<CharacterStats>();
+        if (stats != null) damage = stats.Attack;
+        else if (controller.Character != null) damage = controller.Character.attackDamage;
         PlaceHitbox();
         SwingCount++;
         pogoed = false;
@@ -223,15 +226,15 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (target == null || target.gameObject == gameObject) continue;
             if (!hitThisSwing.Add(target)) continue;   // đã trúng trong đòn này
             float multiplier = (skill != null ? skill.ConsumeBackstab() : 1f) * current.damageMultiplier;
-            int amount = Mathf.RoundToInt(damage * multiplier);
             // Nguồn sát thương đặt phía sau người chơi theo hướng chém → quái bị đẩy theo hướng chém
             Vector2 source = (Vector2)transform.position - WorldDirection * 2f;
-            if (target.TakeDamage(new Hit(amount, source, current.knockback)))
+            Hit hit = CharacterStats.CreateHit(stats, damage * multiplier, source, current.knockback);
+            if (target.TakeDamage(hit))
             {
                 if (controller.Character != null) Poison.Apply(target, controller.Character.poisonDamage);
-                energy?.Gain(energy.gainPerHit + (heavy ? 1 : 0));
+                energy?.Gain(heavy ? energy.hitGain * 2 : energy.hitGain);
                 Color spark = controller.Character != null ? controller.Character.themeColor : Color.white;
-                GameFeel.Impact(col.ClosestPoint(center), spark, heavy || multiplier >= 2.5f);
+                GameFeel.Impact(col.ClosestPoint(center), spark, heavy || multiplier >= 2.5f || hit.crit);
             }
             Pogo();
         }

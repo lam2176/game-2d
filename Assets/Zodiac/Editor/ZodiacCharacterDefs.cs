@@ -37,7 +37,8 @@ public static class ZodiacCharacterDefs
     }
 
     static SkillConfig Skill(SkillType type, string name, float cooldown, int damage, string desc) =>
-        new SkillConfig { type = type, name = name, cooldown = cooldown, damage = damage, description = desc };
+        // Mặc định theo thang cũ (tim, ô Khí) như phần còn lại của bảng — Fill quy đổi sang thang ZodiacBalance.
+        new SkillConfig { type = type, name = name, cooldown = cooldown, damage = damage, description = desc, energyCost = 3, healAmount = 2 };
 
     static readonly Def[] Defs =
     {
@@ -212,7 +213,8 @@ public static class ZodiacCharacterDefs
     }
 
     /// <summary>Tăng khi bảng số liệu đổi cấu trúc (vd. thêm Khí) — asset cũ hơn sẽ được điền lại.</summary>
-    const int DataVersion = 3;
+    // 4: đổi sang thang số ZodiacBalance (máu, công, chiêu ×20; Khí 6 ô → 100).
+    const int DataVersion = 4;
 
     static ZodiacCharacter EnsureCharacter(Def d, bool overwrite)
     {
@@ -247,11 +249,15 @@ public static class ZodiacCharacterDefs
         c.themeColor = d.theme;
         c.colliderSize = d.collider;
         c.colliderOffset = new Vector2(d.colliderOffsetX, d.collider.y / 2f);
-        c.maxHealth = d.hp;
+        // Bảng trên viết theo tim / ô Khí của thang cũ cho dễ đọc → quy đổi sang thang ZodiacBalance
+        c.maxHealth = d.hp * ZodiacBalance.Unit;
         c.walkSpeed = d.walk;
         c.runSpeed = d.run;
         c.jumpHeight = d.jump;
-        c.attackDamage = d.attack;
+        c.attackDamage = d.attack * ZodiacBalance.Unit;
+        c.defense = 0;
+        c.maxEnergy = ZodiacBalance.BaseEnergy;
+        c.energyRegen = 2.5f;
         c.passiveName = d.passive;
         c.passiveDescription = d.passiveDesc;
         c.airJumps = d.airJumps;
@@ -263,6 +269,9 @@ public static class ZodiacCharacterDefs
         c.coinsPerHeal = d.coinsPerHeal;
         c.stompDamageMultiplier = d.stompMult;
         c.skill = JsonUtility.FromJson<SkillConfig>(JsonUtility.ToJson(d.skill));   // bản sao, không dùng chung object
+        c.skill.damage *= ZodiacBalance.Unit;
+        c.skill.healAmount *= ZodiacBalance.Unit;
+        c.skill.energyCost = ZodiacBalance.EnergyCost(c.skill.energyCost);
         c.ultimateName = d.ultimate;
         c.ultimateDescription = d.ultimateDesc;
         c.dataVersion = DataVersion;

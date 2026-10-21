@@ -23,6 +23,7 @@ public class PlayerSkill : MonoBehaviour
 
     ZodiacPlayerController controller;
     PlayerEnergy energy;
+    CharacterStats stats;
     Health health;
     HitFlash flash;
     InputAction skillAction, ultimateAction;
@@ -190,12 +191,21 @@ public class PlayerSkill : MonoBehaviour
         {
             var target = col.GetComponentInParent<Health>();
             if (target == null || target.IsDead || !hitThisSkill.Add(target)) continue;
-            if (target.TakeDamage(new Hit(cfg.damage, transform.position, cfg.knockback, cfg.stunTime)))
-                GameFeel.Impact(col.ClosestPoint(BodyCenter), Theme, cfg.damage >= 3);
+            Hit hit = CreateHit(cfg, transform.position);
+            if (target.TakeDamage(hit))
+                GameFeel.Impact(col.ClosestPoint(BodyCenter), Theme, cfg.damage >= 3 * ZodiacBalance.Unit || hit.crit);
             any = true;
         }
         return any;
     }
+
+    /// <summary>CharacterStats do controller thêm lúc chọn nhân vật — lấy lười vì có thể chưa có khi Awake.</summary>
+    CharacterStats Stats => stats != null ? stats : stats = GetComponent<CharacterStats>();
+    /// <summary>Trang bị / nâng cấp tăng công thì chiêu mạnh lên cùng tỉ lệ.</summary>
+    float AttackScale => Stats != null ? Stats.AttackScale : 1f;
+
+    Hit CreateHit(SkillConfig cfg, Vector2 source) =>
+        CharacterStats.CreateHit(Stats, cfg.damage * AttackScale, source, cfg.knockback, cfg.stunTime);
 
     // ───────── Bắn đạn ─────────
 
@@ -214,7 +224,8 @@ public class PlayerSkill : MonoBehaviour
                     : Mathf.Lerp(-cfg.spreadAngle / 2f, cfg.spreadAngle / 2f, i / (float)(cfg.projectileCount - 1));
                 Vector2 dir = Quaternion.Euler(0f, 0f, a * d) * new Vector2(d, 0f);
                 var shot = Projectile.Spawn(origin + new Vector2(d * 0.3f, 0f), dir * cfg.projectileSpeed, cfg.projectileSize,
-                                            Theme, targetLayers, groundLayer, cfg.damage, false);
+                                            Theme, targetLayers, groundLayer, Mathf.RoundToInt(cfg.damage * AttackScale), false);
+                shot.attacker = Stats;
                 shot.range = cfg.projectileRange;
                 shot.pierce = cfg.pierce;
                 shot.boomerang = cfg.boomerang;
@@ -243,7 +254,7 @@ public class PlayerSkill : MonoBehaviour
         {
             var target = col.GetComponentInParent<Health>();
             if (target == null || target.IsDead || !hitThisSkill.Add(target)) continue;
-            if (cfg.damage > 0) target.TakeDamage(new Hit(cfg.damage, center, cfg.knockback, cfg.stunTime));
+            if (cfg.damage > 0) target.TakeDamage(CreateHit(cfg, center));
             else if (target.TryGetComponent(out EnemyBase enemy)) enemy.Stun(cfg.stunTime);
         }
         if (!cfg.clearsProjectiles) return;

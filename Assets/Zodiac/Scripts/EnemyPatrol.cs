@@ -35,7 +35,7 @@ public class EnemyPatrol : EnemyBase
     [Min(0f)] public float windupTime = 0.45f;
     [Min(0.02f)] public float attackActiveTime = 0.15f;
     public float lungeSpeed = 6f;
-    [Min(0)] public int attackDamage = 1;
+    [Min(0)] public int attackDamage = ZodiacBalance.Unit;
     [Tooltip("Từ lúc kết thúc đòn tới khi được gồng đòn tiếp (giây).")]
     [Min(0f)] public float attackCooldown = 1.2f;
     [Tooltip("Vùng cắn phía trước (tính theo hướng nhìn, gốc ở chân quái).")]

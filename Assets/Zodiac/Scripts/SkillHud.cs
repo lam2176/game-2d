@@ -40,7 +40,7 @@ public class SkillHud : MonoBehaviour
     public Image portraitRing;
     public Text characterText;
     public Text passiveText;
-    [Tooltip("Mỗi ô ứng với 1 Khí.")]
+    [Tooltip("Các ô chia đều thanh Khí (ô đang nạp dở sáng mờ).")]
     public Image[] energyPips;
     public Color energyFull = new Color(0.45f, 0.85f, 1f);
     public Color energyEmpty = new Color(0.15f, 0.2f, 0.3f, 0.8f);
@@ -109,13 +109,15 @@ public class SkillHud : MonoBehaviour
 
         if (energy == null || energyPips == null) return;
         int cost = skill.Config != null ? skill.Config.energyCost : 0;
+        float segment = (float)energy.max / energyPips.Length;   // mỗi ô = một đoạn bằng nhau của thanh Khí
         for (int i = 0; i < energyPips.Length; i++)
         {
             if (energyPips[i] == null) continue;
-            bool filled = i < energy.Current;
-            bool willSpend = filled && enough && i >= energy.Current - cost;   // các ô sẽ bị tốn khi tung chiêu: nhấp nháy
+            float fill = Mathf.Clamp01((energy.Current - i * segment) / segment);
+            bool willSpend = fill > 0f && enough && (i + 1) * segment > energy.Current - cost;   // các ô sẽ bị tốn khi tung chiêu: nhấp nháy
             float pulse = willSpend ? 0.75f + 0.25f * Mathf.Sin(Time.time * 6f) : 1f;
-            energyPips[i].color = filled ? new Color(energyFull.r * pulse, energyFull.g * pulse, energyFull.b * pulse, 1f) : energyEmpty;
+            var full = new Color(energyFull.r * pulse, energyFull.g * pulse, energyFull.b * pulse, 1f);
+            energyPips[i].color = fill >= 1f ? full : Color.Lerp(energyEmpty, full, fill * 0.6f);
         }
     }
 

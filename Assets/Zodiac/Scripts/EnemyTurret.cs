@@ -13,7 +13,7 @@ public class EnemyTurret : EnemyBase
     [Min(0f)] public float chargeTime = 0.6f;
     [Min(0f)] public float shotSpeed = 6.5f;
     [Min(0.1f)] public float shotRange = 14f;
-    [Min(0)] public int shotDamage = 1;
+    [Min(0)] public int shotDamage = ZodiacBalance.Unit;
     public float shotSize = 0.55f;
     public Color shotColor = new Color(1f, 0.45f, 0.1f);
     [Tooltip("Chỉ bắn ngang (không ngắm lên/xuống).")]

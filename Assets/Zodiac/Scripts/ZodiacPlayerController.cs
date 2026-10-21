@@ -181,11 +181,11 @@ public class ZodiacPlayerController : MonoBehaviour
         airJumps = character.airJumps;
         glideFallSpeed = character.glideFallSpeed;
         knockbackResistance = character.knockbackResistance;
-        if (health != null)
-        {
-            health.Configure(character.maxHealth);
-            health.lastStandCharges = character.lastStandCharges;
-        }
+        // Máu, Khí, công, giáp đi qua CharacterStats để trang bị / nâng cấp cộng thêm được
+        var stats = GetComponent<CharacterStats>();
+        if (stats == null) stats = gameObject.AddComponent<CharacterStats>();
+        stats.InitFrom(character);
+        if (health != null) health.lastStandCharges = character.lastStandCharges;
     }
 
     /// <summary>Đẩy nhân vật đi với vận tốc cho trước và tạm mất điều khiển trong stunTime giây.</summary>
