@@ -5,7 +5,7 @@ using UnityEngine;
 /// Vật phẩm thu thập (đồng xu). Nhấp nhô tại chỗ, người chơi chạm vào thì biến mất.
 /// Nhân vật có nội tại hút xu (Chó) thì đồng xu trong bán kính bay về phía người chơi.
 /// </summary>
-[RequireComponent(typeof(Collider2D))]
+[RequireComponent(typeof(Collider))]
 public class Collectible : MonoBehaviour
 {
     public float bobHeight = 0.15f;
@@ -20,7 +20,7 @@ public class Collectible : MonoBehaviour
 
     void Awake()
     {
-        GetComponent<Collider2D>().isTrigger = true;
+        GetComponent<Collider>().isTrigger = true;
         restPosition = transform.localPosition;
         phase = transform.position.x;
     }
@@ -42,7 +42,7 @@ public class Collectible : MonoBehaviour
         transform.localPosition = restPosition + Vector3.up * (Mathf.Sin(Time.time * bobSpeed + phase) * bobHeight);
     }
 
-    void OnTriggerEnter2D(Collider2D other)
+    void OnTriggerEnter(Collider other)
     {
         if (ZodiacPlayerController.FromCollider(other) == null) return;
         gameObject.SetActive(false);

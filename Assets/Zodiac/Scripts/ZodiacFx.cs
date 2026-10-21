@@ -3,12 +3,15 @@ using UnityEngine;
 /// <summary>
 /// Hiệu ứng hình khối tạo lúc chạy (chưa có sprite/particle thật): vòng sóng âm, bụi, vệt lướt.
 /// Sprite tròn/vuông trắng tự sinh bằng Texture2D, tô màu bằng SpriteRenderer.color.
+/// Trong thế giới 3D: hình đứng quay về camera (nghiêng theo góc cúi), vòng sóng chấn có thể nằm phẳng trên mặt đất.
 /// </summary>
 public static class ZodiacFx
 {
-    static Sprite circle, square, crescent, ring, chevrons;
+    static Sprite circle, square, crescent, ring, chevrons, softCircle;
 
     public static Sprite Circle => circle != null ? circle : circle = MakeSprite(128, true);
+    /// <summary>Hình tròn mờ dần ra mép (bóng dưới chân, quầng sáng).</summary>
+    public static Sprite SoftCircle => softCircle != null ? softCircle : softCircle = MakeSoftCircle(64);
     public static Sprite Square => square != null ? square : square = MakeSprite(4, false);
     /// <summary>Lưỡi liềm 1×1 unit (vệt chém), mũi nhọn hai đầu, dày ở giữa phía trước (+x).</summary>
     public static Sprite Crescent => crescent != null ? crescent : crescent = MakeCrescent(128);
@@ -78,6 +81,23 @@ public static class ZodiacFx
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
     }
 
+    static Sprite MakeSoftCircle(int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+        var pixels = new Color32[size * size];
+        float r = size / 2f;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(r, r)) / r;
+            float a = Mathf.Clamp01(1f - d);
+            pixels[y * size + x] = new Color32(255, 255, 255, (byte)(Mathf.SmoothStep(0f, 1f, a * 1.6f) * 255));
+        }
+        tex.SetPixels32(pixels);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+    }
+
     static Sprite MakeSprite(int size, bool round)
     {
         var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
@@ -98,13 +118,24 @@ public static class ZodiacFx
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
     }
 
-    /// <summary>Tạo một hình (tròn hoặc vuông) đơn giản.</summary>
-    public static SpriteRenderer Shape(string name, bool round, Vector2 position, Vector2 size, Color color,
+    /// <summary>Góc ngả về phía camera (theo góc cúi) để hình phẳng không bị dẹt khi nhìn chéo từ trên xuống.</summary>
+    public static Quaternion FacingCamera
+    {
+        get
+        {
+            var cam = Camera.main;
+            return cam != null ? Quaternion.Euler(cam.transform.eulerAngles.x, 0f, 0f) : Quaternion.identity;
+        }
+    }
+
+    /// <summary>Tạo một hình (tròn hoặc vuông) đơn giản, quay về camera.</summary>
+    public static SpriteRenderer Shape(string name, bool round, Vector3 position, Vector2 size, Color color,
                                        int sortingOrder = 15, Transform parent = null)
     {
         var go = new GameObject(name);
         if (parent != null) go.transform.SetParent(parent, false);
-        go.transform.position = new Vector3(position.x, position.y, 0f);
+        else go.transform.rotation = FacingCamera;
+        go.transform.position = position;
         go.transform.localScale = new Vector3(size.x, size.y, 1f);
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = round ? Circle : Square;
@@ -114,23 +145,24 @@ public static class ZodiacFx
         return sr;
     }
 
-    /// <summary>Hiệu ứng tự phát sáng: không bị ánh sáng 2D làm tối.</summary>
+    /// <summary>Hiệu ứng tự phát sáng: không bị ánh sáng / bóng tối làm tối.</summary>
     public static void UseUnlit(SpriteRenderer sr)
     {
         var res = ZodiacResources.Get;
         if (res != null && res.spriteUnlit != null) sr.sharedMaterial = res.spriteUnlit;
     }
 
-    /// <summary>Vòng sóng lan rộng rồi mờ dần (sóng âm, sóng chấn).</summary>
-    public static void Ring(Vector2 position, float radius, Color color, float duration = 0.35f)
+    /// <summary>Vòng sóng lan rộng rồi mờ dần (sóng âm). flat = nằm phẳng trên mặt đất (sóng chấn, vùng nổ).</summary>
+    public static void Ring(Vector3 position, float radius, Color color, float duration = 0.35f, bool flat = false)
     {
         var sr = Shape("FxRing", true, position, Vector2.one * 0.3f, color, 14);
         sr.sprite = RingSprite;
+        if (flat) sr.transform.SetPositionAndRotation(position + Vector3.up * 0.05f, Quaternion.Euler(90f, 0f, 0f));
         sr.gameObject.AddComponent<FxFade>().Init(Vector2.one * 0.3f, Vector2.one * radius * 2f, duration);
     }
 
     /// <summary>Đám bụi nhỏ tại chân (đáp đất, lướt).</summary>
-    public static void Puff(Vector2 position, Color color, float size = 0.8f)
+    public static void Puff(Vector3 position, Color color, float size = 0.8f)
     {
         var sr = Shape("FxPuff", true, position, Vector2.one * size * 0.4f, color, 14);
         sr.gameObject.AddComponent<FxFade>().Init(Vector2.one * size * 0.4f, new Vector2(size * 1.6f, size), 0.3f);

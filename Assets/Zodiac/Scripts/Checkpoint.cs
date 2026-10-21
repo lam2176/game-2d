@@ -1,12 +1,11 @@
 using System;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
 /// <summary>
-/// Đèn lồng checkpoint: người chơi chạm vào thì đèn sáng, trở thành điểm hồi sinh khi rơi vực / dính gai
-/// và khi bấm "Hồi sinh" sau lúc thua. Chạm đèn mới cũng hồi 1 máu (như ghế nghỉ của Hollow Knight, nhẹ hơn).
+/// Đèn lồng checkpoint: người chơi đi ngang qua thì đèn sáng, trở thành điểm hồi sinh khi bấm "Hồi sinh" sau lúc thua.
+/// Thắp đèn mới cũng hồi 1 tim (như ghế nghỉ của Hollow Knight, nhẹ hơn). Đèn hắt ánh sáng thật xuống mặt đường.
 /// </summary>
-[RequireComponent(typeof(Collider2D))]
+[RequireComponent(typeof(Collider))]
 public class Checkpoint : MonoBehaviour
 {
     [Tooltip("Thứ tự trong màn (0 = điểm xuất phát).")]
@@ -15,19 +14,19 @@ public class Checkpoint : MonoBehaviour
     public Color offColor = new Color(0.35f, 0.15f, 0.12f);
     public Color onColor = new Color(1f, 0.35f, 0.15f);
     public GameObject glow;
-    [Tooltip("Đèn 2D của đèn lồng — mờ khi chưa thắp, sáng khi đã thắp.")]
-    public Light2D lampLight;
+    [Tooltip("Đèn điểm của đèn lồng — mờ khi chưa thắp, sáng khi đã thắp.")]
+    public Light lampLight;
     public float offIntensity = 0.35f;
     public float onIntensity = 1.4f;
 
     public bool IsLit { get; private set; }
-    public Vector2 SpawnPosition => transform.position;
+    public Vector3 SpawnPosition => transform.position + Vector3.right * 1.2f;
 
     public event Action<Checkpoint> Reached;
 
     void Awake()
     {
-        GetComponent<Collider2D>().isTrigger = true;
+        GetComponent<Collider>().isTrigger = true;
         SetLit(false);
     }
 
@@ -39,7 +38,7 @@ public class Checkpoint : MonoBehaviour
         if (lampLight != null) lampLight.intensity = value ? onIntensity : offIntensity;
     }
 
-    void OnTriggerEnter2D(Collider2D other)
+    void OnTriggerEnter(Collider other)
     {
         if (IsLit || ZodiacPlayerController.FromCollider(other) == null) return;
         SetLit(true);

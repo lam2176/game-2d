@@ -3,19 +3,18 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Điều khiển platformer: A/D hoặc ←/→ đi, giữ Shift chạy, Space nhảy (thả sớm thì nhảy thấp).
-/// Input đọc trong Update, vật lý xử lý trong FixedUpdate. Nhảy khi đang tiếp đất
-/// (cộng coyote time ngắn sau khi rời mép và jump buffer khi bấm sớm trước lúc chạm đất),
-/// nhảy thêm trên không nếu nhân vật có airJumps, giữ Space khi rơi để lượn nếu có glideFallSpeed.
-/// Đứng trên <see cref="MovingPlatform"/> thì đi theo bục. ↓ + Space trên bục tre (một chiều) thì rơi xuyên xuống.
+/// Điều khiển beat 'em up 2.5D: ← → đi dọc con đường (trục X), ↑ ↓ đổi làn (trục Z, chậm hơn như Streets of Rage),
+/// giữ Shift chạy, Space nhảy (thả sớm thì nhảy thấp). Input đọc trong Update, vật lý (Rigidbody 3D) xử lý trong FixedUpdate.
+/// Nhảy khi đang tiếp đất (cộng coyote time và jump buffer), nhảy thêm trên không nếu nhân vật có airJumps,
+/// giữ Space khi rơi để lượn nếu có glideFallSpeed. Trọng lực tự tính (rơi nhanh hơn lúc lên, lơ lửng nhẹ ở đỉnh).
 ///
 /// Nhân vật lấy từ <see cref="roster"/> theo lựa chọn ở màn hình chính (dự phòng: <see cref="character"/>);
-/// chỉ số tốc độ/nhảy/máu của asset nhân vật ghi đè các ô bên dưới khi vào game — vẫn chỉnh được khi đang Play.
-/// Chiêu thức (PlayerSkill) tạm chiếm quyền điều khiển vận tốc bằng <see cref="SetOverride"/>.
-/// Dùng project-wide actions trong Assets/InputSystem_Actions.inputactions (Player/Move, Jump, Sprint).
+/// chỉ số tốc độ/nhảy của asset nhân vật ghi đè các ô bên dưới khi vào game. Máu, Khí, công đi qua <see cref="CharacterStats"/>.
+/// Chiêu thức (PlayerSkill) và né (PlayerDodge) tạm chiếm quyền điều khiển vận tốc bằng <see cref="SetOverride"/>.
+/// Trúng đòn quật ngã thì ngã nằm đất (bất tử) rồi bật dậy — <see cref="IsKnockedDown"/>.
 /// Animation do <see cref="CharacterAnimator"/> tính bằng code từ trạng thái và các sự kiện <see cref="Jumped"/>, <see cref="Landed"/>.
 /// </summary>
-[RequireComponent(typeof(Rigidbody2D), typeof(CapsuleCollider2D))]
+[RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public class ZodiacPlayerController : MonoBehaviour
 {
     [Tooltip("Danh sách 12 con giáp — lấy nhân vật đang chọn (ZodiacSelection) khi vào game.")]
@@ -27,21 +26,23 @@ public class ZodiacPlayerController : MonoBehaviour
     [Min(0f)] public float walkSpeed = 5f;
     [Tooltip("Tốc độ khi giữ Shift.")]
     [Min(0f)] public float runSpeed = 8.5f;
+    [Tooltip("Tốc độ đổi làn (trục Z) so với tốc độ đi ngang.")]
+    [Range(0.2f, 1f)] public float depthSpeedFactor = 0.7f;
     [Tooltip("Tăng tốc trên mặt đất (unit/s²).")]
     [Min(0f)] public float groundAcceleration = 60f;
     [Tooltip("Giảm tốc trên mặt đất khi thả phím hoặc đổi hướng (unit/s²).")]
     [Min(0f)] public float groundDeceleration = 80f;
     [Tooltip("Tăng/giảm tốc khi đang trên không (unit/s²).")]
-    [Min(0f)] public float airAcceleration = 35f;
+    [Min(0f)] public float airAcceleration = 30f;
 
     [Header("Nhảy")]
-    [Tooltip("Độ cao đỉnh cú nhảy (unit) khi giữ Space. Lực nhảy được tính từ giá trị này và trọng lực.")]
+    [Tooltip("Độ cao đỉnh cú nhảy (unit) khi giữ Space.")]
     [Min(0f)] public float jumpHeight = 3.2f;
+    [Tooltip("Nhân với độ cao nhảy của nhân vật (bảng số liệu viết cho platformer — beat 'em up nhảy thấp hơn).")]
+    [Min(0f)] public float jumpHeightScale = 0.6f;
     [Tooltip("Thả Space khi đang bay lên thì vận tốc lên nhân hệ số này (nhảy thấp).")]
     [Range(0f, 1f)] public float jumpCutMultiplier = 0.5f;
-    [Tooltip("Vẫn nhảy được trong khoảng này sau khi bước khỏi mép (giây). 0 = tắt.")]
-    [Min(0f)] public float coyoteTime = 0.1f;
-    [Tooltip("Bấm Space sớm trong khoảng này trước khi chạm đất vẫn tính (giây). 0 = tắt.")]
+    [Min(0f)] public float coyoteTime = 0.08f;
     [Min(0f)] public float jumpBufferTime = 0.12f;
     [Tooltip("Số lần nhảy thêm trên không.")]
     [Min(0)] public int airJumps = 0;
@@ -49,44 +50,41 @@ public class ZodiacPlayerController : MonoBehaviour
     [Min(0f)] public float glideFallSpeed = 0f;
 
     [Header("Trọng lực")]
-    [Tooltip("Ghi đè Gravity Scale của Rigidbody2D (Physics2D.gravity = -9.81).")]
+    [Tooltip("Nhân với trọng lực Trái Đất (9.81).")]
     [Min(0f)] public float gravityScale = 3f;
-    [Tooltip("Rơi nhanh hơn lúc bay lên cho cú nhảy gọn.")]
     [Min(1f)] public float fallGravityMultiplier = 1.6f;
-    [Tooltip("Tốc độ rơi tối đa (unit/s) — tránh rơi quá nhanh xuyên nền mỏng.")]
     [Min(1f)] public float maxFallSpeed = 20f;
-    [Tooltip("Ở gần đỉnh cú nhảy (|vận tốc dọc| nhỏ hơn giá trị này) mà còn giữ Space thì trọng lực nhẹ đi — lơ lửng một chút như Celeste.")]
-    [Min(0f)] public float apexThreshold = 2.2f;
+    [Min(0f)] public float apexThreshold = 2f;
     [Range(0.1f, 1f)] public float apexGravityMultiplier = 0.55f;
 
     [Header("Bị đánh (cần component Health)")]
-    [Tooltip("Vận tốc bị đẩy ra xa nguồn sát thương (x) và bật lên (y).")]
-    public Vector2 hurtKnockback = new Vector2(6f, 7f);
-    [Tooltip("Mất điều khiển trong khoảng này sau khi bị đánh (giây).")]
+    [Tooltip("Vận tốc bị đẩy ra xa nguồn sát thương (x: ngang, y: bật lên).")]
+    public Vector2 hurtKnockback = new Vector2(5f, 3f);
     [Min(0f)] public float hurtStunTime = 0.25f;
+    [Tooltip("Thời gian nằm đất khi bị quật ngã (giây) — bất tử trong lúc nằm và lúc đứng dậy.")]
+    [Min(0f)] public float knockdownTime = 0.8f;
     [Range(0f, 1f)] public float knockbackResistance = 0f;
 
     [Header("Kiểm tra tiếp đất")]
     public LayerMask groundLayer;
     [Min(0.01f)] public float groundCheckDepth = 0.08f;
-    [Tooltip("Thời gian bỏ qua va chạm với bục một chiều khi ↓ + Space (giây).")]
-    [Min(0f)] public float dropThroughTime = 0.3f;
 
     [Header("Hiển thị")]
-    [Tooltip("Object con được lật trái/phải; Visual (ảnh) nằm ở object con của nó.")]
+    [Tooltip("Object con được lật trái/phải; ảnh nằm ở object con của nó.")]
     public Transform facing;
     public SpriteRenderer spriteRenderer;
 
     /// <summary>Người chơi duy nhất trong màn (quái, đồng xu, camera dùng).</summary>
     public static ZodiacPlayerController Current { get; private set; }
 
-    Rigidbody2D rb;
-    CapsuleCollider2D body;
+    const float EarthGravity = 9.81f;
+
+    Rigidbody rb;
+    CapsuleCollider body;
     Health health;
     InputAction moveAction, jumpAction, sprintAction;
-    readonly Collider2D[] groundHits = new Collider2D[4];
 
-    float inputX, inputY;
+    Vector2 move;
     bool sprintHeld, jumpHeld, jumpCutRequested;
     float coyoteCounter, jumpBufferCounter;
     bool jumping;
@@ -95,8 +93,7 @@ public class ZodiacPlayerController : MonoBehaviour
     float stunCounter;
     bool overridden;
     float overrideGravity;
-    Collider2D droppedPlatform;
-    float dropUntil;
+    float knockdownUntil;
 
     /// <summary>Vừa bật nhảy (true = nhảy trên không).</summary>
     public event Action<bool> Jumped;
@@ -107,43 +104,46 @@ public class ZodiacPlayerController : MonoBehaviour
     public bool IsGrounded { get; private set; }
     public bool IsRunning { get; private set; }
     public bool IsGliding { get; private set; }
+    /// <summary>Đang nằm đất sau khi bị quật ngã.</summary>
+    public bool IsKnockedDown => Time.time < knockdownUntil;
     /// <summary>Đang tàng hình — quái không phát hiện.</summary>
     public bool IsHidden { get; set; }
     /// <summary>1 = nhìn phải, -1 = nhìn trái.</summary>
     public float FacingDirection { get; private set; } = 1f;
     public ZodiacCharacter Character => character;
-    public Rigidbody2D Body => rb;
-    public CapsuleCollider2D BodyCollider => body;
-    public Vector2 Velocity => rb.linearVelocity;
-    /// <summary>Collider đang đứng lên (null khi trên không).</summary>
-    public Collider2D GroundCollider { get; private set; }
+    public Rigidbody Body => rb;
+    public CapsuleCollider BodyCollider => body;
+    public Vector3 Velocity => rb.linearVelocity;
     public bool IsOverridden => overridden;
-    /// <summary>Trục dọc của phím di chuyển (↑ = 1, ↓ = -1) — dùng cho đánh lên/xuống.</summary>
-    public float InputY => inputY;
+    /// <summary>Phím di chuyển (x: ← →, y: ↑ ↓ = vào sâu / ra ngoài).</summary>
+    public Vector2 MoveInput => move;
+    /// <summary>Tâm thân người (để quái nhắm, hiệu ứng).</summary>
+    public Vector3 BodyCenter => body.bounds.center;
 
-    /// <summary>Vận tốc nhảy ban đầu để đạt đúng jumpHeight với bước vật lý hiện tại.</summary>
+    /// <summary>Vận tốc nhảy ban đầu để đạt đúng độ cao nhảy với bước vật lý hiện tại.</summary>
     public float JumpVelocity
     {
         get
         {
-            float g = Mathf.Abs(Physics2D.gravity.y) * gravityScale;
+            float g = EarthGravity * gravityScale;
             float half = g * Time.fixedDeltaTime * 0.5f;   // bù sai số tích phân từng bước
-            return half + Mathf.Sqrt(half * half + 2f * g * jumpHeight);
+            return half + Mathf.Sqrt(half * half + 2f * g * jumpHeight * jumpHeightScale);
         }
     }
 
-    public static ZodiacPlayerController FromCollider(Collider2D other) =>
-        other.attachedRigidbody != null ? other.attachedRigidbody.GetComponent<ZodiacPlayerController>() : null;
+    public static ZodiacPlayerController FromCollider(Collider other) =>
+        other != null && other.attachedRigidbody != null ? other.attachedRigidbody.GetComponent<ZodiacPlayerController>() : null;
 
     void Awake()
     {
         Current = this;
-        rb = GetComponent<Rigidbody2D>();
-        body = GetComponent<CapsuleCollider2D>();
+        rb = GetComponent<Rigidbody>();
+        body = GetComponent<CapsuleCollider>();
         health = GetComponent<Health>();
+        rb.useGravity = false;
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
         if (roster != null && roster.Count > 0) character = roster.Get(ZodiacSelection.Index);
         ApplyCharacter();
-        rb.gravityScale = gravityScale;
         if (health != null) health.Damaged += OnDamaged;
 
         moveAction = InputSystem.actions.FindAction("Player/Move");
@@ -171,8 +171,10 @@ public class ZodiacPlayerController : MonoBehaviour
     void ApplyCharacter()
     {
         if (character == null) return;
-        body.size = character.colliderSize;
-        body.offset = character.colliderOffset;
+        body.direction = 1;
+        body.radius = Mathf.Max(0.2f, character.colliderSize.x * 0.5f);
+        body.height = Mathf.Max(body.radius * 2f, character.colliderSize.y);
+        body.center = new Vector3(0f, body.height * 0.5f, 0f);
         if (spriteRenderer != null && character.sprite != null) spriteRenderer.sprite = character.sprite;
 
         walkSpeed = character.walkSpeed;
@@ -189,30 +191,30 @@ public class ZodiacPlayerController : MonoBehaviour
     }
 
     /// <summary>Đẩy nhân vật đi với vận tốc cho trước và tạm mất điều khiển trong stunTime giây.</summary>
-    public void ApplyKnockback(Vector2 velocity, float stunTime)
+    public void ApplyKnockback(Vector3 velocity, float stunTime)
     {
         if (!controlEnabled || overridden) return;
         rb.linearVelocity = velocity;
-        stunCounter = stunTime;
+        stunCounter = Mathf.Max(stunCounter, stunTime);
         jumping = false;
         jumpBufferCounter = 0f;
-        IsGrounded = false;
+        if (velocity.y > 0.1f) IsGrounded = false;
     }
 
-    /// <summary>Bật nảy lên (đạp đầu quái). Giữ Space thì nảy hết cỡ, thả ra thì bị cắt như cú nhảy thường.</summary>
+    /// <summary>Bật nảy lên (đòn trên không trúng quái). Giữ Space thì nảy hết cỡ, thả ra thì bị cắt như cú nhảy thường.</summary>
     public void Bounce(float velocity)
     {
         if (!controlEnabled) return;
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, velocity);
+        var v = rb.linearVelocity;
+        rb.linearVelocity = new Vector3(v.x, velocity, v.z);
         jumping = true;
         IsGrounded = false;
         coyoteCounter = 0f;
         jumpBufferCounter = 0f;
-        airJumpsLeft = airJumps;   // nảy trên đầu quái thì được nhảy đôi lại (như pogo của Hollow Knight)
     }
 
     /// <summary>
-    /// Chiêu thức chiếm quyền điều khiển: controller không đổi vận tốc, chỉ đặt trọng lực = gravity.
+    /// Chiêu thức chiếm quyền điều khiển: controller không đổi vận tốc, chỉ áp trọng lực theo hệ số gravity.
     /// Gọi lại với active = false để trả quyền.
     /// </summary>
     public void SetOverride(bool active, float gravity = 0f)
@@ -220,15 +222,14 @@ public class ZodiacPlayerController : MonoBehaviour
         overridden = active;
         overrideGravity = gravity;
         stunCounter = 0f;
-        if (!active) rb.gravityScale = gravityScale;
     }
 
     /// <summary>Dịch chuyển tức thời (hồi sinh tại đèn lồng).</summary>
-    public void Teleport(Vector2 position)
+    public void Teleport(Vector3 position)
     {
         rb.position = position;
         transform.position = position;
-        rb.linearVelocity = Vector2.zero;
+        if (!rb.isKinematic) rb.linearVelocity = Vector3.zero;
         stunCounter = 0f;
         jumping = false;
         IsGrounded = false;
@@ -241,62 +242,59 @@ public class ZodiacPlayerController : MonoBehaviour
         GameFeel.Shake(0.3f);
         var res = ZodiacResources.Get;
         if (res != null) ZodiacAudio.Play(res.hurt, 0.9f);
-        if (hit.knockback <= 0f) return;
-        float away = transform.position.x >= hit.source.x ? 1f : -1f;
+        if (hit.knockback <= 0f || health.IsDead) return;
+        Vector3 away = transform.position - hit.source;
+        away.y = 0f;
+        away = away.sqrMagnitude > 0.0001f ? away.normalized : Vector3.right * -FacingDirection;
         float k = hit.knockback * (1f - knockbackResistance);
-        ApplyKnockback(new Vector2(away * hurtKnockback.x * k, hurtKnockback.y * Mathf.Max(k, 0.5f)), hurtStunTime);
+        if (hit.knockdown)
+        {
+            // Quật ngã: văng ra, nằm đất, bất tử cho tới khi đứng dậy hẳn.
+            knockdownUntil = Time.time + knockdownTime;
+            health.SetInvulnerable(knockdownTime + 0.5f);
+            ApplyKnockback(away * hurtKnockback.x * Mathf.Max(k, 0.6f) * 1.3f + Vector3.up * 7f, knockdownTime);
+            return;
+        }
+        ApplyKnockback(away * hurtKnockback.x * k + Vector3.up * hurtKnockback.y * Mathf.Min(k, 1f), hurtStunTime);
     }
 
-    /// <summary>Khoá/mở điều khiển. Khi khoá, nhân vật đứng yên tại chỗ (dùng lúc thắng/thua).</summary>
+    /// <summary>Khoá/mở điều khiển. Khi khoá, nhân vật đứng yên tại chỗ (dùng lúc thắng/thua, chuyển cảnh).</summary>
     public void SetControlEnabled(bool value)
     {
         controlEnabled = value;
-        inputX = inputY = 0f;
+        move = Vector2.zero;
         sprintHeld = jumpHeld = jumpCutRequested = false;
         jumpBufferCounter = 0f;
-        rb.linearVelocity = Vector2.zero;
-        rb.simulated = value;
+        if (!rb.isKinematic) rb.linearVelocity = Vector3.zero;
+        rb.isKinematic = !value;
     }
 
     void Update()
     {
-        if (controlEnabled)
-        {
-            Vector2 move = moveAction.ReadValue<Vector2>();
-            inputX = Mathf.Abs(move.x) < 0.1f ? 0f : move.x;
-            inputY = move.y;
-            sprintHeld = sprintAction.IsPressed();
-            jumpHeld = jumpAction.IsPressed();
-            if (jumpAction.WasPressedThisFrame()) jumpBufferCounter = Mathf.Max(jumpBufferTime, Time.fixedDeltaTime);
-            if (jumpAction.WasReleasedThisFrame()) jumpCutRequested = true;
+        if (!controlEnabled) return;
+        Vector2 raw = moveAction.ReadValue<Vector2>();
+        move = new Vector2(Mathf.Abs(raw.x) < 0.1f ? 0f : raw.x, Mathf.Abs(raw.y) < 0.1f ? 0f : raw.y);
+        if (move.sqrMagnitude > 1f) move.Normalize();
+        sprintHeld = sprintAction.IsPressed();
+        jumpHeld = jumpAction.IsPressed();
+        if (jumpAction.WasPressedThisFrame() && !IsKnockedDown) jumpBufferCounter = Mathf.Max(jumpBufferTime, Time.fixedDeltaTime);
+        if (jumpAction.WasReleasedThisFrame()) jumpCutRequested = true;
 
-            if (!overridden)
-            {
-                if (inputX > 0f) SetFacing(1f);
-                else if (inputX < 0f) SetFacing(-1f);
-            }
+        if (!overridden && stunCounter <= 0f)
+        {
+            if (move.x > 0f) SetFacing(1f);
+            else if (move.x < 0f) SetFacing(-1f);
         }
     }
 
     void FixedUpdate()
     {
         float dt = Time.fixedDeltaTime;
-        Vector2 v = rb.linearVelocity;
+        Vector3 v = rb.linearVelocity;
         bool wasGrounded = IsGrounded;
         float fallSpeed = -v.y;
 
-        if (droppedPlatform != null && Time.time >= dropUntil)
-        {
-            Physics2D.IgnoreCollision(body, droppedPlatform, false);
-            droppedPlatform = null;
-        }
-
-        Collider2D ground = FindGround();
-        Vector2 platformVelocity = Vector2.zero;
-        if (ground != null && ground.TryGetComponent(out MovingPlatform platform)) platformVelocity = platform.Velocity;
-        // Đang bay lên (so với bục dưới chân) thì không tính là đứng trên đất.
-        IsGrounded = ground != null && v.y - platformVelocity.y <= 0.1f;
-        GroundCollider = IsGrounded ? ground : null;
+        IsGrounded = v.y <= 0.1f && CheckGround();
         if (IsGrounded && !wasGrounded && controlEnabled) Landed?.Invoke(Mathf.Max(0f, fallSpeed));
         if (IsGrounded)
         {
@@ -309,42 +307,45 @@ public class ZodiacPlayerController : MonoBehaviour
             coyoteCounter -= dt;
         }
         IsGliding = false;
+        IsRunning = false;
         if (!controlEnabled) return;
 
         if (overridden)
         {
-            rb.gravityScale = overrideGravity;
-            return;
-        }
-
-        if (stunCounter > 0f)
-        {
-            // Đang bị đẩy lùi: để vận tốc tự nhiên, chỉ áp trọng lực và giới hạn tốc độ rơi.
-            stunCounter -= dt;
-            v.y = Mathf.Max(v.y, -maxFallSpeed);
+            ApplyGravity(ref v, overrideGravity, dt);
             rb.linearVelocity = v;
-            rb.gravityScale = v.y < 0f ? gravityScale * fallGravityMultiplier : gravityScale;
             return;
         }
 
-        // Ngang: tăng tốc tới tốc độ mục tiêu (tính so với bục đang đứng), giảm tốc riêng khi thả phím hoặc đổi hướng.
-        IsRunning = inputX != 0f && sprintHeld;
-        float targetSpeed = inputX * (IsRunning ? runSpeed : walkSpeed);
-        float relativeX = v.x - (IsGrounded ? platformVelocity.x : 0f);
-        bool slowingDown = Mathf.Abs(targetSpeed) < Mathf.Abs(relativeX) || targetSpeed * relativeX < 0f;
-        float accel = !IsGrounded ? airAcceleration : slowingDown ? groundDeceleration : groundAcceleration;
-        relativeX = Mathf.MoveTowards(relativeX, targetSpeed, accel * dt);
-        v.x = relativeX + (IsGrounded ? platformVelocity.x : 0f);
-        if (IsGrounded && !jumping && platformVelocity.y < 0f) v.y = platformVelocity.y;   // bục đi xuống: bám theo
-
-        if (jumpBufferCounter > 0f && IsGrounded && inputY < -0.5f && TryDropThrough(ground))
+        if (stunCounter > 0f || IsKnockedDown)
         {
-            jumpBufferCounter = 0f;
+            // Bị đẩy lùi / nằm đất: vận tốc ngang tắt dần trên đất, chỉ áp trọng lực.
+            stunCounter -= dt;
+            if (IsGrounded)
+            {
+                Vector2 flat = Vector2.MoveTowards(new Vector2(v.x, v.z), Vector2.zero, groundDeceleration * 0.35f * dt);
+                v.x = flat.x;
+                v.z = flat.y;
+            }
+            ApplyGravity(ref v, v.y < 0f ? gravityScale * fallGravityMultiplier : gravityScale, dt);
+            rb.linearVelocity = v;
+            return;
         }
-        else if (jumpBufferCounter > 0f && coyoteCounter > 0f && !jumping)
+
+        // Mặt phẳng XZ: tăng tốc tới vận tốc mục tiêu, giảm tốc riêng khi thả phím hoặc đổi hướng.
+        IsRunning = move.x != 0f && sprintHeld;
+        float speed = IsRunning ? runSpeed : walkSpeed;
+        Vector2 target = new Vector2(move.x * speed, move.y * walkSpeed * depthSpeedFactor);
+        Vector2 current = new Vector2(v.x, v.z);
+        bool slowingDown = target.sqrMagnitude < current.sqrMagnitude || Vector2.Dot(target, current) < 0f;
+        float accel = !IsGrounded ? airAcceleration : slowingDown ? groundDeceleration : groundAcceleration;
+        current = Vector2.MoveTowards(current, target, accel * dt);
+        v.x = current.x;
+        v.z = current.y;
+
+        if (jumpBufferCounter > 0f && coyoteCounter > 0f && !jumping)
         {
-            // Nhảy thường: đang đất (hoặc vừa rời mép trong coyote time) và chưa nhảy.
-            v.y = JumpVelocity + Mathf.Max(0f, platformVelocity.y);
+            v.y = JumpVelocity;
             StartJump();
             Jumped?.Invoke(false);
         }
@@ -366,6 +367,10 @@ public class ZodiacPlayerController : MonoBehaviour
             jumpCutRequested = false;
         }
 
+        float g = v.y < 0f ? gravityScale * fallGravityMultiplier : gravityScale;
+        if (!IsGrounded && jumping && jumpHeld && Mathf.Abs(v.y) < apexThreshold) g = gravityScale * apexGravityMultiplier;
+        ApplyGravity(ref v, g, dt);
+
         float fallLimit = maxFallSpeed;
         if (glideFallSpeed > 0f && jumpHeld && v.y < 0f && !IsGrounded)
         {
@@ -374,9 +379,12 @@ public class ZodiacPlayerController : MonoBehaviour
         }
         v.y = Mathf.Max(v.y, -fallLimit);
         rb.linearVelocity = v;
-        float g = v.y < 0f ? gravityScale * fallGravityMultiplier : gravityScale;
-        if (!IsGrounded && jumping && jumpHeld && Mathf.Abs(v.y) < apexThreshold) g = gravityScale * apexGravityMultiplier;
-        rb.gravityScale = g;
+    }
+
+    void ApplyGravity(ref Vector3 v, float scale, float dt)
+    {
+        if (IsGrounded && v.y <= 0f) v.y = -1f;   // ép nhẹ xuống đất để không nảy lên khi đi qua mép nối
+        else v.y -= EarthGravity * scale * dt;
     }
 
     void StartJump()
@@ -388,33 +396,11 @@ public class ZodiacPlayerController : MonoBehaviour
         jumpCutRequested = false;
     }
 
-    bool TryDropThrough(Collider2D ground)
+    bool CheckGround()
     {
-        if (ground == null || !ground.TryGetComponent(out PlatformEffector2D effector) || !effector.useOneWay) return false;
-        Physics2D.IgnoreCollision(body, ground, true);
-        droppedPlatform = ground;
-        dropUntil = Time.time + dropThroughTime;
-        IsGrounded = false;
-        coyoteCounter = 0f;
-        return true;
-    }
-
-    Collider2D FindGround()
-    {
-        GetGroundBox(out Vector2 center, out Vector2 size);
-        var filter = new ContactFilter2D { useTriggers = false };
-        filter.SetLayerMask(groundLayer);
-        int count = Physics2D.OverlapBox(center, size, 0f, filter, groundHits);
-        for (int i = 0; i < count; i++)
-            if (groundHits[i] != droppedPlatform) return groundHits[i];
-        return null;
-    }
-
-    void GetGroundBox(out Vector2 center, out Vector2 size)
-    {
-        Bounds b = body.bounds;
-        center = new Vector2(b.center.x, b.min.y - groundCheckDepth / 2f);
-        size = new Vector2(b.size.x * 0.9f, groundCheckDepth);
+        float r = body.radius * 0.9f;
+        Vector3 origin = transform.position + Vector3.up * (r + 0.05f);
+        return Physics.SphereCast(origin, r, Vector3.down, out _, 0.05f + groundCheckDepth, groundLayer, QueryTriggerInteraction.Ignore);
     }
 
     public void SetFacing(float direction)
@@ -423,17 +409,12 @@ public class ZodiacPlayerController : MonoBehaviour
         if (facing != null) facing.localScale = new Vector3(FacingDirection, 1f, 1f);
     }
 
-    void OnValidate()
-    {
-        runSpeed = Mathf.Max(runSpeed, walkSpeed);
-        if (rb != null && Application.isPlaying && !overridden) rb.gravityScale = gravityScale;
-    }
+    void OnValidate() => runSpeed = Mathf.Max(runSpeed, walkSpeed);
 
     void OnDrawGizmosSelected()
     {
-        if (body == null) body = GetComponent<CapsuleCollider2D>();
-        GetGroundBox(out Vector2 center, out Vector2 size);
+        if (body == null) body = GetComponent<CapsuleCollider>();
         Gizmos.color = Application.isPlaying && IsGrounded ? Color.green : Color.yellow;
-        Gizmos.DrawWireCube(center, size);
+        Gizmos.DrawWireSphere(transform.position + Vector3.up * body.radius * 0.9f, body.radius * 0.9f);
     }
 }

@@ -49,13 +49,13 @@ public class ZodiacAudio : MonoBehaviour
     }
 
     /// <summary>Phát một clip ngẫu nhiên trong nhóm. position = null → không lệch trái/phải theo vị trí.</summary>
-    public static void Play(AudioClip[] group, float volume = 1f, float pitchVariation = 0.06f, Vector2? position = null)
+    public static void Play(AudioClip[] group, float volume = 1f, float pitchVariation = 0.06f, Vector3? position = null)
     {
         if (group == null || group.Length == 0) return;
         Play(group[Random.Range(0, group.Length)], volume, pitchVariation, position);
     }
 
-    public static void Play(AudioClip clip, float volume = 1f, float pitchVariation = 0.06f, Vector2? position = null)
+    public static void Play(AudioClip clip, float volume = 1f, float pitchVariation = 0.06f, Vector3? position = null)
     {
         if (clip == null || !Application.isPlaying) return;
         var h = Host;
@@ -65,10 +65,11 @@ public class ZodiacAudio : MonoBehaviour
         source.panStereo = 0f;
         if (position.HasValue && Camera.main != null)
         {
-            // Lệch tai trái/phải nhẹ theo vị trí so với camera, nhỏ dần khi ở xa
-            Vector2 d = position.Value - (Vector2)Camera.main.transform.position;
-            source.panStereo = Mathf.Clamp(d.x / 14f, -0.6f, 0.6f);
-            volume *= Mathf.Clamp01(1.3f - d.magnitude / 22f);
+            // Lệch tai trái/phải nhẹ theo vị trí so với camera, nhỏ dần khi ở xa theo chiều ngang
+            // (camera luôn lùi ra sau ~14 unit nên không tính khoảng cách 3D đầy đủ)
+            float dx = position.Value.x - Camera.main.transform.position.x;
+            source.panStereo = Mathf.Clamp(dx / 14f, -0.6f, 0.6f);
+            volume *= Mathf.Clamp01(1.3f - Mathf.Abs(dx) / 22f);
         }
         source.PlayOneShot(clip, volume * SfxVolume);
     }

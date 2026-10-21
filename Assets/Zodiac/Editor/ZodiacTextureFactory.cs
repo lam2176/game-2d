@@ -22,6 +22,8 @@ public static class ZodiacTextureFactory
     public class Set
     {
         public Sprite soil, brick, grass, plank, ridge, hills, fog;
+        /// <summary>Mặt đất / tường / mái lát được cả hai chiều cho thế giới 3D.</summary>
+        public Sprite turf, cobble, wood, roof;
     }
 
     public static Set EnsureAll()
@@ -37,6 +39,10 @@ public static class ZodiacTextureFactory
             ridge = Ensure("MountainRidge", 1024, 512, 64, Up((x, y) => Ridge(x, y, 512, 256, 0.55f, 4, 11), 2), tile: true, tileVertical: false),
             hills = Ensure("Hills", 1024, 256, 64, Up((x, y) => Ridge(x, y, 512, 128, 0.35f, 2, 23), 2), tile: true, tileVertical: false),
             fog = Ensure("Fog", 8, 128, 16, (x, y) => new Color(1f, 1f, 1f, Mathf.SmoothStep(1f, 0f, y / 127f)), tile: false),
+            turf = Ensure("Turf", 128 * Scale, 128 * Scale, 64 * Scale, Up(Turf), tile: true),
+            cobble = Ensure("Cobble", 128 * Scale, 128 * Scale, 64 * Scale, Up(Cobble), tile: true),
+            wood = Ensure("WoodWall", 128 * Scale, 128 * Scale, 64 * Scale, Up(WoodWall), tile: true),
+            roof = Ensure("RoofTiles", 128 * Scale, 128 * Scale, 64 * Scale, Up(RoofTiles), tile: true),
         };
     }
 
@@ -109,6 +115,52 @@ public static class ZodiacTextureFactory
             if (y < height && dx < width) return Gray(Mathf.Min(1f, shade + 0.1f));
         }
         return Color.clear;
+    }
+
+    /// <summary>Thảm cỏ nhìn từ trên xuống: nền nhiễu loang, các vệt lá cỏ ngắn sáng/tối, vài đốm hoa dại.</summary>
+    static Color Turf(float x, float y)
+    {
+        float n = Fbm(x, y, 128, 32, 4, 41);
+        float v = 0.72f + (n - 0.5f) * 0.3f;
+        float blade = Fbm(x * 3f, y * 0.7f, 384, 6, 2, 43);                    // vệt lá dọc ngắn
+        v += (blade - 0.5f) * 0.18f;
+        if (Cells(x, y, 128, 12, 47) < 0.18f) v = 0.97f;                      // hoa dại li ti
+        return Gray(v);
+    }
+
+    /// <summary>Đường lát đá cuội: viên đá tròn sáng giữa, khe đất tối giữa các viên.</summary>
+    static Color Cobble(float x, float y)
+    {
+        float d = Cells(x, y, 128, 8, 51);
+        float n = (Fbm(x, y, 128, 16, 3, 53) - 0.5f) * 0.1f;
+        if (d > 1.15f) return Gray(0.42f + n);                                  // khe
+        float dome = Mathf.Sqrt(Mathf.Clamp01(1f - Mathf.Min(d, 1f) * Mathf.Min(d, 1f)));
+        return Gray(0.68f + dome * 0.2f + n - (d > 1f ? 0.12f : 0f));
+    }
+
+    /// <summary>Vách ván gỗ đứng: mỗi tấm rộng 16px, tông khác nhau, vân gỗ dọc, khe tối giữa các tấm.</summary>
+    static Color WoodWall(float x, float y)
+    {
+        const int board = 16;
+        float lx = ((x % board) + board) % board;
+        int id = Mathf.FloorToInt(x / board);
+        if (lx < 1.5f) return Gray(0.38f);
+        float tone = 0.74f + (Hash(id & 7, 61) - 0.5f) * 0.12f;
+        float grain = Mathf.Sin((x + Fbm(x, y, 128, 32, 3, 63) * 40f) * 1.3f) * 0.04f;
+        return Gray(tone + grain + (Fbm(x, y, 128, 8, 2, 65) - 0.5f) * 0.06f);
+    }
+
+    /// <summary>Mái ngói âm dương: hàng ngói cong xếp so le, viền dưới mỗi hàng đổ bóng.</summary>
+    static Color RoofTiles(float x, float y)
+    {
+        const int rowH = 16, tileW = 16;
+        int row = Mathf.FloorToInt(y / rowH);
+        float lx = (((x + (row % 2) * tileW / 2f) % tileW) + tileW) % tileW;
+        float ly = ((y % rowH) + rowH) % rowH;
+        float arch = Mathf.Sin(lx / tileW * Mathf.PI);                         // ngói cong: sáng giữa
+        float v = 0.6f + arch * 0.25f + (ly / rowH) * 0.08f;
+        if (ly < 2.5f) v -= 0.22f;                                              // bóng mép hàng trên
+        return Gray(v + (Fbm(x, y, 128, 16, 2, 71) - 0.5f) * 0.08f);
     }
 
     static Color Plank(float x, float y)

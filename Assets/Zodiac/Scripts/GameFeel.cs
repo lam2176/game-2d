@@ -46,7 +46,7 @@ public class GameFeel : MonoBehaviour
     public static void Shake(float trauma) => ZodiacCameraFollow.Main?.AddTrauma(trauma);
 
     /// <summary>Đánh trúng: đứng hình + rung + tia lửa + tiếng va chạm. heavy cho đòn kết combo / chiêu mạnh.</summary>
-    public static void Impact(Vector2 point, Color sparkColor, bool heavy)
+    public static void Impact(Vector3 point, Color sparkColor, bool heavy)
     {
         HitStop(heavy ? 0.09f : 0.05f);
         Shake(heavy ? 0.32f : 0.16f);

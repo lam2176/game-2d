@@ -2,17 +2,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Đạn dùng chung cho chiêu người chơi (sóng âm, cầu lửa, chũm chọe) và đạn quái (lửa hồ ly, đạn tượng đá).
-/// Không dùng Rigidbody: tự dời bằng transform và quét Physics2D.OverlapCircle mỗi bước vật lý.
+/// Đạn dùng chung cho chiêu người chơi (sóng âm, cầu lửa, chũm chọe) và đạn quái (lửa hồ ly, đạn tượng đá, sóng chấn).
+/// Không dùng Rigidbody: tự dời bằng transform trong không gian 3D và quét Physics.OverlapSphere mỗi bước vật lý.
 /// Mỗi mục tiêu chỉ trúng một lần; pierce quyết định xuyên được bao nhiêu mục tiêu.
 /// Boomerang: bay hết nửa tầm (hoặc chạm tường) thì quay về chủ.
+/// Sóng sát đất (<see cref="groundWave"/>): chỉ trúng mục tiêu có chân thấp hơn <see cref="groundWaveHeight"/> — nhảy qua để né.
+/// Đạn bay ngang qua mọi làn nên muốn né thì đổi làn (↑ ↓) hoặc nhảy.
 /// </summary>
 public class Projectile : MonoBehaviour
 {
     /// <summary>Mọi đạn đang bay — chiêu Kèn Hiệu dùng để xoá đạn địch.</summary>
     public static readonly List<Projectile> Active = new List<Projectile>();
 
-    public Vector2 velocity;
+    public Vector3 velocity;
     public int damage = ZodiacBalance.Unit;
     public float radius = 0.3f;
     public float range = 10f;
@@ -22,6 +24,10 @@ public class Projectile : MonoBehaviour
     public bool passWalls;
     public float knockback = 1f;
     public float stun;
+    public bool knockdown;
+    [Tooltip("Sóng chạy sát mặt đất: mục tiêu đang nhảy cao hơn groundWaveHeight thì không trúng.")]
+    public bool groundWave;
+    public float groundWaveHeight = 0.5f;
     public LayerMask targetLayers;
     public LayerMask wallLayers;
     [Tooltip("Đạn của quái (bị chiêu xoá đạn ảnh hưởng).")]
@@ -32,19 +38,19 @@ public class Projectile : MonoBehaviour
     public float spin;
 
     readonly HashSet<Health> hits = new HashSet<Health>();
-    readonly List<Collider2D> overlaps = new List<Collider2D>();
+    readonly Collider[] overlaps = new Collider[16];
     float travelled;
     bool returning;
 
-    /// <summary>Tạo đạn hình tròn (có lõi sáng) tại vị trí cho trước.</summary>
-    public static Projectile Spawn(Vector2 position, Vector2 velocity, float size, Color color, LayerMask targets,
+    /// <summary>Tạo đạn hình tròn (có lõi sáng, tự phát sáng soi mặt đất) tại vị trí cho trước.</summary>
+    public static Projectile Spawn(Vector3 position, Vector3 velocity, float size, Color color, LayerMask targets,
                                    LayerMask walls, int damage, bool hostile)
     {
         var sr = ZodiacFx.Shape(hostile ? "EnemyShot" : "PlayerShot", true, position, Vector2.one * size, color, 16);
         var core = ZodiacFx.Shape("Core", true, position, Vector2.one * 0.5f, new Color(1f, 1f, 0.9f, 0.9f), 17, sr.transform);
         core.transform.localScale = Vector3.one * 0.5f;
-        // Đạn tự phát sáng soi địa hình xung quanh (cần URP 2D Renderer)
-        ZodiacLights.AddPoint(sr.gameObject, color, 1.6f + size, 0.9f);
+        core.transform.localPosition = new Vector3(0f, 0f, -0.01f);
+        ZodiacLights.AddPoint(sr.gameObject, color, 2.5f + size * 2f, 1.5f);
         var p = sr.gameObject.AddComponent<Projectile>();
         p.velocity = velocity;
         p.radius = size * 0.45f;
@@ -61,25 +67,25 @@ public class Projectile : MonoBehaviour
     void FixedUpdate()
     {
         float dt = Time.fixedDeltaTime;
-        Vector2 pos = transform.position;
+        Vector3 pos = transform.position;
 
         if (returning && owner != null)
         {
-            Vector2 toOwner = (Vector2)owner.position + Vector2.up - pos;
+            Vector3 toOwner = owner.position + Vector3.up - pos;
             if (toOwner.magnitude < 0.6f) { Destroy(gameObject); return; }
             velocity = toOwner.normalized * velocity.magnitude;
         }
 
-        Vector2 step = velocity * dt;
-        if (!passWalls && !returning &&
-            Physics2D.CircleCast(pos, radius * 0.5f, step.normalized, step.magnitude, wallLayers))
+        Vector3 step = velocity * dt;
+        if (!passWalls && !returning && step.sqrMagnitude > 0f &&
+            Physics.SphereCast(pos, radius * 0.5f, step.normalized, out _, step.magnitude, wallLayers, QueryTriggerInteraction.Ignore))
         {
             if (boomerang) { returning = true; hits.Clear(); }
             else { Pop(); return; }
         }
 
         transform.position = pos + step;
-        if (spin != 0f) transform.Rotate(0f, 0f, spin * dt);
+        if (spin != 0f) transform.Rotate(0f, 0f, spin * dt, Space.Self);
         travelled += step.magnitude;
 
         if (boomerang && !returning && travelled >= range * 0.5f) { returning = true; hits.Clear(); }
@@ -91,14 +97,16 @@ public class Projectile : MonoBehaviour
 
     void DetectHits()
     {
-        var filter = new ContactFilter2D { useTriggers = false };
-        filter.SetLayerMask(targetLayers);
-        Physics2D.OverlapCircle(transform.position, radius, filter, overlaps);
-        foreach (var col in overlaps)
+        int count = Physics.OverlapSphereNonAlloc(transform.position, radius, overlaps, targetLayers, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < count; i++)
         {
+            var col = overlaps[i];
             var target = col.GetComponentInParent<Health>();
-            if (target == null || target.IsDead || !hits.Add(target)) continue;
-            var hit = CharacterStats.CreateHit(attacker, damage, transform.position - (Vector3)velocity.normalized, knockback, stun);
+            if (target == null || target.IsDead || hits.Contains(target)) continue;
+            if (groundWave && target.transform.position.y > transform.position.y - radius + groundWaveHeight) continue;   // nhảy qua
+            hits.Add(target);
+            var hit = CharacterStats.CreateHit(attacker, damage, transform.position - velocity.normalized, knockback, stun);
+            hit.knockdown = knockdown;
             if (target.TakeDamage(hit) && !hostile)
             {
                 var sr = GetComponent<SpriteRenderer>();

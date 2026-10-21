@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// HUD chiêu thức kiểu game hành động online (Ngọc Rồng…): thanh 4 ô tròn giữa đáy màn hình —
-/// Q Đánh · W Lướt · E Chiêu · R Tuyệt kỹ. Mỗi ô có biểu tượng, phím, số Khí cần,
+/// Q Đánh · W Lăn · E Chiêu · R Tuyệt kỹ. Mỗi ô có biểu tượng, phím, số Khí cần,
 /// lớp tối quét tròn theo thời gian hồi chiêu, nảy lên khi bấm; ô Tuyệt kỹ viền vàng, sáng nhấp nháy khi đầy Khí.
 /// Góc trái trên: chân dung tròn, tên, nội tại, thanh máu (HealthBar riêng) và các ô Khí.
 /// </summary>
@@ -61,7 +61,7 @@ public class SkillHud : MonoBehaviour
         if (passiveText != null) passiveText.text = $"Nội tại — {character.passiveName}";
 
         Setup(attackSlot, ZodiacFx.Crescent, "Q", "Đánh", "");
-        Setup(dodgeSlot, ZodiacFx.Chevrons, "W", "Lướt", "");
+        Setup(dodgeSlot, ZodiacFx.Chevrons, "W", "Lăn", "");
         Setup(skillSlot, character.sprite, "E", character.skill.name, $"{character.skill.energyCost}");
         Setup(ultimateSlot, character.sprite, "R", character.ultimateName, energy != null ? $"{energy.max}" : "");
         if (ultimateSlot.icon != null) ultimateSlot.icon.color = new Color(1f, 0.9f, 0.6f);

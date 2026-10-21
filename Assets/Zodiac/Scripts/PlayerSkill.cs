@@ -30,7 +30,7 @@ public class PlayerSkill : MonoBehaviour
     float readyTime;
     bool hidden;
     float backstab = 1f;
-    readonly List<Collider2D> overlaps = new List<Collider2D>();
+    readonly Collider[] overlaps = new Collider[24];
     readonly HashSet<Health> hitThisSkill = new HashSet<Health>();
 
     public SkillConfig Config => controller.Character != null ? controller.Character.skill : null;
@@ -127,7 +127,7 @@ public class PlayerSkill : MonoBehaviour
         {
             case SkillType.Dash: StartCoroutine(Dash(cfg)); break;
             case SkillType.Projectile: FireProjectiles(cfg); Finish(cfg); break;
-            case SkillType.Burst: Burst(cfg, BodyCenter + Vector2.right * (controller.FacingDirection * cfg.forwardOffset)); Finish(cfg); break;
+            case SkillType.Burst: Burst(cfg, BodyCenter + Vector3.right * (controller.FacingDirection * cfg.forwardOffset)); Finish(cfg); break;
             case SkillType.Heal: StartCoroutine(Channel(cfg)); break;
             case SkillType.Stealth: StartCoroutine(Stealth(cfg)); break;
             case SkillType.GroundPound: StartCoroutine(GroundPound(cfg)); break;
@@ -140,7 +140,7 @@ public class PlayerSkill : MonoBehaviour
         readyTime = Time.time + cfg.cooldown;
     }
 
-    Vector2 BodyCenter => controller.BodyCollider.bounds.center;
+    Vector3 BodyCenter => controller.BodyCenter;
     Color Theme => controller.Character != null ? controller.Character.themeColor : Color.white;
 
     // ───────── Lướt / vồ ─────────
@@ -149,12 +149,16 @@ public class PlayerSkill : MonoBehaviour
     {
         IsBusy = true;
         var rb = controller.Body;
-        float dir = controller.FacingDirection;
+        // Hướng lướt trên mặt đất: theo phím (chéo đổi làn được), không bấm thì theo hướng nhìn; dashAngle > 0 = vồ chếch lên.
+        Vector2 input = controller.MoveInput;
+        Vector3 flat = input.sqrMagnitude > 0.09f ? new Vector3(input.x, 0f, input.y * 0.7f).normalized
+                                                  : new Vector3(controller.FacingDirection, 0f, 0f);
+        if (Mathf.Abs(flat.x) > 0.1f) controller.SetFacing(flat.x);
         float rad = cfg.dashAngle * Mathf.Deg2Rad;
-        Vector2 velocity = new Vector2(Mathf.Cos(rad) * dir, Mathf.Sin(rad)) * cfg.dashSpeed;
+        Vector3 velocity = (flat * Mathf.Cos(rad) + Vector3.up * Mathf.Sin(rad)) * cfg.dashSpeed;
         controller.SetOverride(true, 0f);
         if (cfg.dashInvulnerable) health?.SetInvulnerable(cfg.dashTime + 0.1f);
-        ZodiacFx.Puff((Vector2)transform.position + Vector2.up * 0.2f, Theme);
+        ZodiacFx.Puff(transform.position + Vector3.up * 0.2f, Theme);
 
         bool bounced = false;
         float nextImage = 0f;
@@ -176,19 +180,18 @@ public class PlayerSkill : MonoBehaviour
 
         controller.SetOverride(false);
         if (bounced) controller.Bounce(11f);
-        else rb.linearVelocity = new Vector2(velocity.x * 0.35f, Mathf.Min(velocity.y * 0.4f, 4f));
+        else if (!rb.isKinematic) rb.linearVelocity = new Vector3(velocity.x * 0.35f, Mathf.Min(velocity.y * 0.4f, 4f), velocity.z * 0.35f);
         Finish(cfg);
     }
 
     /// <summary>Gây sát thương các quái chồng lên hộp quanh người (mỗi con một lần mỗi chiêu).</summary>
-    bool HitAround(Vector2 center, Vector2 size, SkillConfig cfg)
+    bool HitAround(Vector3 center, Vector3 size, SkillConfig cfg)
     {
-        var filter = new ContactFilter2D { useTriggers = false };
-        filter.SetLayerMask(targetLayers);
-        Physics2D.OverlapBox(center, size, 0f, filter, overlaps);
+        int count = Physics.OverlapBoxNonAlloc(center, size * 0.5f, overlaps, Quaternion.identity, targetLayers, QueryTriggerInteraction.Ignore);
         bool any = false;
-        foreach (var col in overlaps)
+        for (int i = 0; i < count; i++)
         {
+            var col = overlaps[i];
             var target = col.GetComponentInParent<Health>();
             if (target == null || target.IsDead || !hitThisSkill.Add(target)) continue;
             Hit hit = CreateHit(cfg, transform.position);
@@ -204,7 +207,7 @@ public class PlayerSkill : MonoBehaviour
     /// <summary>Trang bị / nâng cấp tăng công thì chiêu mạnh lên cùng tỉ lệ.</summary>
     float AttackScale => Stats != null ? Stats.AttackScale : 1f;
 
-    Hit CreateHit(SkillConfig cfg, Vector2 source) =>
+    Hit CreateHit(SkillConfig cfg, Vector3 source) =>
         CharacterStats.CreateHit(Stats, cfg.damage * AttackScale, source, cfg.knockback, cfg.stunTime);
 
     // ───────── Bắn đạn ─────────
@@ -212,9 +215,9 @@ public class PlayerSkill : MonoBehaviour
     void FireProjectiles(SkillConfig cfg)
     {
         float facing = controller.FacingDirection;
-        Vector2 origin = cfg.groundWave
-            ? new Vector2(transform.position.x, transform.position.y + 0.5f)
-            : BodyCenter + new Vector2(facing * 0.5f, 0.2f);
+        Vector3 origin = cfg.groundWave
+            ? transform.position + Vector3.up * 0.45f
+            : BodyCenter + new Vector3(facing * 0.5f, 0.2f, 0f);
         float[] dirs = cfg.bothDirections ? new[] { -1f, 1f } : new[] { facing };
         foreach (float d in dirs)
         {
@@ -222,13 +225,15 @@ public class PlayerSkill : MonoBehaviour
             {
                 float a = cfg.projectileCount == 1 ? 0f
                     : Mathf.Lerp(-cfg.spreadAngle / 2f, cfg.spreadAngle / 2f, i / (float)(cfg.projectileCount - 1));
-                Vector2 dir = Quaternion.Euler(0f, 0f, a * d) * new Vector2(d, 0f);
-                var shot = Projectile.Spawn(origin + new Vector2(d * 0.3f, 0f), dir * cfg.projectileSpeed, cfg.projectileSize,
+                // Chùm đạn toả theo chiều sâu (quét nhiều làn), không toả lên trời
+                Vector3 dir = Quaternion.Euler(0f, a * d, 0f) * new Vector3(d, 0f, 0f);
+                var shot = Projectile.Spawn(origin + new Vector3(d * 0.3f, 0f, 0f), dir * cfg.projectileSpeed, cfg.projectileSize,
                                             Theme, targetLayers, groundLayer, Mathf.RoundToInt(cfg.damage * AttackScale), false);
                 shot.attacker = Stats;
                 shot.range = cfg.projectileRange;
                 shot.pierce = cfg.pierce;
                 shot.boomerang = cfg.boomerang;
+                shot.groundWave = cfg.groundWave;
                 shot.owner = transform;
                 shot.knockback = cfg.knockback;
                 shot.stun = cfg.stunTime;
@@ -241,17 +246,17 @@ public class PlayerSkill : MonoBehaviour
 
     // ───────── Sóng âm ─────────
 
-    void Burst(SkillConfig cfg, Vector2 center)
+    void Burst(SkillConfig cfg, Vector3 center)
     {
         GameFeel.Shake(0.2f + cfg.radius * 0.04f);
         ZodiacParticles.Sparkle(center, Theme, 18, cfg.radius * 0.6f);
-        ZodiacFx.Ring(center, cfg.radius, new Color(Theme.r, Theme.g, Theme.b, 0.6f), 0.4f);
+        // Vòng nằm trên mặt đất cho thấy đúng vùng ảnh hưởng theo cả chiều sâu, vòng đứng nhỏ cho cảm giác nổ
+        ZodiacFx.Ring(new Vector3(center.x, transform.position.y, center.z), cfg.radius, new Color(Theme.r, Theme.g, Theme.b, 0.6f), 0.4f, flat: true);
         ZodiacFx.Ring(center, cfg.radius * 0.6f, new Color(1f, 1f, 1f, 0.5f), 0.25f);
-        var filter = new ContactFilter2D { useTriggers = false };
-        filter.SetLayerMask(targetLayers);
-        Physics2D.OverlapCircle(center, cfg.radius, filter, overlaps);
-        foreach (var col in overlaps)
+        int count = Physics.OverlapSphereNonAlloc(center, cfg.radius, overlaps, targetLayers, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < count; i++)
         {
+            var col = overlaps[i];
             var target = col.GetComponentInParent<Health>();
             if (target == null || target.IsDead || !hitThisSkill.Add(target)) continue;
             if (cfg.damage > 0) target.TakeDamage(CreateHit(cfg, center));
@@ -261,7 +266,7 @@ public class PlayerSkill : MonoBehaviour
         for (int i = Projectile.Active.Count - 1; i >= 0; i--)
         {
             var shot = Projectile.Active[i];
-            if (shot.hostile && Vector2.Distance(shot.transform.position, center) <= cfg.radius) shot.Pop();
+            if (shot.hostile && Vector3.Distance(shot.transform.position, center) <= cfg.radius) shot.Pop();
         }
     }
 
@@ -279,7 +284,7 @@ public class PlayerSkill : MonoBehaviour
         float nextRing = 0f;
         for (float t = 0f; t < cfg.channelTime && !interrupted && controller.ControlEnabled; t += Time.deltaTime)
         {
-            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
             if (t >= nextRing)
             {
                 ZodiacFx.Ring(BodyCenter, 1.6f, new Color(0.5f, 1f, 0.6f, 0.5f), 0.3f);
@@ -350,31 +355,31 @@ public class PlayerSkill : MonoBehaviour
             // Đang trên đất: bật lên trước rồi mới dậm (như Mario).
             for (float t = 0f; t < 0.22f; t += Time.fixedDeltaTime)
             {
-                rb.linearVelocity = new Vector2(0f, 10f);
+                rb.linearVelocity = new Vector3(0f, 10f, 0f);
                 yield return new WaitForFixedUpdate();
             }
         }
         // Khựng lại trên không một nhịp — báo hiệu và cho cảm giác nặng.
         for (float t = 0f; t < 0.12f; t += Time.fixedDeltaTime)
         {
-            rb.linearVelocity = Vector2.zero;
+            rb.linearVelocity = Vector3.zero;
             yield return new WaitForFixedUpdate();
         }
         for (float t = 0f; t < 1.5f && controller.ControlEnabled; t += Time.fixedDeltaTime)
         {
             health?.SetInvulnerable(0.1f);   // bất tử trong lúc lao xuống
-            rb.linearVelocity = new Vector2(0f, -cfg.diveSpeed);
+            rb.linearVelocity = new Vector3(0f, -cfg.diveSpeed, 0f);
             HitAround(BodyCenter, controller.BodyCollider.bounds.size, cfg);
             yield return new WaitForFixedUpdate();
             if (controller.IsGrounded) break;
         }
         controller.SetOverride(false);
-        rb.linearVelocity = Vector2.zero;
+        if (!rb.isKinematic) rb.linearVelocity = Vector3.zero;
         health?.SetInvulnerable(0.25f);
-        Vector2 feet = new Vector2(transform.position.x, transform.position.y + 0.3f);
+        Vector3 feet = transform.position + Vector3.up * 0.3f;
         ZodiacFx.Puff(feet, new Color(0.7f, 0.55f, 0.4f, 0.8f), 2.5f);
-        ZodiacParticles.Dust(feet, Vector2.left, 10);
-        ZodiacParticles.Dust(feet, Vector2.right, 10);
+        ZodiacParticles.Dust(feet, Vector3.left, 10);
+        ZodiacParticles.Dust(feet, Vector3.right, 10);
         ZodiacParticles.Debris(feet, new Color(0.55f, 0.42f, 0.3f), 10, 0.8f);
         GameFeel.HitStop(0.06f);
         GameFeel.Shake(0.45f);

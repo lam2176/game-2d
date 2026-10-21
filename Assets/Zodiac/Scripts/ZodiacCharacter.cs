@@ -142,7 +142,7 @@ public class ZodiacCharacter : ScriptableObject
     [Min(0f)] public float coinMagnetRadius = 0f;
     [Tooltip("Nhặt đủ số đồng xu này thì hồi 1 tim (ZodiacBalance.Unit máu). 0 = tắt.")]
     [Min(0)] public int coinsPerHeal = 0;
-    [Tooltip("Nhân sát thương khi đạp đầu quái.")]
+    [Tooltip("Nhân sát thương đòn trên không (đá bay).")]
     [Min(1)] public int stompDamageMultiplier = 1;
 
     [Header("Chiêu thức (phím K)")]
