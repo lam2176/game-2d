@@ -198,6 +198,7 @@ public class BossFoxSpirit : EnemyBase
                 leapTarget = player != null ? player.transform.position : transform.position;
                 leapTarget.y = transform.position.y;
                 leapTarget.z = ClampLane(leapTarget.z);
+                leapTarget.x = ClampRoom(leapTarget.x);
                 break;
             default: state = State.CastWindup; stateEnd = Time.time + castWindup / Speed; break;
         }
@@ -217,6 +218,7 @@ public class BossFoxSpirit : EnemyBase
             leapTarget = player.transform.position;
             leapTarget.y = transform.position.y;
             leapTarget.z = ClampLane(leapTarget.z);
+            leapTarget.x = ClampRoom(leapTarget.x);
         }
         float g = -Physics.gravity.y * Mathf.Max(1f, gravityMultiplier);
         Vector3 d = Vector3.ClampMagnitude(leapTarget - transform.position, 12f);
@@ -292,6 +294,7 @@ public class BossFoxSpirit : EnemyBase
         {
             Vector3 at = transform.position + new Vector3((i % 2 == 0 ? -1f : 1f) * (2.5f + i), 3f, (i % 2 == 0 ? 1f : -1f));
             at.z = ClampLane(at.z);
+            at.x = ClampRoom(at.x);
             var minion = Instantiate(minionPrefab, at, Quaternion.identity);
             minion.name = "Ma Trơi (gọi ra)";
             ZodiacFx.Ring(at, 1.2f, fireColor, 0.3f);
@@ -308,6 +311,9 @@ public class BossFoxSpirit : EnemyBase
         float k = 0.85f + Mathf.Sin(Time.time * 16f) * 0.15f;
         landingMarker.transform.localScale = Vector3.one * slamRadius * 2f * k;
     }
+
+    /// <summary>Thân to — đứng xa hơn; đang lao / nhảy thì đi xuyên qua.</summary>
+    protected override float MinPlayerDistance => state == State.Dash || state == State.Leap ? 0f : 1.5f;
 
     protected override void Interrupt()
     {

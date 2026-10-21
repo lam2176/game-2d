@@ -12,8 +12,9 @@ using static ZodiacLevelData;
 /// tường vô hình giữ người chơi trên mặt đường, cảnh hai bên theo chủ đề (làng quê / rừng trúc / hang động),
 /// nền xa bằng ảnh lớn đặt sâu (thị sai thật nhờ camera phối cảnh), mặt trời có bóng đổ, sương mù theo khoảng cách,
 /// đèn điểm (đèn lồng, lửa, pha lê) — nhân vật dạng sprite nhận đúng ánh sáng đó nên "chìm" vào bản đồ.
-/// Thêm: vùng giao tranh theo đợt (<see cref="EncounterZone"/>), đèn lồng, đồng xu, bãi chông, biển hướng dẫn, cổng đích,
-/// boss, người chơi, camera, HUD và hậu kỳ.
+/// Màn chia thành các khu vừa một khung hình (<see cref="EncounterZone"/>): tường hai đầu, đèn lồng đầu khu, biển hướng dẫn,
+/// đồng xu, bãi chông, quái theo đợt, lối ra mép phải (<see cref="RoomExit"/>); khu cuối có cổng đích / boss.
+/// Thêm người chơi, camera, HUD và hậu kỳ.
 /// Hình khối 3D (nhà, mái, tường đá…) là mesh hộp UV theo kích thước thật nên texture lát đều, không bị kéo giãn.
 /// </summary>
 public static class ZodiacLevelBuilder
@@ -82,24 +83,15 @@ public static class ZodiacLevelBuilder
         BuildFarBackdrop();
         BuildSky(cam);
 
-        var props = new GameObject("Props").transform;
-        var coins = new GameObject("Collectibles").transform;
-        for (int i = 0; i < def.checkpoints.Length; i++) CreateCheckpoint(props, def.checkpoints[i], i + 1);
-        foreach (float x in def.coins) CreateCoinRow(coins, x);
-        for (int i = 0; i < def.hazards.Length; i++) CreateHazard(props, def.hazards[i], i % 2 == 0);
-        foreach (var sign in def.signs) CreateSign(props, sign.x, sign.text);
-        var goal = CreateGoal(props, def.goalX);
-
-        var player = CreatePlayer(new Vector3(def.startX, 0.05f, LaneCenter));
+        var player = CreatePlayer(RoomEntry(0));
         var follow = cam.gameObject.AddComponent<ZodiacCameraFollow>();
         follow.target = player.transform;
         follow.laneCenterZ = LaneCenter;
         follow.minX = 0f;
-        follow.maxX = def.length;
+        follow.maxX = def.Length;
 
         var manager = new GameObject("GameManager").AddComponent<ZodiacGameManager>();
         manager.player = player;
-        manager.goal = goal;
         manager.nextSceneName = def.nextScene;
         manager.levelTitle = def.title;
         manager.laneMinZ = def.laneMin;
@@ -107,7 +99,7 @@ public static class ZodiacLevelBuilder
         manager.music = ZodiacVisualSetup.Clip(MusicFor(def.backdrop));
         manager.stoneFootsteps = def.backdrop == Backdrop.Cave;
         var canvas = BuildHud(manager, player);
-        BuildEncounters(manager, canvas);
+        BuildRooms(manager, canvas);
 
         BuildLighting(cam, player);
         BuildAmbientParticles(cam);
@@ -251,7 +243,7 @@ public static class ZodiacLevelBuilder
     static void BuildGround()
     {
         var t = ctx.textures;
-        float span = def.length + 80f;
+        float span = def.Length + 80f;
         // Nền rộng ra hai bên con đường (đồng cỏ / nền rừng / nền hang) — mặt trên ở y = 0, có collider
         Material field = def.backdrop switch
         {
@@ -259,7 +251,7 @@ public static class ZodiacLevelBuilder
             Backdrop.Bamboo => Mat("ForestFloor", t.turf.texture, Color.Lerp(def.grass, def.soil, 0.45f)),
             _ => Mat("CaveFloor", t.soil.texture, def.soil),
         };
-        Box("Ground", scenery, new Vector3(def.length / 2f, -0.5f, 14f), new Vector3(span, 1f, 50f), field, 3f, collider: true);
+        Box("Ground", scenery, new Vector3(def.Length / 2f, -0.5f, 14f), new Vector3(span, 1f, 50f), field, 3f, collider: true);
         // Mặt đường đi được (đường đất / lối mòn / nền đá) nhô lên 1cm để không nhấp nháy với nền
         Material road = def.backdrop switch
         {
@@ -268,11 +260,11 @@ public static class ZodiacLevelBuilder
             _ => Mat("CaveRoad", t.cobble.texture, def.stone),
         };
         float width = def.laneMax - def.laneMin + 1.4f;
-        Box("Road", scenery, new Vector3(def.length / 2f, -0.49f, LaneCenter), new Vector3(def.length + 30f, 1f, width), road, 2.5f);
+        Box("Road", scenery, new Vector3(def.Length / 2f, -0.49f, LaneCenter), new Vector3(def.Length + 30f, 1f, width), road, 2.5f);
         // Mép đường: dải đá viền hai bên cho thấy rõ giới hạn đi được
         var curb = Mat("Curb", t.cobble.texture, Color.Lerp(def.stone, Color.white, 0.1f));
         foreach (float z in new[] { def.laneMin - 0.75f, def.laneMax + 0.75f })
-            Box("Curb", scenery, new Vector3(def.length / 2f, 0.02f, z), new Vector3(def.length + 30f, 0.12f, 0.3f), curb, 1f);
+            Box("Curb", scenery, new Vector3(def.Length / 2f, 0.02f, z), new Vector3(def.Length + 30f, 0.12f, 0.3f), curb, 1f);
     }
 
     /// <summary>Tường vô hình: hai mép đường (trước/sau) và hai đầu màn.</summary>
@@ -286,11 +278,11 @@ public static class ZodiacLevelBuilder
             go.transform.position = center;
             go.AddComponent<BoxCollider>().size = size;
         }
-        float mid = def.length / 2f, depth = def.laneMax - def.laneMin;
-        Wall("Back", new Vector3(mid, 3f, def.laneMax + 0.5f + 0.5f), new Vector3(def.length + 20f, 8f, 1f));
-        Wall("Front", new Vector3(mid, 3f, def.laneMin - 0.5f - 0.5f), new Vector3(def.length + 20f, 8f, 1f));
+        float mid = def.Length / 2f, depth = def.laneMax - def.laneMin;
+        Wall("Back", new Vector3(mid, 3f, def.laneMax + 0.75f), new Vector3(def.Length + 20f, 8f, 1f));
+        Wall("Front", new Vector3(mid, 3f, def.laneMin - 0.75f), new Vector3(def.Length + 20f, 8f, 1f));
         Wall("Start", new Vector3(-0.5f, 3f, LaneCenter), new Vector3(1f, 8f, depth + 4f));
-        Wall("End", new Vector3(def.length + 0.5f, 3f, LaneCenter), new Vector3(1f, 8f, depth + 4f));
+        Wall("End", new Vector3(def.Length + 0.5f, 3f, LaneCenter), new Vector3(1f, 8f, depth + 4f));
     }
 
     // ───────────────────────────── Cảnh theo chủ đề ─────────────────────────────
@@ -311,7 +303,7 @@ public static class ZodiacLevelBuilder
 
         // Dãy nhà phía sau con đường, xen luỹ tre và cây
         float x = -6f;
-        while (x < def.length + 10f)
+        while (x < def.Length + 10f)
         {
             float w = R(6f, 8.5f);
             float roll = (float)rnd.NextDouble();
@@ -321,14 +313,14 @@ public static class ZodiacLevelBuilder
             x += w + R(1f, 3f);
         }
         // Hàng rào tre thấp sát mép trong con đường
-        for (float fx = 0f; fx < def.length; fx += 1.6f)
+        for (float fx = 0f; fx < def.Length; fx += 1.6f)
         {
             if (rnd.NextDouble() < 0.25f) { fx += 3f; continue; }
             Box("FencePost", scenery, new Vector3(fx, 0.45f, def.laneMax + 1.4f), new Vector3(0.12f, 0.9f, 0.12f), fence, 1f);
             Box("FenceRail", scenery, new Vector3(fx + 0.8f, 0.6f, def.laneMax + 1.4f), new Vector3(1.6f, 0.07f, 0.07f), fence, 1f);
         }
         // Tiền cảnh: bụi cỏ, đống rơm thấp (không che nhân vật)
-        for (float fx = R(2f, 8f); fx < def.length; fx += R(7f, 14f))
+        for (float fx = R(2f, 8f); fx < def.Length; fx += R(7f, 14f))
         {
             float z = def.laneMin - R(1.6f, 3.2f);
             if (rnd.NextDouble() < 0.5f)
@@ -337,10 +329,10 @@ public static class ZodiacLevelBuilder
                 Primitive(PrimitiveType.Cylinder, "Haystack", scenery, new Vector3(fx, 0.45f, z), new Vector3(1.1f, 0.45f, 1.1f), hay);
         }
         // Đồng lúa xa phía sau, bờ ruộng, vài cây lẻ
-        Box("RiceField", scenery, new Vector3(def.length / 2f, 0.02f, def.laneMax + 20f), new Vector3(def.length + 80f, 0.04f, 22f), rice, 3f);
+        Box("RiceField", scenery, new Vector3(def.Length / 2f, 0.02f, def.laneMax + 20f), new Vector3(def.Length + 80f, 0.04f, 22f), rice, 3f);
         for (float z = def.laneMax + 11f; z < def.laneMax + 31f; z += 4f)
-            Box("Dike", scenery, new Vector3(def.length / 2f, 0.06f, z), new Vector3(def.length + 80f, 0.12f, 0.35f), Mat("Dike", t.soil.texture, def.soil), 2f);
-        for (float fx = -10f; fx < def.length + 20f; fx += R(12f, 22f))
+            Box("Dike", scenery, new Vector3(def.Length / 2f, 0.06f, z), new Vector3(def.Length + 80f, 0.12f, 0.35f), Mat("Dike", t.soil.texture, def.soil), 2f);
+        for (float fx = -10f; fx < def.Length + 20f; fx += R(12f, 22f))
             Tree(new Vector3(fx, 0f, def.laneMax + R(18f, 32f)), trunk, leaves, R(3f, 4.5f));
     }
 
@@ -409,16 +401,16 @@ public static class ZodiacLevelBuilder
         for (float z = def.laneMax + 1.8f; z < def.laneMax + 40f; z += R(1.2f, 2.6f))
         {
             float density = Mathf.Lerp(0.9f, 0.35f, (z - def.laneMax) / 40f);
-            for (float x = R(-12f, -8f); x < def.length + 12f; x += R(1.4f, 3.5f) / density)
+            for (float x = R(-12f, -8f); x < def.Length + 12f; x += R(1.4f, 3.5f) / density)
                 BambooStalk(new Vector3(x, 0f, z + R(-0.5f, 0.5f)), stalkMats[rnd.Next(stalkMats.Length)], node, R(9f, 15f));
         }
         // Vài cây tre tiền cảnh sát camera (thưa, mảnh) — tạo lớp che phía trước như rừng thật
-        for (float x = R(4f, 10f); x < def.length; x += R(14f, 22f))
+        for (float x = R(4f, 10f); x < def.Length; x += R(14f, 22f))
             BambooStalk(new Vector3(x, 0f, def.laneMin - R(2.2f, 3.5f)), stalkMats[rnd.Next(stalkMats.Length)], node, R(9f, 12f));
         // Tán lá trên cao, đá rêu ven đường
-        for (float x = -10f; x < def.length + 10f; x += R(6f, 10f))
+        for (float x = -10f; x < def.Length + 10f; x += R(6f, 10f))
             Primitive(PrimitiveType.Sphere, "Canopy", scenery, new Vector3(x, R(9f, 12f), def.laneMax + R(3f, 10f)), new Vector3(R(5f, 8f), 2f, 4f), leaves);
-        for (float x = R(3f, 8f); x < def.length; x += R(8f, 15f))
+        for (float x = R(3f, 8f); x < def.Length; x += R(8f, 15f))
             Primitive(PrimitiveType.Sphere, "Rock", scenery, new Vector3(x, 0.15f, def.laneMax + R(1.2f, 2.2f)), new Vector3(R(0.8f, 1.6f), R(0.5f, 0.8f), R(0.7f, 1.1f)), rock);
     }
 
@@ -441,28 +433,28 @@ public static class ZodiacLevelBuilder
         var ember = Plain("Ember", new Color(1f, 0.55f, 0.2f), new Color(1f, 0.45f, 0.1f) * 3f);
 
         // Vách hang phía sau: các khối đá cao thấp, nghiêng nhẹ
-        for (float x = -10f; x < def.length + 12f; x += R(2.5f, 4.5f))
+        for (float x = -10f; x < def.Length + 12f; x += R(2.5f, 4.5f))
         {
             float h = R(6f, 11f), w = R(3f, 5f);
             Box("CaveRock", scenery, new Vector3(x, h / 2f - 0.5f, def.laneMax + R(2.5f, 4f)), new Vector3(w, h, R(2.5f, 4f)),
                 rnd.NextDouble() < 0.5 ? rock : rockDark, 2f, euler: new Vector3(R(-6f, 6f), R(-15f, 15f), R(-5f, 5f)));
         }
         // Vách xa hơn mờ trong bóng tối
-        Box("CaveBack", scenery, new Vector3(def.length / 2f, 8f, def.laneMax + 14f), new Vector3(def.length + 60f, 18f, 2f), rockDark, 4f);
+        Box("CaveBack", scenery, new Vector3(def.Length / 2f, 8f, def.laneMax + 14f), new Vector3(def.Length + 60f, 18f, 2f), rockDark, 4f);
         // Măng đá phía trước và sau
-        for (float x = R(2f, 6f); x < def.length; x += R(6f, 12f))
+        for (float x = R(2f, 6f); x < def.Length; x += R(6f, 12f))
         {
             float s = R(0.5f, 0.9f);
             Box("Stalagmite", scenery, new Vector3(x, 0.4f, def.laneMin - R(1.6f, 3f)), new Vector3(s, s * 2.2f, s), rock, 1f, euler: new Vector3(0f, 45f, R(-8f, 8f)));
         }
         // Pha lê phát sáng trên vách, chậu lửa ven đường: nguồn sáng chính trong hang
-        for (float x = R(3f, 7f); x < def.length; x += R(8f, 12f))
+        for (float x = R(3f, 7f); x < def.Length; x += R(8f, 12f))
         {
             var c = Box("Crystal", scenery, new Vector3(x, R(2f, 4.5f), def.laneMax + 1.9f), new Vector3(0.5f, 0.9f, 0.5f), crystal, 1f,
                         euler: new Vector3(0f, 45f, R(-25f, 25f)));
             ZodiacLights.AddPoint(c, new Color(0.6f, 0.45f, 1f), 7f, 2.5f);
         }
-        for (float x = 6f; x < def.length; x += R(11f, 15f))
+        for (float x = 6f; x < def.Length; x += R(11f, 15f))
         {
             var b = Primitive(PrimitiveType.Cylinder, "Brazier", scenery, new Vector3(x, 0.45f, def.laneMax + 1.3f), new Vector3(0.7f, 0.45f, 0.7f), bowl);
             var fire = Primitive(PrimitiveType.Sphere, "Fire", b.transform.parent, new Vector3(x, 1.05f, def.laneMax + 1.3f), new Vector3(0.55f, 0.45f, 0.55f), ember);
@@ -475,17 +467,17 @@ public static class ZodiacLevelBuilder
     {
         var t = ctx.textures;
         var root = new GameObject("FarBackdrop").transform;
-        float span = def.length + 140f;
+        float span = def.Length + 140f;
         switch (def.backdrop)
         {
             case Backdrop.Village:
-                Card("Mountains", root, t.ridge, new Vector3(def.length / 2f, 9f, 95f), new Vector2(span * 1.6f, 22f), Color.Lerp(def.far, def.sky, 0.25f));
-                Card("Hills", root, t.hills, new Vector3(def.length / 2f, 3.5f, 55f), new Vector2(span * 1.2f, 8f), def.mid);
+                Card("Mountains", root, t.ridge, new Vector3(def.Length / 2f, 9f, 95f), new Vector2(span * 1.6f, 22f), Color.Lerp(def.far, def.sky, 0.25f));
+                Card("Hills", root, t.hills, new Vector3(def.Length / 2f, 3.5f, 55f), new Vector2(span * 1.2f, 8f), def.mid);
                 break;
             case Backdrop.Bamboo:
-                Card("Ridge", root, t.ridge, new Vector3(def.length / 2f, 10f, 80f), new Vector2(span * 1.5f, 24f), def.far);
+                Card("Ridge", root, t.ridge, new Vector3(def.Length / 2f, 10f, 80f), new Vector2(span * 1.5f, 24f), def.far);
                 for (int i = 0; i < 3; i++)
-                    Card("Mist", root, t.fog, new Vector3(def.length / 2f, 1.5f + i * 2.5f, 20f + i * 12f), new Vector2(span, 5f),
+                    Card("Mist", root, t.fog, new Vector3(def.Length / 2f, 1.5f + i * 2.5f, 20f + i * 12f), new Vector2(span, 5f),
                          new Color(1f, 1f, 1f, 0.3f), tiled: false).sharedMaterial = ZodiacVisualSetup.UnlitMaterial;
                 break;
         }
@@ -674,45 +666,100 @@ public static class ZodiacLevelBuilder
         return trigger;
     }
 
-    // ───────────────────────────── Vùng giao tranh, boss ─────────────────────────────
+    // ───────────────────────────── Khu, boss ─────────────────────────────
 
-    static void BuildEncounters(ZodiacGameManager manager, Transform canvas)
+    static Vector3 RoomEntry(int i) => new Vector3(def.RoomX(i) + 1.6f, 0.05f, LaneCenter);
+
+    static void BuildRooms(ZodiacGameManager manager, Transform canvas)
     {
-        var root = new GameObject("Encounters").transform;
-        foreach (var e in def.encounters)
+        var root = new GameObject("Rooms").transform;
+        var coins = new GameObject("Collectibles").transform;
+        var zones = new EncounterZone[def.stages.Length];
+        for (int i = 0; i < def.stages.Length; i++)
         {
-            var go = new GameObject($"Encounter {e.x:0}");
+            var stage = def.stages[i];
+            float xMin = def.RoomX(i), xMax = xMin + RoomWidth;
+            bool last = i == def.stages.Length - 1;
+            var go = new GameObject($"Room {i + 1} — {stage.title}");
             go.transform.SetParent(root, false);
-            go.transform.position = new Vector3(e.x + e.width / 2f, 0f, LaneCenter);
+            go.transform.position = new Vector3((xMin + xMax) / 2f, 0f, LaneCenter);
             var zone = go.AddComponent<EncounterZone>();
-            zone.xMin = e.x;
-            zone.xMax = e.x + e.width;
-            zone.triggerX = e.x + (e.boss ? 4f : 5f);
-            zone.walls = new[]
-            {
-                ArenaWall(go.transform, e.x - 0.5f),
-                ArenaWall(go.transform, e.x + e.width + 0.5f),
-            };
-            zone.waves = new EncounterZone.Wave[e.waves.Length];
-            for (int w = 0; w < e.waves.Length; w++) zone.waves[w] = ParseWave(e, e.waves[w]);
-            if (e.boss) BuildBoss(zone, e, manager, canvas);
+            zone.title = stage.title;
+            zone.xMin = xMin;
+            zone.xMax = xMax;
+            zone.entry = RoomEntry(i);
+            RoomWall(go.transform, xMin - 0.5f);
+            RoomWall(go.transform, xMax + 0.5f);
+            CreateCheckpoint(go.transform, xMin + 0.6f, i + 1);
+            if (!string.IsNullOrEmpty(stage.sign)) CreateSign(go.transform, xMin + 3.2f, stage.sign);
+            for (int c = 0; c < stage.coinRows; c++) CreateCoinRow(coins, Mathf.Lerp(xMin + 4f, xMax - 4f, (c + 0.5f) / stage.coinRows));
+            if (stage.hazard) CreateHazard(go.transform, (xMin + xMax) / 2f + 1f, i % 2 == 0);
+            zone.waves = new EncounterZone.Wave[stage.waves.Length];
+            for (int w = 0; w < stage.waves.Length; w++) zone.waves[w] = ParseWave(xMin, xMax, w, stage.waves[w]);
+            if (stage.boss) BuildBoss(zone, xMin, xMax, canvas);
+            if (last) manager.goal = CreateGoal(go.transform, xMax - 2.2f);
+            else zone.exit = CreateExit(go.transform, xMax - 0.7f);
+            zones[i] = zone;
         }
+        manager.rooms = zones;
     }
 
-    /// <summary>Tường vô hình hai đầu đấu trường — chỉ chặn người chơi (quái từ ngoài màn hình vẫn đi vào được).</summary>
-    static GameObject ArenaWall(Transform parent, float x)
+    /// <summary>Tường hai đầu khu — chặn cả người chơi lẫn quái (không ai bị đánh văng ra khỏi khung hình).</summary>
+    static void RoomWall(Transform parent, float x)
     {
-        var go = new GameObject("ArenaWall") { layer = ctx.groundLayer };
+        var go = new GameObject("RoomWall") { layer = ctx.groundLayer };
         go.transform.SetParent(parent, false);
         go.transform.position = new Vector3(x, 3f, LaneCenter);
+        go.AddComponent<BoxCollider>().size = new Vector3(1f, 8f, def.laneMax - def.laneMin + 2f);
+    }
+
+    /// <summary>Lối ra mép phải: cột sáng vàng + mũi tên, bật khi dọn xong khu.</summary>
+    static GameObject CreateExit(Transform parent, float x)
+    {
+        var go = new GameObject("RoomExit");
+        go.transform.SetParent(parent, false);
+        go.transform.position = new Vector3(x, 0f, LaneCenter);
         var box = go.AddComponent<BoxCollider>();
-        box.size = new Vector3(1f, 8f, def.laneMax - def.laneMin + 2f);
-        box.excludeLayers = 1 << ctx.enemyLayer;
+        box.size = new Vector3(1f, 3f, def.laneMax - def.laneMin + 1f);
+        box.center = new Vector3(0f, 1.5f, 0f);
+        var exit = go.AddComponent<RoomExit>();
+
+        var beacon = new GameObject("Beacon").transform;
+        beacon.SetParent(go.transform, false);
+        var gold = new Color(1f, 0.85f, 0.35f, 0.35f);
+        var glow = Plain("ExitGlow", new Color(1f, 0.85f, 0.35f), new Color(1f, 0.75f, 0.25f) * 1.5f);
+        // Cột sáng mảnh ở mép trong + vệt sáng chạy ngang mặt đường (không chắn tầm nhìn)
+        var column = Box("LightColumn", beacon, new Vector3(x, 1.6f, def.laneMax + 0.4f), new Vector3(0.25f, 3.2f, 0.25f), glow, 1f);
+        var strip = Box("LightStrip", beacon, new Vector3(x, 0.02f, LaneCenter), new Vector3(0.35f, 0.03f, def.laneMax - def.laneMin), glow, 1f);
+        foreach (var r in new[] { column, strip }) r.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+        var arrow = ZodiacPrototypeBuilder.CreateText(CreateWorldCanvas(beacon, new Vector3(x - 0.6f, 2.4f, def.laneMin - 0.2f)), "Arrow", "→", 160,
+                                                      new Color(1f, 0.9f, 0.4f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200f, 200f), TextAnchor.MiddleCenter);
+        arrow.fontStyle = FontStyle.Bold;
+        ZodiacLights.AddPoint(beacon.gameObject, gold, 6f, 2f);
+        exit.beacon = beacon;
         return go;
     }
 
-    /// <summary>Đợt quái từ chuỗi mã: quái chạy vào xen kẽ từ mép phải / trái, rải đều các làn; Thạch Sư đứng sẵn ở làn trong cùng.</summary>
-    static EncounterZone.Wave ParseWave(Encounter e, string codes)
+    static Transform CreateWorldCanvas(Transform parent, Vector3 position)
+    {
+        var canvasGo = new GameObject("Canvas", typeof(RectTransform));
+        canvasGo.transform.SetParent(parent, false);
+        canvasGo.AddComponent<Billboard>().full = true;
+        var canvas = canvasGo.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+        canvas.sortingOrder = 30;
+        var rt = (RectTransform)canvasGo.transform;
+        rt.sizeDelta = new Vector2(200f, 200f);
+        rt.localScale = Vector3.one * 0.01f;
+        rt.position = position;
+        return canvasGo.transform;
+    }
+
+    /// <summary>
+    /// Đợt quái từ chuỗi mã. Quái hiện ngay trong khu: đợt đầu dồn về nửa phải (người chơi vào từ mép trái),
+    /// các đợt sau xen kẽ hai bên; rải đều các làn. Thạch Sư đứng sẵn ở làn trong cùng.
+    /// </summary>
+    static EncounterZone.Wave ParseWave(float xMin, float xMax, int waveIndex, string codes)
     {
         var spawns = new List<EncounterZone.Spawn>();
         var tokens = codes.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
@@ -739,18 +786,22 @@ public static class ZodiacLevelBuilder
             float delay;
             if (c == 'T')
             {
-                float tx = e.x + e.width * (turrets % 2 == 0 ? 0.72f : 0.3f);
-                pos = new Vector3(tx, 0f, def.laneMax - 0.5f);
+                float tx = Mathf.Lerp(xMin, xMax, turrets % 2 == 0 ? 0.75f : 0.45f);
+                pos = new Vector3(tx, 0.05f, def.laneMax - 0.5f);
                 delay = 0f;
                 turrets++;
             }
             else
             {
-                bool right = walkers % 2 == 0;
-                float lane = tokens.Length <= 1 ? 0.5f : (walkers * 0.37f) % 1f;
+                bool right = waveIndex == 0 || walkers % 2 == 0;
+                int slot = waveIndex == 0 ? walkers : walkers / 2;
+                float x = right ? xMax - 1.2f - slot * 1.6f : xMin + 1.2f + slot * 1.6f;
+                x = Mathf.Clamp(x, xMin + 5f, xMax - 1.2f);
+                if (!right) x = Mathf.Clamp(xMin + 1.2f + slot * 1.6f, xMin + 1.2f, xMax - 5f);
+                float lane = tokens.Length <= 1 ? 0.5f : (walkers * 0.37f + 0.15f) % 1f;
                 float z = Mathf.Lerp(def.laneMin + 0.5f, def.laneMax - 0.5f, lane);
-                pos = new Vector3(right ? e.x + e.width + 1.5f : e.x - 1.5f, c == 'F' ? 2.6f : 0.05f, z);
-                delay = walkers * 0.45f;
+                pos = new Vector3(x, c == 'F' ? 2.6f : 0.05f, z);
+                delay = walkers * 0.4f;
                 walkers++;
             }
             spawns.Add(new EncounterZone.Spawn { prefab = prefab, position = pos, delay = delay });
@@ -758,14 +809,13 @@ public static class ZodiacLevelBuilder
         return new EncounterZone.Wave { spawns = spawns.ToArray() };
     }
 
-    static void BuildBoss(EncounterZone zone, Encounter e, ZodiacGameManager manager, Transform canvas)
+    static void BuildBoss(EncounterZone zone, float xMin, float xMax, Transform canvas)
     {
         var go = (GameObject)PrefabUtility.InstantiatePrefab(ctx.prefabs.boss);
-        go.transform.position = new Vector3(e.x + e.width * 0.72f, 0.05f, LaneCenter);
+        go.transform.position = new Vector3(Mathf.Lerp(xMin, xMax, 0.72f), 0.05f, LaneCenter);
         var boss = go.GetComponent<BossFoxSpirit>();
         zone.boss = boss;
         zone.bossMusic = ZodiacVisualSetup.Clip("Music/music_boss");
-        manager.boss = boss;
 
         // Thanh máu boss trên HUD
         var bar = ZodiacPrototypeBuilder.CreateImage(canvas, "BossBar", BarBackColor);
@@ -1094,8 +1144,12 @@ public static class ZodiacLevelBuilder
         go.gameObject.AddComponent<GoIndicator>();
 
         var banner = ZodiacPrototypeBuilder.CreateText(canvas, "LevelBanner", $"{def.title}\n<size=34>{def.subtitle}</size>", 64,
-            Color.white, new Vector2(0.5f, 0.5f), new Vector2(0f, 220f), new Vector2(1400f, 200f), TextAnchor.MiddleCenter);
+            Color.white, new Vector2(0.5f, 0.5f), new Vector2(0f, 250f), new Vector2(1400f, 200f), TextAnchor.MiddleCenter);
         banner.gameObject.AddComponent<TimedFade>().delay = 2.5f;
+        var roomBanner = ZodiacPrototypeBuilder.CreateText(canvas, "RoomBanner", "", 48, new Color(1f, 0.9f, 0.6f),
+            new Vector2(0.5f, 0.5f), new Vector2(0f, 90f), new Vector2(1200f, 140f), TextAnchor.MiddleCenter);
+        roomBanner.gameObject.AddComponent<TimedFade>().delay = 1.6f;
+        manager.roomBanner = roomBanner;
 
         BuildResultPanels(canvas, manager);
         ZodiacPrototypeBuilder.CreateEventSystem(null);

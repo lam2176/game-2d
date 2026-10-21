@@ -6,10 +6,12 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Trạng thái màn chơi: đang chơi → thắng (chạm cổng đích) hoặc thua (Health người chơi về 0).
+/// Màn chia thành các khu (<see cref="rooms"/>), mỗi khu vừa một khung hình: vào khu thì camera khoá, hiện tên khu,
+/// quái kéo tới; dọn xong đi ra mép phải là màn hình tối lại và chuyển sang khu kế (<see cref="NextRoom"/>).
+/// Cổng đích chỉ hiện khi dọn xong khu cuối (và hạ boss nếu có).
 /// Thua có thể "Hồi sinh tại đèn lồng": tải lại màn và đặt người chơi ở đèn lồng đã thắp xa nhất —
-/// các vùng giao tranh phía sau đèn lồng coi như đã dọn (<see cref="EncounterZone"/>).
-/// Màn có boss thì cổng đích chỉ hiện khi boss bị hạ.
-/// Giữ giới hạn mặt đường (làn trong cùng / ngoài cùng) cho quái dùng chung.
+/// các khu phía trước đèn lồng coi như đã dọn.
+/// Giữ giới hạn mặt đường (làn trong cùng / ngoài cùng) và khu đang đánh cho quái dùng chung.
 /// Đếm đồng xu, cập nhật HUD, hiện bảng thắng/thua. Phím F5 chơi lại nhanh (R là Tuyệt kỹ).
 /// </summary>
 public class ZodiacGameManager : MonoBehaviour
@@ -21,6 +23,9 @@ public class ZodiacGameManager : MonoBehaviour
     /// <summary>Z làn ngoài cùng (gần camera) và trong cùng của mặt đường.</summary>
     public static float LaneMinZ => Instance != null ? Instance.laneMinZ : -3f;
     public static float LaneMaxZ => Instance != null ? Instance.laneMaxZ : 3f;
+    /// <summary>Mép trái / phải khu đang đánh (quái không chạy ra ngoài khung hình).</summary>
+    public static float RoomMinX => Instance != null && Instance.Room != null ? Instance.Room.xMin : -1000f;
+    public static float RoomMaxX => Instance != null && Instance.Room != null ? Instance.Room.xMax : 1000f;
 
     public ZodiacPlayerController player;
     public PlayerTrigger goal;
@@ -28,8 +33,8 @@ public class ZodiacGameManager : MonoBehaviour
     [Tooltip("Scene màn tiếp theo. Trống = màn cuối, thắng thì về màn hình chính.")]
     public string nextSceneName = "";
     public string levelTitle = "";
-    [Tooltip("Boss của màn (không bắt buộc) — cổng đích ẩn cho tới khi boss bị hạ.")]
-    public BossFoxSpirit boss;
+    [Tooltip("Các khu theo thứ tự. Cổng đích hiện khi dọn xong khu cuối.")]
+    public EncounterZone[] rooms = System.Array.Empty<EncounterZone>();
 
     [Header("Mặt đường")]
     public float laneMinZ = -3f;
@@ -48,9 +53,13 @@ public class ZodiacGameManager : MonoBehaviour
     [Tooltip("Dòng lý do thua trong LosePanel.")]
     public Text loseDetailText;
     public Text nextButtonLabel;
+    [Tooltip("Tên khu hiện giữa màn hình khi vào khu.")]
+    public Text roomBanner;
 
     public State Current { get; private set; } = State.Playing;
     public Checkpoint ActiveCheckpoint { get; private set; }
+    public int RoomIndex { get; private set; } = -1;
+    public EncounterZone Room => RoomIndex >= 0 && RoomIndex < rooms.Length ? rooms[RoomIndex] : null;
 
     int collected, total, coinsTowardHeal;
     Checkpoint[] checkpoints;
@@ -95,15 +104,16 @@ public class ZodiacGameManager : MonoBehaviour
         if (playerHealth != null) playerHealth.Died += () => Finish(State.Lost, "Bạn đã bị hạ gục");
         foreach (var cp in checkpoints) cp.Reached += OnCheckpoint;
 
-        if (boss != null)
+        if (rooms.Length > 0)
         {
             if (goal != null) goal.gameObject.SetActive(false);
-            boss.Health.Died += OnBossDefeated;
-        }
-        if (ActiveCheckpoint != null)
-        {
-            var follow = FindAnyObjectByType<ZodiacCameraFollow>();
-            if (follow != null) follow.SnapToTarget();
+            rooms[rooms.Length - 1].Cleared += _ => ShowGoal();
+            // Khu đang đứng (hồi sinh ở đèn lồng giữa màn) — các khu trước coi như đã dọn
+            int start = 0;
+            for (int i = 0; i < rooms.Length; i++)
+                if (player.transform.position.x >= rooms[i].xMin) start = i;
+            for (int i = 0; i < start; i++) rooms[i].MarkCleared();
+            EnterRoom(start);
         }
 
         winPanel.SetActive(false);
@@ -137,11 +147,49 @@ public class ZodiacGameManager : MonoBehaviour
         ZodiacFx.Ring(cp.transform.position + Vector3.up * 1.5f, 2f, new Color(1f, 0.6f, 0.2f, 0.7f));
     }
 
-    void OnBossDefeated()
+    void ShowGoal()
     {
         if (goal == null) return;
         goal.gameObject.SetActive(true);
         ZodiacFx.Ring(goal.transform.position, 4f, new Color(1f, 0.9f, 0.4f, 0.8f), 0.8f, flat: true);
+        GoIndicator.Show();
+    }
+
+    /// <summary>Vào khu: khoá camera vào khu, hiện tên khu, bắt đầu đợt quái.</summary>
+    public void EnterRoom(int index)
+    {
+        RoomIndex = Mathf.Clamp(index, 0, rooms.Length - 1);
+        var room = rooms[RoomIndex];
+        var follow = FindAnyObjectByType<ZodiacCameraFollow>();
+        if (follow != null)
+        {
+            follow.Lock(room.xMin, room.xMax);
+            follow.SnapToTarget();
+        }
+        if (roomBanner != null)
+        {
+            roomBanner.text = $"Khu {RoomIndex + 1}/{rooms.Length}" + (string.IsNullOrEmpty(room.title) ? "" : $"\n<size=34>{room.title}</size>");
+            if (roomBanner.TryGetComponent(out TimedFade fade)) fade.Restart();
+        }
+        room.Begin();
+    }
+
+    /// <summary>Đi vào lối ra của khu đã dọn: tối màn hình, chuyển sang khu kế.</summary>
+    public void NextRoom()
+    {
+        if (Current != State.Playing || RoomIndex + 1 >= rooms.Length) return;
+        int next = RoomIndex + 1;
+        var target = rooms[next];
+        player.SetControlEnabled(false);
+        ScreenFader.Blink(() =>
+        {
+            if (Current != State.Playing) return;
+            player.SetControlEnabled(true);
+            player.Teleport(target.entry);
+            player.SetFacing(1f);
+            playerHealth?.SetInvulnerable(1f);
+            EnterRoom(next);
+        }, 0.35f, "Đang tới khu tiếp theo…" + (string.IsNullOrEmpty(target.title) ? "" : $"\n<size=32>{target.title}</size>"), 0.5f);
     }
 
     /// <summary>Dính bẫy (gai, lửa): trừ máu, bị đẩy ra khỏi bẫy.</summary>

@@ -97,6 +97,9 @@ public class EnemyRoller : EnemyBase
         ZodiacParticles.Dust(transform.position + Vector3.up * 0.1f, -Vector3.right * direction, 6);
     }
 
+    /// <summary>Đang lăn thì lăn xuyên qua chỗ người chơi đứng.</summary>
+    protected override float MinPlayerDistance => state == State.Roll ? 0f : 0.75f;
+
     protected override void Interrupt()
     {
         if (state == State.Windup) { state = State.Align; nextRoll = Time.time + cooldown * 0.5f; ReleaseToken(); }

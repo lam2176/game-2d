@@ -33,13 +33,17 @@ Tay phải mũi tên, tay trái Space/Shift + QWER (như game hành động onli
 ## Luật chung (tham khảo)
 
 - **Canh làn**: đòn đánh chỉ trúng quái cùng làn (lệch tối đa ~0.5 unit). Né bằng cách đổi làn, lăn, hoặc nhảy.
-- **Vùng giao tranh** (*Streets of Rage*): đi tới thì tường vô hình đóng hai đầu, camera khoá khung, quái kéo tới theo từng đợt.
-  Dọn xong thì hiện **ĐI TIẾP →**.
+- **Màn chia thành khu**: mỗi khu vừa khít một khung hình, camera đứng yên nên luôn thấy hết quái. Quái hiện ngay trong khu
+  (vòng khói báo trước) theo từng đợt. Dọn xong hiện **ĐI TIẾP →** và cột sáng ở mép phải; đi vào là màn hình tối lại
+  ("Đang tới khu tiếp theo…") rồi sang khu kế. Khu cuối có cổng đích (màn 3: boss).
 - **Vây đánh có lượt** (*Sifu*, *Batman Arkham*): tối đa 2 quái tấn công cùng lúc, số còn lại đứng vòng ngoài chờ.
 - **Quật ngã**: đòn kết combo, đá bay, đòn lao làm quái văng lên nằm đất (bất tử khi nằm); đánh trúng lúc còn đang bay thì tung hứng tiếp.
 - **Quái không gây sát thương khi chạm** — mọi đòn của quái đều **có báo hiệu trước** (thân bẹp xuống, phát sáng, vòng đỏ dưới đất).
-- **Đèn lồng = checkpoint**: đi ngang qua thì thắp, hồi 1 tim (20 máu) và trở thành điểm hồi sinh khi bấm "Hồi sinh tại đèn lồng".
-  Các vùng giao tranh phía sau đèn lồng coi như đã dọn.
+  Quái không bao giờ đứng đè lên người chơi (giữ khoảng cách tối thiểu).
+- **Lính cầm đồ mất đồ**: Lính Khiên đỡ 4 đòn (hoặc còn nửa máu) thì vỡ khiên; Lính Đất Nung còn nửa máu thì văng giáo.
+  Mất đồ thì thành lính thường: hết đỡ đòn, đánh yếu và ngắn tầm hơn nhưng nhanh hơn.
+- **Đèn lồng = checkpoint**: mỗi khu có một đèn lồng ở đầu khu; thắp đèn hồi 1 tim (20 máu). Thua thì "Hồi sinh tại đèn lồng"
+  bắt đầu lại từ đầu khu đang đánh, các khu trước coi như đã dọn.
 - **Bãi chông / than hồng** chắn nửa mặt đường: đi vòng làn kia hoặc nhảy qua.
 
 ## 12 con giáp
@@ -67,7 +71,9 @@ pivot ở bàn chân → `Assets/Zodiac/Art/Characters/<Con>_<Chi>.png`.
 
 ## Quái
 
-Lấy cảm hứng từ truyện cổ và đình chùa Việt Nam; hình dáng tạm ghép từ hình khối (chưa có sprite).
+Lấy cảm hứng từ truyện cổ và đình chùa Việt Nam. Ảnh quái vẽ bằng AI (Figma AI) theo nét tranh Tết của 12 con giáp, tách nền bằng
+**Tools ▸ Zodiac ▸ Tách nền ảnh quái** (ảnh gốc nền trắng đặt ở `Assets/Zodiac/Art/Enemies/Raw`, kết quả ở `Assets/Zodiac/Art/Enemies`).
+Giáo và khiên là ảnh riêng để văng ra khi lính mất đồ. Boss Hồ Tinh chưa có ảnh (hết credit AI) — vẫn ghép hình khối.
 
 | Quái | Mã đợt | Hành vi | Cách hạ | Tham khảo |
 |---|---|---|---|---|
@@ -81,24 +87,24 @@ Lấy cảm hứng từ truyện cổ và đình chùa Việt Nam; hình dáng t
 
 ## Bản đồ
 
-Mỗi màn khai báo trong `Assets/Zodiac/Editor/ZodiacLevelData.cs`: chiều dài con đường, các **vùng giao tranh**
-(vị trí, bề ngang, danh sách đợt quái viết bằng mã — ví dụ `"W Q W"`), đèn lồng, cụm đồng xu, bãi chông, biển hướng dẫn, cổng đích.
-Sửa số liệu rồi dựng lại là xong. Cảnh hai bên đường (nhà, tre, vách đá) sinh theo chủ đề với số ngẫu nhiên cố định theo tên màn.
+Mỗi màn khai báo trong `Assets/Zodiac/Editor/ZodiacLevelData.cs` là một danh sách **khu**: tên khu, các đợt quái viết bằng mã
+(ví dụ `"W Q W"`), biển hướng dẫn, bãi chông, số cụm đồng xu, có boss không. Khu rộng 15 unit (vừa khung hình 16:9),
+các khu cách nhau 36 unit dọc con đường nên không nhìn thấy nhau. Sửa số liệu rồi dựng lại là xong.
+Cảnh hai bên đường (nhà, tre, vách đá) sinh theo chủ đề với số ngẫu nhiên cố định theo tên màn.
 
-Nhịp màn: mỗi loại quái mới có biển hướng dẫn ngay trước vùng giới thiệu nó, rồi mới trộn với loại khác; đèn lồng sau 1–2 vùng.
+Nhịp màn: mỗi loại quái mới có biển hướng dẫn ở đầu khu giới thiệu nó, rồi mới trộn với loại khác.
 
-1. **Làng Quê** (130 unit) — đường đất giữa dãy nhà vách gỗ mái ngói, luỹ tre, đồng lúa và núi xa. Dạy đánh/đổi làn với
-   Lính Đất Nung → Lính Khiên → Bọ Gai → bãi chông → vùng trộn cuối, rồi **cổng làng**.
-2. **Rừng Trúc** (140 unit) — rừng tre dày nhiều tầng, sương mù đặc. Ma Trơi (đá bay) → Cóc Tía (vòng đỏ) → các vùng trộn.
-3. **Động Hồ Tinh** (130 unit) — hang tối, ánh sáng từ pha lê và chậu lửa. Thạch Sư phun lửa, các vùng trộn, rồi
-   **đấu trường boss**: tường đóng, camera khoá, thanh máu boss hiện trên HUD; hạ Hồ Tinh thì cổng đền hiện ra.
+1. **Làng Quê** — Đầu làng (Lính Đất Nung) → Giếng làng (Lính Khiên) → Bờ tre (Bọ Gai, bãi chông) → Cổng làng (trộn, cổng đích).
+2. **Rừng Trúc** — Bìa rừng (Ma Trơi) → Suối trúc (Cóc Tía) → Lối mòn sương (trộn, bãi chông) → Miếu hoang (trộn, cổng đích).
+3. **Động Hồ Tinh** — Cửa động (Thạch Sư) → Hang pha lê (trộn) → Đền đá (trộn) → Động Hồ Tinh (**boss**: thanh máu boss trên HUD,
+   hạ Hồ Tinh thì cổng đền hiện ra).
 
 ## Ghi chú kỹ thuật
 
 - Vật lý 3D: người chơi `Rigidbody` + `CapsuleCollider` tự tính trọng lực; quái có collider bề dày theo làn, không va chạm với người chơi
   (sát thương do đòn đánh quét `Physics.OverlapBox`).
 - Hình nhân vật/quái: Root (vật lý) → Facing (lật trái/phải, chứa hitbox) → Tilt (`Billboard`, ngả theo góc cúi camera) → Visual.
-- Camera phối cảnh cố định góc cúi (`ZodiacCameraFollow`), bám trục X, khoá trong đấu trường khi đánh đợt quái.
+- Camera phối cảnh cố định góc cúi (`ZodiacCameraFollow`), khoá trong khu đang đánh (`ZodiacGameManager.EnterRoom`).
 - Chiêu thức: `PlayerSkill` đọc `SkillConfig` của nhân vật (6 kiểu: Dash, Projectile, Burst, Heal, Stealth, GroundPound) —
   thêm chiêu mới chủ yếu là chỉnh thông số. Lướt theo hướng phím (cả chéo), đạn toả quạt theo chiều sâu.
 - Quái kế thừa `EnemyBase` (bị đánh, quật ngã, lượt vây đánh, chết); mỗi loại chỉ viết AI trong `Think()`.

@@ -7,6 +7,7 @@ using UnityEngine;
 /// - Vào vị trí thì gồng đòn (windupTime, thân bẹp xuống báo hiệu) → lao tới đánh (attackActiveTime) → nghỉ (recoverTime).
 ///   Né bằng cách đổi làn trong lúc nó gồng, lăn, hoặc đánh ngắt trước.
 /// - Đánh xong trả lượt để quái khác vào.
+/// - Mất đồ (giáo văng, khiên vỡ): thành lính tay không — đánh yếu và ngắn hơn nhưng nhanh nhẹn hơn.
 /// </summary>
 public class EnemyBrawler : EnemyBase
 {
@@ -104,7 +105,9 @@ public class EnemyBrawler : EnemyBase
     void UpdateAttack()
     {
         Vector3 forward = Vector3.right * direction;
-        SetPlanarVelocity(BlockedAhead(forward) ? Vector3.zero : forward * lungeSpeed);
+        // Lao tới nhưng dừng trước mặt người chơi (không xuyên qua đứng đè lên)
+        bool closeEnough = player != null && Mathf.Abs(ToPlayer.x) <= 0.85f;
+        SetPlanarVelocity(BlockedAhead(forward) || closeEnough ? Vector3.zero : forward * lungeSpeed);
         if (!attackLanded && attackDamage > 0)
         {
             Vector3 center = transform.position + new Vector3(attackBoxOffset.x * direction, attackBoxOffset.y, attackBoxOffset.z);
@@ -126,6 +129,17 @@ public class EnemyBrawler : EnemyBase
         stateEndTime = Time.time + recoverTime;
         nextAttackTime = Time.time + attackCooldown;
         ReleaseToken();
+    }
+
+    protected override void OnGearLost()
+    {
+        attackDamage = Mathf.Max(1, Mathf.RoundToInt(attackDamage * 0.6f));
+        attackKnockdown = false;
+        attackRange *= 0.8f;
+        attackBoxOffset.x *= 0.8f;
+        attackBoxSize *= 0.85f;
+        windupTime *= 0.85f;
+        moveSpeed *= 1.15f;
     }
 
     protected override void Interrupt()

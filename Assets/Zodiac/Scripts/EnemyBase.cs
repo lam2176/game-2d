@@ -15,6 +15,8 @@ using UnityEngine;
 /// Phản hồi: khựng/bẹp người khi trúng đòn, dấu "!" khi phát hiện người chơi, sao quay khi bị choáng do chiêu.
 /// Quái có khiên (guardFront) chặn mọi đòn từ phía trước — vòng ra sau lưng (đổi làn đi vòng), đá bay từ trên xuống,
 /// hoặc làm choáng bằng chiêu để hạ khiên.
+/// Quái cầm đồ (<see cref="gear"/>: khiên, giáo): đỡ đủ <see cref="gearDurability"/> đòn hoặc máu tụt dưới
+/// <see cref="gearLostAtHealth"/> thì đồ văng ra (<see cref="GearDebris"/>) và quái thành lính thường (<see cref="OnGearLost"/>).
 /// </summary>
 [RequireComponent(typeof(Rigidbody), typeof(Collider), typeof(Health))]
 public abstract class EnemyBase : MonoBehaviour
@@ -44,12 +46,22 @@ public abstract class EnemyBase : MonoBehaviour
     [Tooltip("Thời gian nằm đất (giây) — bất tử trong lúc nằm và đứng dậy.")]
     [Min(0f)] public float downTime = 0.8f;
     [Min(0f)] public float deathFadeTime = 0.4f;
+    [Tooltip("Màu mảnh vỡ khi chết.")]
+    public Color debrisColor = Color.gray;
 
     [Header("Khiên")]
     [Tooltip("Chặn đòn đánh từ phía trước (theo hướng nhìn). Đòn từ trên xuống / sau lưng vẫn trúng.")]
     public bool guardFront;
     [Tooltip("Hình khiên (nảy lên khi đỡ đòn).")]
     public Transform shield;
+
+    [Header("Đồ cầm tay")]
+    [Tooltip("Khiên / vũ khí — văng ra khi đỡ đủ đòn hoặc máu tụt dưới ngưỡng; mất đồ thì thành quái thường.")]
+    public Transform gear;
+    [Tooltip("Số đòn đỡ được trước khi đồ vỡ (khiên). 0 = không vỡ vì đỡ đòn.")]
+    [Min(0)] public int gearDurability;
+    [Tooltip("Máu còn dưới tỉ lệ này thì đồ văng ra.")]
+    [Range(0f, 1f)] public float gearLostAtHealth = 0.5f;
 
     [Header("Vây đánh")]
     [Tooltip("Phải xin lượt mới được tấn công (tối đa MaxAttackers con cùng lúc).")]
@@ -72,12 +84,16 @@ public abstract class EnemyBase : MonoBehaviour
     Transform stunIcon;
     Vector3 visualScale = Vector3.one;
     float punch, shieldPunch, nextAlert, downPose;
+    int blocksTaken;
+    bool gearLost;
     readonly Collider[] hits = new Collider[4];
 
     public bool IsStunned => Time.time < stunnedUntil;
     /// <summary>Đang bị quật ngã (đang bay hoặc nằm đất) — không hành động.</summary>
     public bool IsDown => knockedDown;
     public Health Health => health;
+    /// <summary>Còn cầm đồ (khiên / vũ khí).</summary>
+    public bool HasGear => gear != null && !gearLost;
 
     protected virtual void Awake()
     {
@@ -116,8 +132,28 @@ public abstract class EnemyBase : MonoBehaviour
         }
         if (IsStunned) return;
         Think();
+        KeepPersonalSpace();
         UpdateVisual();
     }
+
+    /// <summary>
+    /// Quái không va chạm vật lý với người chơi (để không đẩy nhau), nên tự giữ khoảng cách tối thiểu: không bao giờ đứng
+    /// đè lên người chơi — người chơi luôn thấy rõ và đánh trúng được.
+    /// </summary>
+    void KeepPersonalSpace()
+    {
+        if (player == null || rb.isKinematic || !rb.useGravity) return;
+        Vector3 d = transform.position - player.transform.position;
+        if (Mathf.Abs(d.z) > 0.6f || Mathf.Abs(d.x) >= MinPlayerDistance) return;
+        float side = Mathf.Abs(d.x) > 0.05f ? Mathf.Sign(d.x) : -direction;
+        // Sát tường thì lùi sang phía kia của người chơi
+        if (ClampRoom(transform.position.x + side) != transform.position.x + side) side = -side;
+        var v = rb.linearVelocity;
+        rb.linearVelocity = new Vector3(side * 3f, v.y, v.z);
+    }
+
+    /// <summary>Khoảng cách ngang tối thiểu tới người chơi khi cùng làn.</summary>
+    protected virtual float MinPlayerDistance => 0.75f;
 
     /// <summary>AI mỗi bước vật lý (không gọi khi đang choáng, nằm đất hoặc đã chết).</summary>
     protected abstract void Think();
@@ -176,14 +212,20 @@ public abstract class EnemyBase : MonoBehaviour
 
     /// <summary>Z kẹp trong mặt đường (chừa mép).</summary>
     protected static float ClampLane(float z) =>
-        Mathf.Clamp(z, ZodiacGameManager.LaneMinZ + 0.4f, ZodiacGameManager.LaneMaxZ - 0.4f);
+        Mathf.Clamp(z, ZodiacGameManager.LaneMinZ + 0.3f, ZodiacGameManager.LaneMaxZ - 0.3f);
+
+    /// <summary>X kẹp trong khu đang đánh (chừa mép) — quái không chạy ra khỏi khung hình.</summary>
+    protected static float ClampRoom(float x) =>
+        Mathf.Clamp(x, ZodiacGameManager.RoomMinX + 0.7f, ZodiacGameManager.RoomMaxX - 0.7f);
 
     /// <summary>Điểm đứng đánh: ngang hàng người chơi (cùng làn), cách attackRange về phía quái đang đứng.</summary>
     protected Vector3 EngagePoint(float attackRange)
     {
         float side = transform.position.x >= player.transform.position.x ? 1f : -1f;
         Vector3 p = player.transform.position;
-        return new Vector3(p.x + side * attackRange, transform.position.y, ClampLane(p.z));
+        // Người chơi sát tường thì đứng đánh phía bên kia
+        if (ClampRoom(p.x + side * attackRange) != p.x + side * attackRange) side = -side;
+        return new Vector3(ClampRoom(p.x + side * attackRange), transform.position.y, ClampLane(p.z));
     }
 
     /// <summary>Điểm đứng chờ lượt: vòng ngoài, giữ làn riêng — trông như đang rình chứ không đứng xếp hàng.</summary>
@@ -192,7 +234,7 @@ public abstract class EnemyBase : MonoBehaviour
         float side = transform.position.x >= player.transform.position.x ? 1f : -1f;
         Vector3 p = player.transform.position;
         float sway = Mathf.Sin(Time.time * 0.9f + laneOffset * 5f) * 0.6f;
-        return new Vector3(p.x + side * (distance + sway), transform.position.y, ClampLane(p.z + laneOffset * 2.5f));
+        return new Vector3(ClampRoom(p.x + side * (distance + sway)), transform.position.y, ClampLane(p.z + laneOffset * 2.5f));
     }
 
     /// <summary>Đi về điểm cho trước (chỉ trên mặt đường), trả về true khi đã tới.</summary>
@@ -273,7 +315,35 @@ public abstract class EnemyBase : MonoBehaviour
         // Đánh vào khiên ở tầm gần: người chơi bị bật ngược lại
         if (player != null && Mathf.Abs(player.transform.position.x - transform.position.x) < 2.5f)
             player.ApplyKnockback(new Vector3(direction * 6f, 2f, 0f), 0.15f);
+        if (gearDurability > 0 && ++blocksTaken >= gearDurability) LoseGear(hit.source);
     }
+
+    /// <summary>Đồ văng ra: hết đỡ đòn, lớp con đổi chỉ số trong <see cref="OnGearLost"/>.</summary>
+    void LoseGear(Vector3 source)
+    {
+        if (!HasGear) return;
+        gearLost = true;
+        if (guardFront)
+        {
+            guardFront = false;
+            health.Blocks = null;
+            health.Blocked -= OnBlocked;
+        }
+        if (shield == gear) shield = null;
+        if (TryGetComponent(out HitFlash flash)) flash.Forget(gear);
+        Vector3 at = gear.position;
+        ZodiacParticles.Sparks(at, new Color(1f, 0.9f, 0.6f), 14);
+        ZodiacParticles.Debris(at, new Color(0.7f, 0.55f, 0.3f), 6, 0.3f);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.block, 1f, 0.15f, at);
+        GameFeel.HitStop(0.06f);
+        GameFeel.Shake(0.15f);
+        GearDebris.Launch(gear, transform.position - source);
+        OnGearLost();
+    }
+
+    /// <summary>Vừa mất đồ — lớp con giảm sức đánh / tầm đánh, thành quái thường.</summary>
+    protected virtual void OnGearLost() { }
 
     // ───────── Bị đánh ─────────
 
@@ -307,6 +377,7 @@ public abstract class EnemyBase : MonoBehaviour
             Interrupt();
         }
         if (hit.stun > 0f) Stun(hit.stun);
+        if (HasGear && !health.IsDead && health.Normalized <= gearLostAtHealth) LoseGear(hit.source);
     }
 
     void UpdateKnockdown()
@@ -334,15 +405,8 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
-    /// <summary>Màu mảnh vỡ khi chết (lấy từ hình đầu tiên của quái).</summary>
-    protected Color DebrisColor
-    {
-        get
-        {
-            var sr = (visual != null ? visual : transform).GetComponentInChildren<SpriteRenderer>();
-            return sr != null ? sr.color : Color.gray;
-        }
-    }
+    /// <summary>Màu mảnh vỡ khi chết.</summary>
+    protected Color DebrisColor => debrisColor;
 
     protected virtual void OnDied()
     {

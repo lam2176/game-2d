@@ -47,6 +47,7 @@ public class EnemyHopper : EnemyBase
                     Vector3 to = Vector3.ClampMagnitude(ToPlayer, maxLeap);
                     landing = transform.position + to;
                     landing.z = ClampLane(landing.z);
+                    landing.x = ClampRoom(landing.x);
                     ShowMarker(true);
                     state = State.Crouch;
                     stateEnd = Time.time + crouchTime;
