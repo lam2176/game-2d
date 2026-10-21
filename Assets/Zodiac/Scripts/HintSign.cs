@@ -19,8 +19,8 @@ public class HintSign : MonoBehaviour
     {
         var player = ZodiacPlayerController.Current;
         if (player == null || bubble == null) return;
-        Vector2 d = player.transform.position - transform.position;
-        bool show = Mathf.Abs(d.x) <= showDistance && Mathf.Abs(d.y) <= 3f;
+        Vector3 d = player.transform.position - transform.position;
+        bool show = Mathf.Abs(d.x) <= showDistance;
         if (bubble.activeSelf != show) bubble.SetActive(show);
     }
 }

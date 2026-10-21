@@ -1,25 +1,31 @@
 using System;
 using UnityEngine;
 
-/// <summary>Một lần trúng đòn: sát thương, vị trí nguồn (để đẩy lùi ra xa), hệ số đẩy lùi và thời gian choáng.</summary>
+/// <summary>
+/// Một lần trúng đòn: sát thương, vị trí nguồn (để đẩy lùi ra xa), hệ số đẩy lùi, thời gian choáng
+/// và có quật ngã không (đòn kết combo, đá bay — bên bị đánh văng ra nằm đất rồi mới dậy).
+/// </summary>
 public struct Hit
 {
     public int amount;
-    public Vector2 source;
+    public Vector3 source;
     [Tooltip("Hệ số nhân lực đẩy lùi của bên bị đánh. 0 = không đẩy (độc, gai...).")]
     public float knockback;
     [Tooltip("Thời gian choáng thêm (giây) — quái đứng im, không tấn công.")]
     public float stun;
     [Tooltip("Đòn chí mạng (số bay lên to hơn, rung mạnh hơn).")]
     public bool crit;
+    [Tooltip("Quật ngã: văng lên, nằm đất một lúc (bất tử khi nằm) rồi đứng dậy.")]
+    public bool knockdown;
 
-    public Hit(int amount, Vector2 source, float knockback = 1f, float stun = 0f)
+    public Hit(int amount, Vector3 source, float knockback = 1f, float stun = 0f)
     {
         this.amount = amount;
         this.source = source;
         this.knockback = knockback;
         this.stun = stun;
         crit = false;
+        knockdown = false;
     }
 }
 
@@ -83,7 +89,7 @@ public class Health : MonoBehaviour
         Changed?.Invoke();
     }
 
-    public bool TakeDamage(int amount, Vector2 sourcePosition) => TakeDamage(new Hit(amount, sourcePosition));
+    public bool TakeDamage(int amount, Vector3 sourcePosition) => TakeDamage(new Hit(amount, sourcePosition));
 
     /// <summary>Trừ máu. Trả về false nếu đã chết, đang bất tử hoặc amount ≤ 0.</summary>
     public bool TakeDamage(Hit hit)

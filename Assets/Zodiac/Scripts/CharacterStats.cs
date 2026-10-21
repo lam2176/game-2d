@@ -140,7 +140,7 @@ public class CharacterStats : MonoBehaviour
     }
 
     /// <summary>Tạo đòn đánh; attacker null (quái, bẫy) thì sát thương cố định, không chí mạng.</summary>
-    public static Hit CreateHit(CharacterStats attacker, float baseDamage, Vector2 source, float knockback = 1f, float stun = 0f)
+    public static Hit CreateHit(CharacterStats attacker, float baseDamage, Vector3 source, float knockback = 1f, float stun = 0f)
     {
         if (attacker == null) return new Hit(Mathf.RoundToInt(baseDamage), source, knockback, stun);
         int amount = attacker.RollDamage(baseDamage, out bool crit);

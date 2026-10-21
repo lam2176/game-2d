@@ -4,13 +4,14 @@ using UnityEngine;
 /// <summary>
 /// Hạt hiệu ứng bằng Particle System, tạo một lần lúc chạy rồi phát bằng Emit (không tạo/huỷ object mỗi lần):
 /// bụi chân (chạy, nhảy, đáp, đổi hướng), tia lửa khi trúng đòn, mảnh vỡ khi quái chết, lấp lánh khi nhặt xu.
+/// Hạt bay trong không gian 3D (toả cả theo chiều sâu), mảnh vỡ nảy trên mặt đất (layer Ground).
 /// </summary>
 public static class ZodiacParticles
 {
     static readonly Dictionary<string, ParticleSystem> systems = new Dictionary<string, ParticleSystem>();
 
     /// <summary>Bụi chân. dir = hướng bay chính (thường là ngược hướng chạy hoặc toả hai bên khi đáp).</summary>
-    public static void Dust(Vector2 position, Vector2 dir, int count, Color? color = null)
+    public static void Dust(Vector3 position, Vector3 dir, int count, Color? color = null)
     {
         var ps = Get("Dust", lit: true, ps =>
         {
@@ -30,15 +31,15 @@ public static class ZodiacParticles
         var p = new ParticleSystem.EmitParams { startColor = color ?? new Color(0.85f, 0.78f, 0.65f, 0.75f) };
         for (int i = 0; i < count; i++)
         {
-            p.position = position + new Vector2(Random.Range(-0.25f, 0.25f), Random.Range(0f, 0.1f));
-            Vector2 v = dir * Random.Range(1f, 3f) + new Vector2(Random.Range(-0.6f, 0.6f), Random.Range(0.3f, 1.2f));
+            p.position = position + new Vector3(Random.Range(-0.25f, 0.25f), Random.Range(0f, 0.1f), Random.Range(-0.2f, 0.2f));
+            Vector3 v = dir * Random.Range(1f, 3f) + new Vector3(Random.Range(-0.6f, 0.6f), Random.Range(0.3f, 1.2f), Random.Range(-0.5f, 0.5f));
             p.velocity = v;
             ps.Emit(p, 1);
         }
     }
 
     /// <summary>Tia lửa toả tròn khi trúng đòn (tự phát sáng, không bị bóng tối che).</summary>
-    public static void Sparks(Vector2 position, Color color, int count)
+    public static void Sparks(Vector3 position, Color color, int count)
     {
         var ps = Get("Sparks", lit: false, ps =>
         {
@@ -55,15 +56,14 @@ public static class ZodiacParticles
         var p = new ParticleSystem.EmitParams { position = position };
         for (int i = 0; i < count; i++)
         {
-            float a = Random.Range(0f, Mathf.PI * 2f);
-            p.velocity = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * Random.Range(4f, 11f);
+            p.velocity = Random.onUnitSphere * Random.Range(4f, 11f);
             p.startColor = Color.Lerp(color, Color.white, Random.Range(0.2f, 0.7f));
             ps.Emit(p, 1);
         }
     }
 
     /// <summary>Mảnh vỡ văng ra rồi rơi (quái chết, tượng đá vỡ).</summary>
-    public static void Debris(Vector2 position, Color color, int count, float spread = 0.5f)
+    public static void Debris(Vector3 position, Color color, int count, float spread = 0.5f)
     {
         var ps = Get("Debris", lit: true, ps =>
         {
@@ -79,7 +79,7 @@ public static class ZodiacParticles
             var collision = ps.collision;
             collision.enabled = true;
             collision.type = ParticleSystemCollisionType.World;
-            collision.mode = ParticleSystemCollisionMode.Collision2D;
+            collision.mode = ParticleSystemCollisionMode.Collision3D;
             collision.bounce = 0.35f;
             collision.dampen = 0.3f;
             collision.collidesWith = LayerMask.GetMask("Ground");
@@ -87,15 +87,15 @@ public static class ZodiacParticles
         var p = new ParticleSystem.EmitParams();
         for (int i = 0; i < count; i++)
         {
-            p.position = position + Random.insideUnitCircle * spread;
-            p.velocity = new Vector2(Random.Range(-4f, 4f), Random.Range(3f, 9f));
+            p.position = position + Random.insideUnitSphere * spread;
+            p.velocity = new Vector3(Random.Range(-4f, 4f), Random.Range(3f, 9f), Random.Range(-2.5f, 2.5f));
             p.startColor = Color.Lerp(color, Color.black, Random.Range(0f, 0.35f));
             ps.Emit(p, 1);
         }
     }
 
     /// <summary>Lấp lánh bay lên (nhặt xu, thắp đèn lồng, hồi máu).</summary>
-    public static void Sparkle(Vector2 position, Color color, int count, float radius = 0.4f)
+    public static void Sparkle(Vector3 position, Color color, int count, float radius = 0.4f)
     {
         var ps = Get("Sparkle", lit: false, ps =>
         {
@@ -108,8 +108,8 @@ public static class ZodiacParticles
         var p = new ParticleSystem.EmitParams();
         for (int i = 0; i < count; i++)
         {
-            p.position = position + Random.insideUnitCircle * radius;
-            p.velocity = new Vector2(Random.Range(-1f, 1f), Random.Range(0.5f, 2.5f));
+            p.position = position + Random.insideUnitSphere * radius;
+            p.velocity = new Vector3(Random.Range(-1f, 1f), Random.Range(0.5f, 2.5f), Random.Range(-0.6f, 0.6f));
             p.startColor = Color.Lerp(color, Color.white, Random.Range(0f, 0.5f));
             ps.Emit(p, 1);
         }

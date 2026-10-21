@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -9,8 +8,10 @@ using UnityEngine.Rendering.Universal;
 
 /// <summary>
 /// Thiết lập hình ảnh/âm thanh dùng chung khi dựng prototype:
-///   • Chuyển URP sang 2D Renderer (để có Light2D) — thêm vào PC/Mobile RP asset và đặt làm mặc định.
-///   • Tạo Assets/Zodiac/Resources/ZodiacResources.asset: vật liệu Sprite-Lit/Unlit + toàn bộ âm thanh.
+///   • Chuyển URP sang Universal Renderer (3D: bóng đổ, đèn điểm, sương mù, SSAO) — đặt làm mặc định cho PC/Mobile RP asset.
+///   • Vật liệu: sprite trong thế giới 3D (shader Zodiac/Sprite Lit 3D — nhận đèn, đổ bóng), vật liệu môi trường URP/Lit
+///     (đất, đá, gỗ, ngói… lát bằng texture vẽ bằng code, tô màu theo từng màn).
+///   • Tạo Assets/Zodiac/Resources/ZodiacResources.asset: vật liệu hiệu ứng + toàn bộ âm thanh.
 ///   • Volume profile hậu kỳ cho từng màn (bloom cho đèn lồng/lửa, vignette, chỉnh màu).
 ///   • Vật liệu hạt (đom đóm, bụi, lá) cho hiệu ứng môi trường lưu trong scene.
 /// Âm thanh: Assets/Zodiac/Audio/SFX — Kenney.nl (CC0); Synth + Music — tổng hợp bằng code, không bản quyền.
@@ -18,35 +19,27 @@ using UnityEngine.Rendering.Universal;
 public static class ZodiacVisualSetup
 {
     const string SettingsFolder = "Assets/Zodiac/Settings";
-    const string Renderer2DPath = SettingsFolder + "/Zodiac2DRenderer.asset";
+    const string UniversalRendererPath = "Assets/Settings/PC_Renderer.asset";
     const string ResourcesPath = "Assets/Zodiac/Resources/ZodiacResources.asset";
     const string AudioRoot = "Assets/Zodiac/Audio";
     const string UrpMaterials = "Packages/com.unity.render-pipelines.universal/Runtime/Materials";
-    const string ParticleMaterialPath = "Assets/Zodiac/Art/Materials/ParticleGlow.mat";
+    const string MaterialFolder = "Assets/Zodiac/Art/Materials";
+    const string ParticleMaterialPath = MaterialFolder + "/ParticleGlow.mat";
+    const string SpriteLit3DPath = MaterialFolder + "/SpriteLit3D.mat";
 
-    // ───────────────────────────── 2D Renderer ─────────────────────────────
+    // ───────────────────────────── Universal Renderer (3D) ─────────────────────────────
 
-    /// <summary>Đảm bảo mọi URP asset trong Quality Settings dùng 2D Renderer làm mặc định.</summary>
-    public static void Ensure2DRenderer()
+    /// <summary>
+    /// Mọi URP asset trong Quality Settings dùng Universal Renderer làm mặc định (thay 2D Renderer của bản platformer),
+    /// bật bóng đổ mềm của mặt trời.
+    /// </summary>
+    public static void EnsureUniversalRenderer()
     {
-        var data = AssetDatabase.LoadAssetAtPath<Renderer2DData>(Renderer2DPath);
+        var data = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(UniversalRendererPath);
         if (data == null)
         {
-            ZodiacPrototypeBuilder.EnsureFolder(SettingsFolder);
-            // Dùng đúng hàm của menu Create > Rendering > URP 2D Renderer (internal) để có đủ tài nguyên mặc định.
-            var menus = Type.GetType("UnityEditor.Rendering.Universal.Renderer2DMenus, Unity.RenderPipelines.Universal.Editor");
-            var create = menus?.GetMethod("CreateRendererAsset", BindingFlags.Static | BindingFlags.NonPublic);
-            if (create != null)
-            {
-                var typeParam = create.GetParameters()[1].ParameterType;
-                data = create.Invoke(null, new object[] { Renderer2DPath, Enum.Parse(typeParam, "_2DRenderer"), false, "Renderer" }) as Renderer2DData;
-            }
-            if (data == null)
-            {
-                data = ScriptableObject.CreateInstance<Renderer2DData>();
-                AssetDatabase.CreateAsset(data, Renderer2DPath);
-            }
-            AssetDatabase.SaveAssets();
+            Debug.LogError("Không tìm thấy " + UniversalRendererPath + " (renderer 3D của template URP).");
+            return;
         }
 
         var assets = new[] { GraphicsSettings.defaultRenderPipeline }
@@ -58,7 +51,7 @@ public static class ZodiacVisualSetup
             var list = so.FindProperty("m_RendererDataList");
             int index = -1;
             for (int i = 0; i < list.arraySize; i++)
-                if (list.GetArrayElementAtIndex(i).objectReferenceValue == data) index = i;
+                if (list.GetArrayElementAtIndex(i).objectReferenceValue is UniversalRendererData) index = i;
             if (index < 0)
             {
                 index = list.arraySize;
@@ -66,11 +59,71 @@ public static class ZodiacVisualSetup
                 list.GetArrayElementAtIndex(index).objectReferenceValue = data;
             }
             so.FindProperty("m_DefaultRendererIndex").intValue = index;
-            so.FindProperty("m_MSAA").intValue = 4;   // khử răng cưa mép sprite xoay/nghiêng
+            so.FindProperty("m_MSAA").intValue = 4;   // khử răng cưa mép sprite cắt alpha
+            so.FindProperty("m_MainLightShadowsSupported").boolValue = true;
+            so.FindProperty("m_ShadowDistance").floatValue = 45f;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(urp);
         }
         AssetDatabase.SaveAssets();
+    }
+
+    /// <summary>Vật liệu cho mọi sprite đứng trong thế giới 3D (nhân vật, quái, đạo cụ dạng ảnh).</summary>
+    public static Material SpriteLit3D
+    {
+        get
+        {
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(SpriteLit3DPath);
+            if (mat != null)
+            {
+                mat.enableInstancing = false;   // màu SpriteRenderer đi qua màu đỉnh (xem ghi chú trong shader)
+                return mat;
+            }
+            var shader = Shader.Find("Zodiac/Sprite Lit 3D");
+            if (shader == null)
+            {
+                Debug.LogError("Thiếu shader Zodiac/Sprite Lit 3D (Assets/Zodiac/Shaders/SpriteLit3D.shader).");
+                return LitMaterial;
+            }
+            ZodiacPrototypeBuilder.EnsureFolder(MaterialFolder);
+            mat = new Material(shader) { enableInstancing = false };
+            AssetDatabase.CreateAsset(mat, SpriteLit3DPath);
+            return mat;
+        }
+    }
+
+    /// <summary>
+    /// Vật liệu môi trường URP/Lit (mặt đất, tường, mái…) — texture xám vẽ bằng code tô màu bằng color.
+    /// Tạo lại mỗi lần dựng (tên riêng theo màn) để chỉnh bảng màu là thấy ngay.
+    /// </summary>
+    public static Material EnvMaterial(string name, Texture texture, Color color, float smoothness = 0.12f, Color? emission = null)
+    {
+        string path = $"{MaterialFolder}/Env_{name}.mat";
+        var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (mat == null)
+        {
+            ZodiacPrototypeBuilder.EnsureFolder(MaterialFolder);
+            mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            AssetDatabase.CreateAsset(mat, path);
+        }
+        mat.SetTexture("_BaseMap", texture);
+        mat.SetColor("_BaseColor", color);
+        mat.SetFloat("_Smoothness", smoothness);
+        mat.SetFloat("_Metallic", 0f);
+        mat.enableInstancing = true;
+        if (emission.HasValue)
+        {
+            mat.EnableKeyword("_EMISSION");
+            mat.SetColor("_EmissionColor", emission.Value);
+            mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+        }
+        else
+        {
+            mat.DisableKeyword("_EMISSION");
+            mat.SetColor("_EmissionColor", Color.black);
+        }
+        EditorUtility.SetDirty(mat);
+        return mat;
     }
 
     public static Material LitMaterial => AssetDatabase.LoadAssetAtPath<Material>(UrpMaterials + "/Sprite-Lit-Default.mat");

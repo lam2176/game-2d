@@ -11,9 +11,9 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 /// <summary>
-/// Menu "Tools/Zodiac/Dựng prototype": chuyển URP sang 2D Renderer (ánh sáng 2D), tạo asset (placeholder, 12 con giáp + roster,
-/// âm thanh, vật liệu, hậu kỳ, vật liệu vật lý) nếu chưa có, tạo lại prefab quái, dựng màn hình chọn nhân vật Zodiac_Start
-/// và 3 màn chơi Zodiac_Level01..03 từ bản đồ ký tự (<see cref="ZodiacLevelData"/>), rồi đưa chúng lên đầu Build Settings.
+/// Menu "Tools/Zodiac/Dựng prototype": chuyển URP sang Universal Renderer (3D: bóng đổ, sương, đèn điểm), tạo asset (placeholder,
+/// 12 con giáp + roster, âm thanh, vật liệu, hậu kỳ, vật liệu vật lý) nếu chưa có, tạo lại prefab quái, dựng màn hình chọn nhân vật
+/// Zodiac_Start và 3 màn beat 'em up 2.5D Zodiac_Level01..03 từ <see cref="ZodiacLevelData"/>, rồi đưa chúng lên đầu Build Settings.
 /// Asset nhân vật/âm thanh đã có thì giữ nguyên (không mất chỉnh sửa tay); scene đã có thì hỏi trước khi ghi đè.
 /// Không đụng tới ảnh gốc trong Assets/Characters.
 ///
@@ -28,7 +28,9 @@ public static class ZodiacPrototypeBuilder
     internal const string SquarePath = PlaceholderFolder + "/Square.png";
     internal const string CirclePath = PlaceholderFolder + "/Circle.png";
     const string PhysicsFolder = Root + "/Physics";
-    internal const string NoFrictionPath = PhysicsFolder + "/NoFriction.physicsMaterial2D";
+    internal const string NoFrictionPath = PhysicsFolder + "/NoFriction.physicMaterial";
+    /// <summary>Vật liệu vật lý 2D của bản platformer — xoá khi dựng lại.</summary>
+    const string LegacyNoFriction2DPath = PhysicsFolder + "/NoFriction.physicsMaterial2D";
 
     static readonly Color MenuSkyColor = new Color(0.98f, 0.90f, 0.75f);
     static readonly Color TitleColor = new Color(0.70f, 0.08f, 0.08f);
@@ -70,7 +72,7 @@ public static class ZodiacPrototypeBuilder
             return;
         }
 
-        ZodiacVisualSetup.Ensure2DRenderer();
+        ZodiacVisualSetup.EnsureUniversalRenderer();
         var ctx = new ZodiacLevelBuilder.Context
         {
             square = EnsurePlaceholderSprite(SquarePath, 4, circle: false),
@@ -115,7 +117,6 @@ public static class ZodiacPrototypeBuilder
         var menu = new GameObject("StartMenu").AddComponent<ZodiacStartMenu>();
         menu.roster = roster;
         menu.levelSceneName = ZodiacLevelData.Levels[0].sceneName;
-        ZodiacLights.AddGlobal(new GameObject("GlobalLight"), Color.white, 1f);
         var canvas = CreateCanvas();
 
         CreateText(canvas, "Title", "12 CON GIÁP", 96, TitleColor, new Vector2(0.5f, 1f), new Vector2(0f, -30f),
@@ -191,7 +192,7 @@ public static class ZodiacPrototypeBuilder
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
         }
 
-        CreateText(canvas, "Controls", "Mũi tên / chuột: chọn con giáp · Enter: xác nhận · Trong màn: ← → đi · Space nhảy · Q đánh · W lướt · E chiêu · R tuyệt kỹ",
+        CreateText(canvas, "Controls", "Mũi tên / chuột: chọn con giáp · Enter: xác nhận · Trong màn: ← ↑ → ↓ đi · Space nhảy · Q đánh · W lăn · E chiêu · R tuyệt kỹ",
                    24, InkColor, new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(1800f, 40f), TextAnchor.MiddleCenter);
 
         CreateEventSystem(menu.slots.Length > 0 ? menu.slots[0].gameObject : play.gameObject);
@@ -337,12 +338,20 @@ public static class ZodiacPrototypeBuilder
 
     // ───────────────────────────── Asset ─────────────────────────────
 
-    static PhysicsMaterial2D EnsureNoFriction()
+    static PhysicsMaterial EnsureNoFriction()
     {
-        var mat = AssetDatabase.LoadAssetAtPath<PhysicsMaterial2D>(NoFrictionPath);
+        AssetDatabase.DeleteAsset(LegacyNoFriction2DPath);
+        var mat = AssetDatabase.LoadAssetAtPath<PhysicsMaterial>(NoFrictionPath);
         if (mat != null) return mat;
         EnsureFolder(PhysicsFolder);
-        mat = new PhysicsMaterial2D("NoFriction") { friction = 0f, bounciness = 0f };
+        mat = new PhysicsMaterial("NoFriction")
+        {
+            dynamicFriction = 0f,
+            staticFriction = 0f,
+            bounciness = 0f,
+            frictionCombine = PhysicsMaterialCombine.Minimum,
+            bounceCombine = PhysicsMaterialCombine.Minimum,
+        };
         AssetDatabase.CreateAsset(mat, NoFrictionPath);
         return mat;
     }

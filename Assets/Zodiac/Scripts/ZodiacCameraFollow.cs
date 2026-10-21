@@ -1,10 +1,10 @@
 using UnityEngine;
 
 /// <summary>
-/// Camera bám theo nhân vật trong LateUpdate (sau khi Rigidbody2D nội suy xong nên không giật).
-/// Trục X: nhìn trước theo hướng chạy. Trục Y: giữ khung hình đứng yên khi nhảy bình thường,
-/// chỉ dời theo khi tiếp đất ở độ cao mới, khi rơi xuống thấp hơn, hoặc khi lên quá cao.
-/// Không lộ ra ngoài vùng <see cref="bounds"/>.
+/// Camera phối cảnh kiểu beat 'em up 2.5D: đứng lùi phía trước con đường, cúi nhìn xuống một góc cố định,
+/// bám theo nhân vật dọc trục X (nhìn trước theo hướng chạy), chỉ dịch nhẹ theo chiều sâu Z để làn trước/sau luôn trong khung.
+/// Không lộ ra ngoài [<see cref="minX"/>, <see cref="maxX"/>] — tính theo bề ngang khung hình tại làn giữa.
+/// Khi đánh đợt quái (<see cref="EncounterZone"/>) khung hình bị khoá trong đấu trường bằng <see cref="Lock"/>.
 /// Rung màn hình theo "trauma" (Squirrel Eiserloh, GDC 2016): độ rung = trauma², nhiễu Perlin, giảm dần theo thời gian;
 /// phần rung cộng lên trên vị trí bám theo nên không làm lệch camera về lâu dài.
 /// </summary>
@@ -12,27 +12,29 @@ using UnityEngine;
 public class ZodiacCameraFollow : MonoBehaviour
 {
     public Transform target;
-    public Vector2 offset = new Vector2(0f, 2f);
+    [Tooltip("Vị trí camera so với điểm nhìn (điểm nhìn = x nhân vật, làn giữa).")]
+    public Vector3 offset = new Vector3(0f, 6.2f, -12.5f);
+    [Tooltip("Độ cao điểm nhìn so với mặt đất.")]
+    public float lookHeight = 1.3f;
+    [Tooltip("Z của làn giữa con đường.")]
+    public float laneCenterZ;
+    [Tooltip("Camera dịch theo Z của nhân vật bao nhiêu phần (0 = đứng yên, 1 = bám hẳn).")]
+    [Range(0f, 1f)] public float depthFollow = 0.25f;
 
     [Header("Trục X")]
     [Tooltip("Khoảng nhìn trước theo hướng di chuyển.")]
-    public float lookAhead = 2f;
-    public float lookAheadSpeed = 4f;
-    public float smoothTimeX = 0.15f;
+    public float lookAhead = 1.5f;
+    public float lookAheadSpeed = 3f;
+    public float smoothTime = 0.18f;
 
-    [Header("Trục Y")]
-    public float smoothTimeY = 0.25f;
-    [Tooltip("Lên cao hơn mức tiếp đất gần nhất quá khoảng này thì camera mới bắt đầu theo lên.")]
-    public float jumpFollowMargin = 3.5f;
-
-    [Tooltip("Vùng thế giới camera được phép nhìn thấy.")]
-    public Rect bounds = new Rect(-13f, -4f, 72f, 20f);
+    [Tooltip("Giới hạn tâm khung hình theo X (đầu và cuối con đường).")]
+    public float minX = -1000f, maxX = 1000f;
 
     [Header("Rung")]
     [Tooltip("Độ lệch tối đa khi trauma = 1 (unit).")]
-    public float maxShakeOffset = 0.6f;
+    public float maxShakeOffset = 0.5f;
     [Tooltip("Góc nghiêng tối đa khi trauma = 1 (độ).")]
-    public float maxShakeAngle = 2.5f;
+    public float maxShakeAngle = 2f;
     [Tooltip("Trauma giảm bao nhiêu mỗi giây.")]
     public float traumaDecay = 1.6f;
 
@@ -40,18 +42,17 @@ public class ZodiacCameraFollow : MonoBehaviour
     public static ZodiacCameraFollow Main { get; private set; }
 
     Camera cam;
-    Rigidbody2D targetBody;
-    ZodiacPlayerController targetPlayer;
-    float velocityX, velocityY;
-    float currentLookAhead, focusY;
-    Vector3 followPosition;
+    Rigidbody targetBody;
+    float velocityX, velocityZ, currentLookAhead;
+    Vector3 focus;
     float trauma;
+    bool locked;
+    float lockMin, lockMax;
 
     void Awake()
     {
         cam = GetComponent<Camera>();
         Main = this;
-        followPosition = transform.position;
     }
 
     void OnDestroy()
@@ -62,11 +63,31 @@ public class ZodiacCameraFollow : MonoBehaviour
     /// <summary>Thêm độ rung (0..1, cộng dồn, tối đa 1).</summary>
     public void AddTrauma(float amount) => trauma = Mathf.Clamp01(trauma + amount);
 
+    /// <summary>Bề ngang nửa khung hình (unit) tại làn giữa — để khoá đấu trường vừa khít màn hình.</summary>
+    public float HalfViewWidth
+    {
+        get
+        {
+            float distance = new Vector2(offset.y - lookHeight, offset.z).magnitude;
+            float halfHeight = distance * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            return halfHeight * cam.aspect;
+        }
+    }
+
+    /// <summary>Khoá tâm khung hình trong [xMin + nửa khung, xMax − nửa khung] (đấu trường).</summary>
+    public void Lock(float xMin, float xMax)
+    {
+        locked = true;
+        lockMin = xMin;
+        lockMax = xMax;
+    }
+
+    public void Unlock() => locked = false;
+
     void Start()
     {
         if (target == null) return;
-        targetBody = target.GetComponent<Rigidbody2D>();
-        targetPlayer = target.GetComponent<ZodiacPlayerController>();
+        targetBody = target.GetComponent<Rigidbody>();
         SnapToTarget();
     }
 
@@ -74,10 +95,10 @@ public class ZodiacCameraFollow : MonoBehaviour
     public void SnapToTarget()
     {
         if (target == null) return;
-        focusY = target.position.y;
-        velocityX = velocityY = 0f;
-        followPosition = DesiredPosition();
-        transform.position = followPosition;
+        velocityX = velocityZ = 0f;
+        currentLookAhead = 0f;
+        focus = DesiredFocus();
+        Apply(Vector3.zero, 0f);
     }
 
     void LateUpdate()
@@ -88,34 +109,39 @@ public class ZodiacCameraFollow : MonoBehaviour
             currentLookAhead = Mathf.MoveTowards(currentLookAhead, Mathf.Sign(targetBody.linearVelocity.x) * lookAhead,
                                                  lookAheadSpeed * Time.deltaTime);
 
-        float y = target.position.y;
-        bool grounded = targetPlayer == null || targetPlayer.IsGrounded;
-        if (grounded || y < focusY) focusY = y;
-        else if (y > focusY + jumpFollowMargin) focusY = y - jumpFollowMargin;
-
-        Vector3 desired = DesiredPosition();
-        Vector3 p = followPosition;
-        p.x = Mathf.SmoothDamp(p.x, desired.x, ref velocityX, smoothTimeX);
-        p.y = Mathf.SmoothDamp(p.y, desired.y, ref velocityY, smoothTimeY);
-        followPosition = p;
+        Vector3 desired = DesiredFocus();
+        focus.x = Mathf.SmoothDamp(focus.x, desired.x, ref velocityX, smoothTime);
+        focus.z = Mathf.SmoothDamp(focus.z, desired.z, ref velocityZ, smoothTime * 2f);
+        focus.y = desired.y;
 
         // Rung: dùng thời gian thực để vẫn rung trong lúc hitstop
         float shake = trauma * trauma;
         float t = Time.unscaledTime * 25f;
-        Vector3 offset = new Vector3(Mathf.PerlinNoise(t, 1.7f) - 0.5f, Mathf.PerlinNoise(3.3f, t) - 0.5f, 0f) * (2f * maxShakeOffset * shake);
-        transform.SetPositionAndRotation(p + offset,
-            Quaternion.Euler(0f, 0f, (Mathf.PerlinNoise(t, 7.1f) - 0.5f) * 2f * maxShakeAngle * shake));
+        Vector3 jitter = new Vector3(Mathf.PerlinNoise(t, 1.7f) - 0.5f, Mathf.PerlinNoise(3.3f, t) - 0.5f, 0f) * (2f * maxShakeOffset * shake);
+        float roll = (Mathf.PerlinNoise(t, 7.1f) - 0.5f) * 2f * maxShakeAngle * shake;
+        Apply(jitter, roll);
         trauma = Mathf.Max(0f, trauma - traumaDecay * Time.unscaledDeltaTime);
     }
 
-    Vector3 DesiredPosition()
+    void Apply(Vector3 jitter, float roll)
     {
-        float halfH = cam.orthographicSize, halfW = halfH * cam.aspect;
-        float x = target.position.x + offset.x + currentLookAhead;
-        float y = focusY + offset.y;
-        x = ClampCentered(x, bounds.xMin + halfW, bounds.xMax - halfW);
-        y = ClampCentered(y, bounds.yMin + halfH, bounds.yMax - halfH);
-        return new Vector3(x, y, transform.position.z);
+        Vector3 position = focus + offset;
+        Quaternion look = Quaternion.LookRotation(focus - position);
+        transform.SetPositionAndRotation(position + look * jitter, look * Quaternion.Euler(0f, 0f, roll));
+    }
+
+    Vector3 DesiredFocus()
+    {
+        float half = HalfViewWidth;
+        float min = minX + half, max = maxX - half;
+        if (locked)
+        {
+            min = Mathf.Max(min, lockMin + half);
+            max = Mathf.Min(max, lockMax - half);
+        }
+        float x = ClampCentered(target.position.x + currentLookAhead, min, max);
+        float z = laneCenterZ + (target.position.z - laneCenterZ) * depthFollow;
+        return new Vector3(x, lookHeight, z);
     }
 
     static float ClampCentered(float value, float min, float max) =>
@@ -124,6 +150,6 @@ public class ZodiacCameraFollow : MonoBehaviour
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireCube(bounds.center, bounds.size);
+        Gizmos.DrawLine(new Vector3(minX, 0f, laneCenterZ), new Vector3(maxX, 0f, laneCenterZ));
     }
 }

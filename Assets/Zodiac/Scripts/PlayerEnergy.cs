@@ -10,7 +10,7 @@ using UnityEngine;
 public class PlayerEnergy : MonoBehaviour
 {
     [Min(1)] public int max = ZodiacBalance.BaseEnergy;
-    [Tooltip("Khí nạp mỗi đòn đánh thường trúng (đòn kết combo, đạp đầu nạp gấp đôi).")]
+    [Tooltip("Khí nạp mỗi đòn đánh thường trúng (đòn quật ngã nạp gấp đôi).")]
     [Min(0)] public int hitGain = 16;
     [Tooltip("Khí tự hồi mỗi giây. 0 = tắt.")]
     [Min(0f)] public float regenPerSecond = 2.5f;

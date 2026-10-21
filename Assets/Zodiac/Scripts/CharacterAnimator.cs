@@ -5,8 +5,8 @@ using UnityEngine;
 /// đặt trên object Visual (pivot ở chân), mỗi frame tính vị trí/góc/tỉ lệ từ trạng thái thật của nhân vật.
 ///   • Nhịp bước khớp quãng đường đi được (không "trượt" khi chạy nhanh/chậm), nghiêng người theo gia tốc.
 ///   • Lò xo co giãn: bật nhảy kéo dài người, chạm đất bẹp xuống theo tốc độ rơi rồi nảy lại (squash &amp; stretch).
-///   • Vung người theo đòn đánh (ngang/lên/xuống, đòn 3 mạnh hơn), giật lùi khi bị thương, lộn vòng khi nhảy đôi,
-///     chao lượn khi lượn, kéo dài người khi lướt/dậm đất.
+///   • Vung người theo đòn đánh (đòn kết / đòn lao mạnh hơn, đá bay chúi người), giật lùi khi bị thương,
+///     ngã nằm khi bị quật ngã, lộn vòng khi nhảy đôi, chao lượn khi lượn, kéo dài người khi lướt/dậm đất.
 ///   • Tiếng bước chân theo mặt đất + bụi chân, tiếng/bụi khi nhảy và đáp.
 /// Nguyên tắc 12 của Disney (squash &amp; stretch, anticipation, follow-through) áp dụng cho một tấm ảnh duy nhất.
 /// </summary>
@@ -42,6 +42,7 @@ public class CharacterAnimator : MonoBehaviour
     float kickAngle, kickVelocity;     // góc vung người (lò xo)
     float spin, spinSpeed;             // lộn vòng khi nhảy đôi
     float lastVx;
+    float down;                        // 0 = đứng, 1 = nằm hẳn (bị quật ngã)
 
     void Awake()
     {
@@ -84,7 +85,7 @@ public class CharacterAnimator : MonoBehaviour
             spin = 0f;
             ZodiacParticles.Sparkle(Feet, player.Character != null ? player.Character.themeColor : Color.white, 8, 0.3f);
         }
-        else ZodiacParticles.Dust(Feet, Vector2.zero, 6);
+        else ZodiacParticles.Dust(Feet, Vector3.zero, 6);
     }
 
     void OnLanded(float speed)
@@ -92,17 +93,16 @@ public class CharacterAnimator : MonoBehaviour
         if (speed < 2f) return;
         float k = Mathf.Clamp01(speed / 20f);
         Impulse(new Vector2(3f, -4.5f) * (0.4f + k));
-        ZodiacParticles.Dust(Feet, Vector2.left, Mathf.RoundToInt(3 + k * 6));
-        ZodiacParticles.Dust(Feet, Vector2.right, Mathf.RoundToInt(3 + k * 6));
+        ZodiacParticles.Dust(Feet, Vector3.left, Mathf.RoundToInt(3 + k * 6));
+        ZodiacParticles.Dust(Feet, Vector3.right, Mathf.RoundToInt(3 + k * 6));
         var r = ZodiacResources.Get;
         if (r != null) ZodiacAudio.Play(r.land, 0.35f + 0.5f * k, 0.1f);
         if (speed > 17f) GameFeel.Shake(0.12f);
     }
 
-    void OnSwung(int step, Vector2 dir)
+    void OnSwung(int step, PlayerMeleeAttack.Kind kind)
     {
-        if (dir.y > 0.5f) Kick(22f);
-        else if (dir.y < -0.5f) Kick(-28f);
+        if (kind == PlayerMeleeAttack.Kind.Air) Kick(-30f);
         else
         {
             Kick(step == 2 ? -26f : -15f);
@@ -139,7 +139,7 @@ public class CharacterAnimator : MonoBehaviour
     void Impulse(Vector2 v) => squashVelocity += v;
     void Kick(float degreesPerSecondScaled) => kickVelocity += degreesPerSecondScaled * 18f;
 
-    Vector2 Feet => player != null ? (Vector2)player.transform.position + Vector2.up * 0.05f : (Vector2)t.position;
+    Vector3 Feet => player != null ? player.transform.position + Vector3.up * 0.05f : t.position;
 
     // ───────── Mỗi frame ─────────
 
@@ -148,8 +148,8 @@ public class CharacterAnimator : MonoBehaviour
         if (player == null) return;
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
-        Vector2 v = player.Velocity;
-        float speed = Mathf.Abs(v.x);
+        Vector3 v = player.Velocity;
+        float speed = new Vector2(v.x, v.z).magnitude;   // tốc độ trên mặt đường (đổi làn cũng tính bước chân)
         var c = player.Character;
         float runSpeed = c != null ? Mathf.Max(1f, c.runSpeed) : 8.5f;
 
@@ -188,7 +188,7 @@ public class CharacterAnimator : MonoBehaviour
             }
             // Đổi hướng khi đang chạy nhanh: trượt bụi
             if (Mathf.Abs(lastVx) > runSpeed * 0.6f && Mathf.Sign(lastVx) != Mathf.Sign(v.x) && speed > 0.5f)
-                ZodiacParticles.Dust(Feet, new Vector2(Mathf.Sign(lastVx), 0f), 6);
+                ZodiacParticles.Dust(Feet, new Vector3(Mathf.Sign(lastVx), 0f, 0f), 6);
         }
         else
         {
@@ -221,12 +221,14 @@ public class CharacterAnimator : MonoBehaviour
         }
 
         lean = Mathf.Lerp(lean, targetLean, 1f - Mathf.Exp(-leanSmoothing * dt));
+        // Bị quật ngã: ngả ra sau nằm hẳn xuống đất, hết thời gian thì bật dậy
+        down = Mathf.MoveTowards(down, player.IsKnockedDown ? 1f : 0f, dt * (player.IsKnockedDown ? 5f : 3.5f));
 
         // Giữ thể tích: kéo dài trục này thì trục kia co lại một phần
         float sx = 1f + squash.x - squash.y * 0.5f;
         float sy = 1f + squash.y - squash.x * 0.5f;
         t.localScale = new Vector3(Mathf.Max(0.5f, sx), Mathf.Max(0.5f, sy), 1f);
-        t.localRotation = Quaternion.Euler(0f, 0f, lean + wobble + kickAngle + spin);
+        t.localRotation = Quaternion.Euler(0f, 0f, lean + wobble + kickAngle + spin + down * 82f);
         // Khi lộn vòng thì xoay quanh giữa thân, không quanh chân
         float halfHeight = c != null ? c.colliderSize.y * 0.5f : 1f;
         Vector3 spinOffset = spin != 0f ? (Vector3)(Vector2.up * halfHeight - (Vector2)(Quaternion.Euler(0, 0, spin) * (Vector2.up * halfHeight))) : Vector3.zero;
@@ -239,11 +241,9 @@ public class CharacterAnimator : MonoBehaviour
         if (r != null)
         {
             var group = r.footstepGrass;
-            var ground = player.GroundCollider;
-            if (ground != null && ground.GetComponent<PlatformEffector2D>() != null) group = r.footstepWood;
-            else if (ZodiacGameManager.Instance != null && ZodiacGameManager.Instance.stoneFootsteps) group = r.footstepStone;
+            if (ZodiacGameManager.Instance != null && ZodiacGameManager.Instance.stoneFootsteps) group = r.footstepStone;
             ZodiacAudio.Play(group, Mathf.Lerp(0.25f, 0.45f, run), 0.1f);
         }
-        if (run > 0.5f) ZodiacParticles.Dust(Feet, new Vector2(-player.FacingDirection, 0f), 2);
+        if (run > 0.5f) ZodiacParticles.Dust(Feet, new Vector3(-player.FacingDirection, 0f, 0f), 2);
     }
 }

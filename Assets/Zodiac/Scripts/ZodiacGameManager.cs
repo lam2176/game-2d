@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -7,10 +6,10 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Trạng thái màn chơi: đang chơi → thắng (chạm cổng đích) hoặc thua (Health người chơi về 0).
-/// Rơi xuống vực (KillZone / thấp hơn fallLimitY) hoặc dính gai: mất 1 máu và hồi sinh ở đèn lồng gần nhất
-/// (như Hollow Knight / Celeste) — chỉ thua khi hết máu.
-/// Thua có thể "Hồi sinh tại đèn lồng": tải lại màn và đặt người chơi ở đèn lồng đã thắp xa nhất.
+/// Thua có thể "Hồi sinh tại đèn lồng": tải lại màn và đặt người chơi ở đèn lồng đã thắp xa nhất —
+/// các vùng giao tranh phía sau đèn lồng coi như đã dọn (<see cref="EncounterZone"/>).
 /// Màn có boss thì cổng đích chỉ hiện khi boss bị hạ.
+/// Giữ giới hạn mặt đường (làn trong cùng / ngoài cùng) cho quái dùng chung.
 /// Đếm đồng xu, cập nhật HUD, hiện bảng thắng/thua. Phím F5 chơi lại nhanh (R là Tuyệt kỹ).
 /// </summary>
 public class ZodiacGameManager : MonoBehaviour
@@ -19,18 +18,22 @@ public class ZodiacGameManager : MonoBehaviour
 
     public static ZodiacGameManager Instance { get; private set; }
 
+    /// <summary>Z làn ngoài cùng (gần camera) và trong cùng của mặt đường.</summary>
+    public static float LaneMinZ => Instance != null ? Instance.laneMinZ : -3f;
+    public static float LaneMaxZ => Instance != null ? Instance.laneMaxZ : 3f;
+
     public ZodiacPlayerController player;
     public PlayerTrigger goal;
-    public PlayerTrigger killZone;
     public string startSceneName = "Zodiac_Start";
     [Tooltip("Scene màn tiếp theo. Trống = màn cuối, thắng thì về màn hình chính.")]
     public string nextSceneName = "";
     public string levelTitle = "";
-    [Tooltip("Dự phòng cho KillZone: nhân vật xuống thấp hơn độ cao này là rơi vực.")]
-    public float fallLimitY = -10f;
     [Tooltip("Boss của màn (không bắt buộc) — cổng đích ẩn cho tới khi boss bị hạ.")]
     public BossFoxSpirit boss;
-    [Min(0f)] public float respawnDelay = 0.45f;
+
+    [Header("Mặt đường")]
+    public float laneMinZ = -3f;
+    public float laneMaxZ = 3f;
 
     [Header("Âm thanh")]
     public AudioClip music;
@@ -51,15 +54,31 @@ public class ZodiacGameManager : MonoBehaviour
 
     int collected, total, coinsTowardHeal;
     Checkpoint[] checkpoints;
-    Vector2 startPosition;
-    bool respawning;
     Health playerHealth;
 
     /// <summary>Hồi sinh sau khi tải lại scene: (tên scene, chỉ số đèn lồng).</summary>
     static string continueScene;
     static int continueCheckpoint = -1;
 
-    void Awake() => Instance = this;
+    void Awake()
+    {
+        Instance = this;
+        // Người chơi đặt ở đèn lồng trước khi các vùng giao tranh chạy Start (để biết vùng nào đã qua)
+        checkpoints = FindObjectsByType<Checkpoint>().OrderBy(c => c.index).ToArray();
+        if (continueScene == SceneManager.GetActiveScene().name && continueCheckpoint >= 0)
+        {
+            var cp = checkpoints.FirstOrDefault(c => c.index == continueCheckpoint);
+            if (cp != null)
+            {
+                foreach (var c in checkpoints) if (c.index <= cp.index) c.SetLit(true);
+                ActiveCheckpoint = cp;
+                // Chỉ dời transform (Rigidbody của người chơi có thể chưa Awake) — vật lý tự đồng bộ trước bước đầu tiên
+                player.transform.position = cp.SpawnPosition;
+            }
+        }
+        continueScene = null;
+        continueCheckpoint = -1;
+    }
 
     void OnDestroy()
     {
@@ -72,12 +91,8 @@ public class ZodiacGameManager : MonoBehaviour
         total = items.Length;
         foreach (var item in items) item.Collected += OnCollected;
         if (goal != null) goal.Entered += _ => Finish(State.Won);
-        if (killZone != null) killZone.Entered += _ => HazardHit(ZodiacBalance.Unit, player.transform.position);
         playerHealth = player.GetComponent<Health>();
         if (playerHealth != null) playerHealth.Died += () => Finish(State.Lost, "Bạn đã bị hạ gục");
-
-        startPosition = player.transform.position;
-        checkpoints = FindObjectsByType<Checkpoint>().OrderBy(c => c.index).ToArray();
         foreach (var cp in checkpoints) cp.Reached += OnCheckpoint;
 
         if (boss != null)
@@ -85,21 +100,11 @@ public class ZodiacGameManager : MonoBehaviour
             if (goal != null) goal.gameObject.SetActive(false);
             boss.Health.Died += OnBossDefeated;
         }
-
-        if (continueScene == SceneManager.GetActiveScene().name && continueCheckpoint >= 0)
+        if (ActiveCheckpoint != null)
         {
-            var cp = checkpoints.FirstOrDefault(c => c.index == continueCheckpoint);
-            if (cp != null)
-            {
-                foreach (var c in checkpoints) if (c.index <= cp.index) c.SetLit(true);
-                ActiveCheckpoint = cp;
-                player.Teleport(cp.SpawnPosition);
-                var follow = FindAnyObjectByType<ZodiacCameraFollow>();
-                if (follow != null) follow.SnapToTarget();
-            }
+            var follow = FindAnyObjectByType<ZodiacCameraFollow>();
+            if (follow != null) follow.SnapToTarget();
         }
-        continueScene = null;
-        continueCheckpoint = -1;
 
         winPanel.SetActive(false);
         losePanel.SetActive(false);
@@ -109,8 +114,6 @@ public class ZodiacGameManager : MonoBehaviour
 
     void Update()
     {
-        if (Current == State.Playing && !respawning && player.transform.position.y < fallLimitY)
-            HazardHit(ZodiacBalance.Unit, player.transform.position);
         if (Keyboard.current != null && Keyboard.current.f5Key.wasPressedThisFrame) Restart();
     }
 
@@ -122,7 +125,7 @@ public class ZodiacGameManager : MonoBehaviour
         if (c != null && c.coinsPerHeal > 0 && playerHealth != null && ++coinsTowardHeal >= c.coinsPerHeal)
         {
             coinsTowardHeal = 0;
-            if (playerHealth.Heal(ZodiacBalance.Unit) > 0) ZodiacFx.Ring(player.BodyCollider.bounds.center, 1.5f, new Color(0.5f, 1f, 0.6f, 0.8f));
+            if (playerHealth.Heal(ZodiacBalance.Unit) > 0) ZodiacFx.Ring(player.BodyCenter, 1.5f, new Color(0.5f, 1f, 0.6f, 0.8f));
         }
         RefreshHud();
     }
@@ -138,44 +141,18 @@ public class ZodiacGameManager : MonoBehaviour
     {
         if (goal == null) return;
         goal.gameObject.SetActive(true);
-        ZodiacFx.Ring(goal.transform.position + Vector3.up * 2f, 4f, new Color(1f, 0.9f, 0.4f, 0.8f), 0.8f);
+        ZodiacFx.Ring(goal.transform.position, 4f, new Color(1f, 0.9f, 0.4f, 0.8f), 0.8f, flat: true);
     }
 
-    /// <summary>Rơi vực / dính gai: trừ máu (không đẩy lùi), còn sống thì đưa về đèn lồng gần nhất.</summary>
-    public void HazardHit(int damage, Vector2 source)
+    /// <summary>Dính bẫy (gai, lửa): trừ máu, bị đẩy ra khỏi bẫy.</summary>
+    public void HazardHit(int damage, Vector3 source)
     {
-        if (Current != State.Playing || respawning) return;
-        var res = ZodiacResources.Get;
-        if (res != null) ZodiacAudio.Play(res.spike, 0.9f);
-        if (playerHealth != null)
+        if (Current != State.Playing || playerHealth == null) return;
+        if (playerHealth.TakeDamage(new Hit(damage, source, 0.8f)))
         {
-            playerHealth.TakeDamage(new Hit(damage, source, 0f));
-            if (playerHealth.IsDead) return;   // Died đã gọi Finish
+            var res = ZodiacResources.Get;
+            if (res != null) ZodiacAudio.Play(res.spike, 0.9f);
         }
-        StartCoroutine(RespawnRoutine());
-    }
-
-    IEnumerator RespawnRoutine()
-    {
-        respawning = true;
-        player.SetControlEnabled(false);
-        yield return new WaitForSeconds(respawnDelay * 0.4f);
-        bool done = false;
-        // Mờ đen → dịch chuyển về đèn lồng → sáng lại
-        ScreenFader.Blink(() =>
-        {
-            if (Current == State.Playing)
-            {
-                player.SetControlEnabled(true);
-                player.Teleport(ActiveCheckpoint != null ? ActiveCheckpoint.SpawnPosition : startPosition);
-                playerHealth?.SetInvulnerable(1.2f);
-                var follow = FindAnyObjectByType<ZodiacCameraFollow>();
-                if (follow != null) follow.SnapToTarget();
-            }
-            done = true;
-        }, respawnDelay * 0.3f);
-        while (!done) yield return null;
-        respawning = false;
     }
 
     void Finish(State result, string loseReason = null)
