@@ -67,6 +67,9 @@ public class PlayerMeleeAttack : MonoBehaviour
     PlayerEnergy energy;
     CharacterStats stats;
     PlayerDodge dodge;
+    PlayerGrab grab;
+    PlayerPassives passives;
+    LayerMask groundLayers;
     InputAction attackAction;
     readonly Collider[] overlaps = new Collider[16];
     readonly HashSet<Health> hitThisSwing = new HashSet<Health>();
@@ -97,6 +100,10 @@ public class PlayerMeleeAttack : MonoBehaviour
         skill = GetComponent<PlayerSkill>();
         energy = GetComponent<PlayerEnergy>();
         dodge = GetComponent<PlayerDodge>();
+        grab = GetComponent<PlayerGrab>();
+        passives = GetComponent<PlayerPassives>();
+        var skillComp = GetComponent<PlayerSkill>();
+        groundLayers = skillComp != null ? skillComp.groundLayer : (LayerMask)0;
         attackAction = InputSystem.actions.FindAction("Player/Attack");
         if (attackAction == null || hitbox == null)
         {
@@ -122,7 +129,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         if (attackAction.WasPressedThisFrame() && Time.time >= nextAttackTime && (skill == null || !skill.IsBusy) &&
-            (dodge == null || !dodge.IsDodging)) StartSwing();
+            (dodge == null || !dodge.IsDodging) && (grab == null || !grab.IsHolding)) StartSwing();
 
         if (phase == Phase.Startup && Time.time >= phaseEndTime)
         {
@@ -231,14 +238,14 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (target == null || target.gameObject == gameObject || target.IsDead) continue;
             if (!hitThisSwing.Add(target)) continue;   // đã trúng trong đòn này
             float multiplier = (skill != null ? skill.ConsumeBackstab() : 1f) * current.damageMultiplier;
-            if (LastKind == Kind.Air && controller.Character != null) multiplier *= controller.Character.stompDamageMultiplier;
+            if (passives != null) multiplier *= passives.DamageMultiplier(LastKind);
             // Nguồn sát thương đặt phía sau người chơi theo hướng chém → quái bị đẩy theo hướng chém
             Vector3 source = transform.position - Vector3.right * (controller.FacingDirection * 2f);
             Hit hit = CharacterStats.CreateHit(stats, damage * multiplier, source, current.knockback);
             hit.knockdown = current.knockdown;
             if (target.TakeDamage(hit))
             {
-                if (controller.Character != null) Poison.Apply(target, controller.Character.poisonDamage);
+                passives?.OnMeleeHit(target, LastKind, LastComboStep, targetLayers, groundLayers);
                 energy?.Gain(current.knockdown ? energy.hitGain * 2 : energy.hitGain);
                 Color spark = controller.Character != null ? controller.Character.themeColor : Color.white;
                 GameFeel.Impact(col.ClosestPoint(center), spark, current.knockdown || multiplier >= 2.5f || hit.crit);

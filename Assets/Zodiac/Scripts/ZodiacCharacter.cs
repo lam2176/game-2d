@@ -144,6 +144,16 @@ public class ZodiacCharacter : ScriptableObject
     [Min(0)] public int coinsPerHeal = 0;
     [Tooltip("Nhân sát thương đòn trên không (đá bay).")]
     [Min(1)] public int stompDamageMultiplier = 1;
+    [Tooltip("Cộng tỉ lệ chí mạng (0.1 = +10%).")]
+    [Range(0f, 0.5f)] public float critBonus = 0f;
+    [Tooltip("Nhân thời gian hồi lăn (0.5 = hồi nhanh gấp đôi).")]
+    [Min(0.1f)] public float dodgeCooldownScale = 1f;
+    [Tooltip("Đá bay trúng quái thì hồi thêm chừng này Khí.")]
+    [Min(0)] public int airHitEnergy = 0;
+    [Tooltip("Đá bay trúng quái thì choáng thêm (giây).")]
+    [Min(0f)] public float airHitStun = 0f;
+    [Tooltip("Đòn kết combo trên đất phun thêm một cầu lửa nhỏ về phía trước.")]
+    public bool finisherFireball;
 
     [Header("Chiêu thức (phím K)")]
     public SkillConfig skill = new SkillConfig();

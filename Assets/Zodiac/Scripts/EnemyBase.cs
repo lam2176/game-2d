@@ -106,6 +106,12 @@ public abstract class EnemyBase : MonoBehaviour
     int blocksTaken;
     bool gearLost;
     readonly Collider[] hits = new Collider[4];
+    // Bị túm / bị ném (PlayerGrab)
+    bool held, thrown;
+    int thrownDamage;
+    CharacterStats thrower;
+    readonly System.Collections.Generic.HashSet<Health> thrownHits = new System.Collections.Generic.HashSet<Health>();
+    readonly Collider[] thrownOverlaps = new Collider[8];
 
     public bool IsStunned => Time.time < stunnedUntil;
     /// <summary>Đang bị quật ngã (đang bay hoặc nằm đất) — không hành động.</summary>
@@ -141,11 +147,13 @@ public abstract class EnemyBase : MonoBehaviour
     void FixedUpdate()
     {
         if (health.IsDead) return;
+        if (held) return;
         if (rb.useGravity && !rb.isKinematic && gravityMultiplier > 1f)
             rb.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
         UpdateStunIcon();
         if (knockedDown)
         {
+            if (thrown && !lying) ThrownImpact();
             UpdateKnockdown();
             return;
         }
@@ -426,6 +434,13 @@ public abstract class EnemyBase : MonoBehaviour
             // Đang bay: chạm đất thì nằm xuống, bụi tung
             if (Time.time > launchedAt + 0.15f && IsGrounded() && rb.linearVelocity.y <= 0.05f)
             {
+                if (thrown)
+                {
+                    // Bị ném: đập xuống đất mới mất máu (không đẩy thêm)
+                    thrown = false;
+                    if (thrownDamage > 0) health.TakeDamage(CharacterStats.CreateHit(thrower, thrownDamage, transform.position, 0f));
+                    if (health.IsDead) return;
+                }
                 lying = true;
                 downUntil = Time.time + downTime;
                 health.SetInvulnerable(downTime + 0.35f);
@@ -446,6 +461,70 @@ public abstract class EnemyBase : MonoBehaviour
 
     /// <summary>Màu mảnh vỡ khi chết.</summary>
     protected Color DebrisColor => debrisColor;
+
+    // ───────── Bị túm / ném ─────────
+
+    /// <summary>Túm được không: đang choáng, đứng trên đất, quật ngã được, không phải boss.</summary>
+    public bool CanBeGrabbed =>
+        !health.IsDead && !knockedDown && !held && canBeKnockedDown && rb.useGravity && !rb.isKinematic &&
+        IsStunned && !(this is BossFoxSpirit);
+
+    /// <summary>Người chơi túm: đứng im trong tay, không tự hành động.</summary>
+    public void Grab()
+    {
+        held = true;
+        ReleaseToken();
+        Interrupt();
+        rb.linearVelocity = Vector3.zero;
+        rb.isKinematic = true;
+        punch = 1f;
+    }
+
+    /// <summary>Giữ quái ở vị trí cho trước (trước mặt người chơi).</summary>
+    public void HoldAt(Vector3 position)
+    {
+        if (!held) return;
+        rb.position = position;
+        transform.position = position;
+    }
+
+    /// <summary>
+    /// Ném (hoặc thả) quái đang bị túm: văng theo vận tốc, nằm đất khi chạm đất. damage &gt; 0: đâm phải ai thì người đó
+    /// mất damage máu và bị quật ngã, bản thân mất damage máu khi đập đất.
+    /// </summary>
+    public void Throw(Vector3 velocity, int damage, CharacterStats by)
+    {
+        held = false;
+        if (health.IsDead) return;
+        rb.isKinematic = false;
+        knockedDown = true;
+        lying = false;
+        launchedAt = Time.time;
+        rb.linearVelocity = velocity;
+        if (Mathf.Abs(velocity.x) > 0.05f) direction = -Mathf.Sign(velocity.x);
+        thrown = true;
+        thrownDamage = damage;
+        thrower = by;
+        thrownHits.Clear();
+        thrownHits.Add(health);
+    }
+
+    /// <summary>Đang bay vì bị ném: đâm quái khác / hũ / rương thì gây sát thương và quật ngã.</summary>
+    void ThrownImpact()
+    {
+        if (thrownDamage <= 0) return;
+        var b = body.bounds;
+        int count = Physics.OverlapBoxNonAlloc(b.center, b.extents + new Vector3(0.15f, 0.1f, 0.15f), thrownOverlaps, Quaternion.identity,
+                                               1 << gameObject.layer, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < count; i++)
+        {
+            var target = thrownOverlaps[i].GetComponentInParent<Health>();
+            if (target == null || target.IsDead || !thrownHits.Add(target)) continue;
+            var hit = CharacterStats.CreateHit(thrower, thrownDamage, transform.position, 1.3f);
+            hit.knockdown = true;
+            if (target.TakeDamage(hit)) GameFeel.Impact(thrownOverlaps[i].ClosestPoint(b.center), Color.white, true);
+        }
+    }
 
     float hpScaleApplied = 1f;
 

@@ -28,6 +28,7 @@ Tay phải mũi tên, tay trái Space/Shift + QWER (như game hành động onli
 | **W** (L, Ctrl trái, LB) | Lăn né theo hướng phím (cả chéo) — bất tử, xuyên quái và đạn |
 | **E** (K, chuột phải, RB) | Chiêu riêng của con giáp (tốn Khí) |
 | **R** (RT) | **Tuyệt kỹ** — cần đầy thanh Khí (100), tốn hết |
+| **F** (Y) | Túm quái đang choáng (Q thúc gối, F / Q ném) · ở làng: dùng điểm gần đó |
 | **1 / 2** | Dùng nhanh đồ đã gán (bình máu, bình Khí) |
 | **I / Tab** | Hành trang · trang Tu luyện |
 | **Esc** | Tạm dừng: tiếp tục, chơi lại, về màn hình chính, âm lượng, toàn màn hình |
@@ -153,6 +154,21 @@ máu mất và chuỗi dài nhất. **S**: +10 xu và một món hiếm (mảnh 
 
 **Hũ sành, rương gỗ** (`Breakable`): mỗi khu 2–3 hũ (2 đòn vỡ, rơi xu, đôi khi bình máu / lửa ma trơi), khu lẻ có rương
 (4 lần sát thương, nhiều xu, bình máu / bình Khí / mảnh Đan / Ngọc may mắn). Không tính vào việc dọn khu.
+
+**Túm & ném** (`PlayerGrab`): đứng sát một quái đang choáng (vừa trúng đòn, bị sóng âm…) bấm **F** (tay cầm: Y) để túm.
+Đang túm: **Q** thúc gối (tối đa 3 lần), **Q** lần nữa hoặc **F** thì ném theo hướng đang nhìn (bấm ← / → để quay).
+Quái bị ném mất 2× sát thương khi đập đất, ai nó đâm phải (quái khác, hũ, rương) cũng mất 2× và bị quật ngã.
+Giữ quá 2.5 giây hoặc bị đánh trúng thì quái tuột ra. Không túm được boss, quái bay, Thạch Sư.
+
+**Nội tại gom về một chỗ** (`PlayerPassives`): độc, đá bay, hút xu, hồi máu bằng xu (giờ tính cả xu quái rơi) đều đi qua đây.
+Bốn con vốn có nội tại kiểu đi cảnh được thêm hiệu ứng chiến đấu:
+
+| Con giáp | Nội tại | Thêm |
+|---|---|---|
+| Chuột | Lanh lẹ | Lăn hồi nhanh gấp đôi, +10% chí mạng |
+| Rồng | Thăng long | Đòn kết combo phun thêm một cầu lửa nhỏ |
+| Khỉ | Tề Thiên | Đá bay trúng quái hồi thêm 6 Khí |
+| Gà | Cánh phượng | Đá bay trúng quái choáng thêm 0.6 giây |
 
 ## Bản đồ
 

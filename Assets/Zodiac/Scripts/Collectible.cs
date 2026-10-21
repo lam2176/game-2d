@@ -28,7 +28,7 @@ public class Collectible : MonoBehaviour
     void Update()
     {
         var player = ZodiacPlayerController.Current;
-        float magnet = player != null && player.Character != null ? player.Character.coinMagnetRadius : 0f;
+        float magnet = PlayerPassives.CoinMagnet;
         if (magnet > 0f && player.ControlEnabled)
         {
             Vector3 target = player.transform.position + Vector3.up;
