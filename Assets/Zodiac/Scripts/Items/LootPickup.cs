@@ -33,17 +33,18 @@ public class LootPickup : MonoBehaviour
     Transform visual;
 
     /// <summary>Rải đồ từ bảng rơi tại vị trí (quái chết).</summary>
-    public static void DropFrom(LootEntry[] table, Vector2Int coinRange, Vector3 position)
+    /// <param name="scale">Nhân tỉ lệ rơi đồ và số xu (độ khó, quái tinh anh).</param>
+    public static void DropFrom(LootEntry[] table, Vector2Int coinRange, Vector3 position, float scale = 1f)
     {
         if (table != null)
             foreach (var e in table)
             {
-                if (e == null || e.item == null || UnityEngine.Random.value > e.chance) continue;
+                if (e == null || e.item == null || UnityEngine.Random.value > e.chance * scale) continue;
                 int n = UnityEngine.Random.Range(e.min, e.max + 1);
                 if (e.item.Stackable) Spawn(ItemAffixes.Roll(e.item, n), 0, position);
                 else for (int k = 0; k < n; k++) Spawn(ItemAffixes.Roll(e.item), 0, position);   // trang bị: mỗi món một bộ dòng phụ
             }
-        int c = coinRange.y > 0 ? UnityEngine.Random.Range(coinRange.x, coinRange.y + 1) : 0;
+        int c = coinRange.y > 0 ? Mathf.RoundToInt(UnityEngine.Random.Range(coinRange.x, coinRange.y + 1) * scale) : 0;
         for (int i = 0; i < c; i++) Spawn(null, 1, position);
     }
 

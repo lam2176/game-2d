@@ -123,7 +123,7 @@ Màn hình chính → **Bắt đầu** vào thẳng **Làng Trung Tâm** (scene 
 | **Bàn thờ tổ** | Mở trang Tu luyện (cộng điểm, luyện Đan) |
 | **Tiệm thuốc bắc** | Mua bình thuốc, Ngọc may mắn, Bùa bảo hộ · Bán đồ (nửa giá, đồ đập cao bán đắt hơn) · **Luyện đan** từ nguyên liệu |
 | **Lò rèn** | **Đập đồ** +0 → +10 (cả đồ đang mặc) · **Phân giải** đồ thừa ra nguyên liệu + đồng |
-| **Cổng làng** | Chọn màn đã mở |
+| **Cổng làng** | Chọn màn đã mở · chọn **độ khó** |
 
 **Đập đồ** (`Forge`): tỉ lệ +1…+3 chắc chắn, rồi 85 · 70 · 55 · 40 · 30 · 20 · 12%. Mỗi lần hỏng liên tiếp +5% cho lần sau.
 Hỏng khi lên +1…+5 giữ cấp; lên **+6 trở lên hỏng thì tụt 1 cấp** — trừ khi dùng **Bùa bảo hộ**. **Ngọc may mắn** +10%.
@@ -131,6 +131,28 @@ Tốn `10 × cấp mới` đồng + nguyên liệu theo ô đồ (vũ khí Mản
 Mỗi cấp +8% chỉ số gốc của món (+10 = gấp đôi).
 
 **Luyện đan** (`Shop.Recipes`): Bình máu lớn, 2 Bình Khí, Mảnh Huyết Đan, Mảnh Khí Đan, Ngọc may mắn — từ nguyên liệu quái rơi.
+
+## Chiều sâu chiến đấu (giai đoạn C1)
+
+**Độ khó** (`ZodiacDifficulty`, chọn ở Cổng làng, lưu trong hồ sơ):
+
+| | Máu quái | Đòn quái | Tinh anh | Đồ rơi / xu | XP |
+|---|---|---|---|---|---|
+| Thường | ×1 | ×1 | 8% | ×1 | ×1 |
+| Khó | ×1.5 | ×1.3 | 20% | ×1.25 | ×1.3 |
+| Ác Mộng (mở khi phá đảo màn cuối) | ×2.2 | ×1.7 | 35% | ×1.6 | ×1.7 |
+
+**Quái tinh anh** (`EliteAffix`): to hơn, vòng hào quang màu dưới chân, chữ "Tinh anh · …" trên đầu, máu ×2.2, XP và đồ rơi ×3,
+40% rơi thêm Bùa bảo hộ / Ngọc may mắn / mảnh Đan. Một trong 5 đặc tính:
+**Cuồng nộ** (nhanh ×1.45, đòn mạnh hơn, choáng ngắn) · **Giáp đá** (+80 giáp, khó đẩy lùi) · **Độc** (đòn trúng gây độc 3 lần) ·
+**Hồi máu** (2 giây không bị đánh thì hồi 4%/giây) · **Phân thân** (chết tách 2 con nhỏ — phải hạ hết mới dọn xong khu).
+
+**Chuỗi đòn & xếp hạng khu** (`ComboCounter`): mỗi đòn trúng quái cộng chuỗi (đứt sau 2.5 giây không trúng hoặc khi bị đánh),
+hiện số lớn ở mép phải từ 3 đòn. Dọn xong khu thì chấm **S / A / B / C** theo thời gian (so với 6 + 3.5 giây mỗi quái),
+máu mất và chuỗi dài nhất. **S**: +10 xu và một món hiếm (mảnh Đan, Ngọc may mắn, Bình máu lớn) · **A**: +5 xu.
+
+**Hũ sành, rương gỗ** (`Breakable`): mỗi khu 2–3 hũ (2 đòn vỡ, rơi xu, đôi khi bình máu / lửa ma trơi), khu lẻ có rương
+(4 lần sát thương, nhiều xu, bình máu / bình Khí / mảnh Đan / Ngọc may mắn). Không tính vào việc dọn khu.
 
 ## Bản đồ
 

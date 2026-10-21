@@ -223,7 +223,7 @@ public class ZodiacGameManager : MonoBehaviour
         if (res != null) ZodiacAudio.Play(result == State.Won ? res.win : res.lose, 1f, 0f);
         if (result == State.Won)
         {
-            PlayerProfile.Current.CompleteLevel(levelIndex);
+            PlayerProfile.Current.CompleteLevel(levelIndex, string.IsNullOrEmpty(nextSceneName));
             winDetailText.text = $"Thu được {collected}/{total} đồng xu";
             if (nextButtonLabel != null)
                 nextButtonLabel.text = string.IsNullOrEmpty(nextSceneName) ? "Về làng" : "Màn tiếp theo";

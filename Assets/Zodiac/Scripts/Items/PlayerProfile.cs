@@ -111,6 +111,10 @@ public class PlayerProfile
     [Tooltip("Số màn đã mở (1 = chỉ màn 1).")]
     public int unlockedLevels = 1;
     public List<CharacterProgress> characters = new List<CharacterProgress>();
+    [Tooltip("Độ khó đang chọn (ZodiacDifficulty): 0 Thường, 1 Khó, 2 Ác Mộng.")]
+    public int difficulty;
+    [Tooltip("Đã phá đảo màn cuối → mở Ác Mộng.")]
+    public bool nightmareUnlocked;
 
     static PlayerProfile current;
 
@@ -176,6 +180,7 @@ public class PlayerProfile
             }
         for (int i = 0; i < quick.Length; i++) quick[i] ??= "";
         unlockedLevels = Mathf.Max(1, unlockedLevels);
+        if (!ZodiacDifficulty.IsUnlocked(difficulty, this)) difficulty = ZodiacDifficulty.Normal;
         if (version < 2)
         {
             // Phiên bản 1: đồ trang bị có thể nằm chồng — tách thành từng món riêng
@@ -420,11 +425,21 @@ public class PlayerProfile
         Commit();
     }
 
-    /// <summary>Thắng màn index (0 = màn 1) → mở màn kế.</summary>
-    public void CompleteLevel(int index)
+    /// <summary>Thắng màn index (0 = màn 1) → mở màn kế; thắng màn cuối (final) → mở độ khó Ác Mộng.</summary>
+    public void CompleteLevel(int index, bool final = false)
     {
         unlockedLevels = Mathf.Max(unlockedLevels, index + 2);
+        if (final) nightmareUnlocked = true;
         Commit();
+    }
+
+    /// <summary>Đổi độ khó (Ác Mộng phải mở trước).</summary>
+    public bool SetDifficulty(int level)
+    {
+        if (level < ZodiacDifficulty.Normal || level > ZodiacDifficulty.Nightmare || !ZodiacDifficulty.IsUnlocked(level, this)) return false;
+        difficulty = level;
+        Commit();
+        return true;
     }
 
     // ───────── Tiến trình con giáp ─────────

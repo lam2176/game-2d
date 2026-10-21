@@ -769,6 +769,11 @@ public static class ZodiacLevelBuilder
             if (!string.IsNullOrEmpty(stage.sign)) CreateSign(go.transform, xMin + 3.2f, stage.sign);
             for (int c = 0; c < stage.coinRows; c++) CreateCoinRow(coins, Mathf.Lerp(xMin + 4f, xMax - 4f, (c + 0.5f) / stage.coinRows));
             if (stage.hazard) CreateHazard(go.transform, (xMin + xMax) / 2f + 1f, i % 2 == 0);
+            // Hũ sành sát mép trong mặt đường, rương gỗ ở các khu lẻ
+            CreateJar(go.transform, new Vector3(xMin + 5.4f, 0f, def.laneMax - 0.45f));
+            CreateJar(go.transform, new Vector3(xMax - 2.6f, 0f, def.laneMin + 0.45f));
+            if (rnd.NextDouble() < 0.5) CreateJar(go.transform, new Vector3(xMax - 3.4f, 0f, def.laneMax - 0.5f));
+            if (i % 2 == 1) CreateChest(go.transform, new Vector3(xMin + 8.2f, 0f, def.laneMax - 0.5f));
             zone.waves = new EncounterZone.Wave[stage.waves.Length];
             for (int w = 0; w < stage.waves.Length; w++) zone.waves[w] = ParseWave(xMin, xMax, w, stage.waves[w]);
             if (stage.boss) BuildBoss(zone, xMin, xMax, canvas);
@@ -778,6 +783,54 @@ public static class ZodiacLevelBuilder
             zones[i] = zone;
         }
         manager.rooms = zones;
+    }
+
+    static LootEntry L(string id, float chance, int min = 1, int max = 1) =>
+        new LootEntry { item = ZodiacItemDefs.Get(id), chance = chance, min = min, max = max };
+
+    /// <summary>Gốc một vật đập vỡ được: layer Enemy (đòn người chơi trúng), collider hộp, máu, phần hình con.</summary>
+    static Breakable BreakableRoot(string name, Transform parent, Vector3 position, Vector3 size, int hp)
+    {
+        var go = new GameObject(name) { layer = ctx.enemyLayer };
+        go.transform.SetParent(parent, false);
+        go.transform.position = position;
+        var box = go.AddComponent<BoxCollider>();
+        box.size = size;
+        box.center = new Vector3(0f, size.y / 2f, 0f);
+        go.AddComponent<Health>().maxHealth = hp;
+        var b = go.AddComponent<Breakable>();
+        b.visual = new GameObject("Visual").transform;
+        b.visual.SetParent(go.transform, false);
+        return b;
+    }
+
+    /// <summary>Hũ sành: 2 đòn là vỡ, rơi vài xu, đôi khi bình máu nhỏ.</summary>
+    static void CreateJar(Transform parent, Vector3 position)
+    {
+        var b = BreakableRoot("Hũ sành", parent, position, new Vector3(0.7f, 0.9f, 0.7f), ZodiacBalance.Unit + 5);
+        var clay = Plain("JarClay", new Color(0.55f, 0.3f, 0.18f));
+        var rim = Plain("JarRim", new Color(0.32f, 0.17f, 0.1f));
+        Primitive(PrimitiveType.Sphere, "Body", b.visual, position + Vector3.up * 0.4f, new Vector3(0.7f, 0.78f, 0.7f), clay);
+        Primitive(PrimitiveType.Cylinder, "Neck", b.visual, position + Vector3.up * 0.82f, new Vector3(0.38f, 0.08f, 0.38f), rim);
+        b.debrisColor = new Color(0.55f, 0.3f, 0.18f);
+        b.coinDrop = new Vector2Int(1, 3);
+        b.loot = new[] { L("binh_mau_nho", 0.15f), L("lua_ma_troi", 0.1f) };
+    }
+
+    /// <summary>Rương gỗ: cứng hơn, nhiều xu và cơ hội ra mảnh Đan / đồ.</summary>
+    static void CreateChest(Transform parent, Vector3 position)
+    {
+        var b = BreakableRoot("Rương gỗ", parent, position, new Vector3(1.1f, 0.8f, 0.7f), ZodiacBalance.Unit * 4);
+        var wood = Plain("ChestWood", WoodColor);
+        var band = Plain("ChestBand", new Color(0.85f, 0.65f, 0.2f), new Color(0.15f, 0.1f, 0f));
+        Box("Body", b.visual, position + Vector3.up * 0.32f, new Vector3(1.1f, 0.64f, 0.7f), wood);
+        Box("Lid", b.visual, position + Vector3.up * 0.72f, new Vector3(1.14f, 0.18f, 0.74f), wood);
+        Box("BandL", b.visual, position + new Vector3(-0.35f, 0.42f, 0f), new Vector3(0.1f, 0.86f, 0.76f), band);
+        Box("BandR", b.visual, position + new Vector3(0.35f, 0.42f, 0f), new Vector3(0.1f, 0.86f, 0.76f), band);
+        Box("Lock", b.visual, position + new Vector3(0f, 0.55f, -0.37f), new Vector3(0.16f, 0.2f, 0.04f), band);
+        b.debrisColor = WoodColor;
+        b.coinDrop = new Vector2Int(5, 9);
+        b.loot = new[] { L("binh_mau_nho", 0.5f), L("binh_khi", 0.3f), L("manh_huyet_dan", 0.15f), L("manh_khi_dan", 0.15f), L("ngoc_may_man", 0.05f) };
     }
 
     /// <summary>Tường hai đầu khu — chặn cả người chơi lẫn quái (không ai bị đánh văng ra khỏi khung hình).</summary>
