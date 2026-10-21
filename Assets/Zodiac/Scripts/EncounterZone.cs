@@ -11,6 +11,8 @@ using UnityEngine.UI;
 /// bị hạ hết. Dọn xong (và hạ boss nếu có) thì mở lối ra ở mép phải (<see cref="exit"/>) và hiện "ĐI TIẾP →";
 /// đi vào lối ra là màn hình tối lại và chuyển sang khu tiếp theo.
 /// Hồi sinh ở đèn lồng của khu sau thì khu này coi như đã dọn.
+/// Quái sinh ra nhân máu / sát thương theo độ khó (<see cref="ZodiacDifficulty"/>) và có thể thành tinh anh (<see cref="EliteAffix"/>);
+/// dọn xong thì chấm hạng khu (<see cref="ComboCounter"/>).
 /// </summary>
 public class EncounterZone : MonoBehaviour
 {
@@ -73,8 +75,12 @@ public class EncounterZone : MonoBehaviour
     {
         if (IsActive || IsCleared) return;
         IsActive = true;
+        int count = boss != null ? 6 : 0;
+        foreach (var w in waves) count += w.spawns.Length;
+        if (count > 0) ComboCounter.BeginRoom(count);
         if (boss != null)
         {
+            boss.ApplyScaling(ZodiacDifficulty.HealthScale, ZodiacDifficulty.DamageScale, ZodiacDifficulty.LootScale);
             if (bossBar != null) bossBar.SetActive(true);
             if (bossNameText != null) bossNameText.text = boss.bossName;
             ZodiacAudio.PlayMusic(bossMusic, 0.6f);
@@ -114,15 +120,32 @@ public class EncounterZone : MonoBehaviour
         ZodiacParticles.Dust(ground + Vector3.up * 0.1f, Vector3.up, 8, new Color(0.4f, 0.3f, 0.45f, 0.8f));
         yield return new WaitForSeconds(SpawnWarning);
         var go = Instantiate(spawn.prefab, spawn.position, Quaternion.identity);
-        if (go.TryGetComponent(out EnemyBase enemy)) enemy.alwaysAggro = true;
+        if (go.TryGetComponent(out EnemyBase enemy))
+        {
+            enemy.alwaysAggro = true;
+            enemy.ApplyScaling(ZodiacDifficulty.HealthScale, ZodiacDifficulty.DamageScale, ZodiacDifficulty.LootScale);
+            if (UnityEngine.Random.value < ZodiacDifficulty.EliteChance || ForceElite)
+                EliteAffix.Make(enemy, EliteAffix.RandomKind(), spawn.prefab, Track);
+        }
         if (go.TryGetComponent(out Health h)) alive.Add(h);
         ZodiacFx.Puff(spawn.position + Vector3.up * 0.6f, new Color(0.6f, 0.5f, 0.7f, 0.8f), 1.6f);
     }
+
+    /// <summary>Thêm quái vào khu đang đánh (phân thân của tinh anh) — khu chưa dọn xong khi nó còn sống.</summary>
+    public void Track(Health h)
+    {
+        if (h != null) alive.Add(h);
+    }
+
+    /// <summary>Mọi quái sinh ra đều là tinh anh (kiểm thử).</summary>
+    public static bool ForceElite;
 
     void Clear()
     {
         IsActive = false;
         IsCleared = true;
+        var player = ZodiacPlayerController.Current;
+        ComboCounter.EndRoom(player != null ? player.transform.position : entry);
         if (bossBar != null) bossBar.SetActive(false);
         if (boss != null && ZodiacGameManager.Instance != null) ZodiacAudio.PlayMusic(ZodiacGameManager.Instance.music);
         if (exit != null)

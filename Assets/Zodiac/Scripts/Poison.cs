@@ -16,10 +16,12 @@ public class Poison : MonoBehaviour
     Health health;
     HitFlash flash;
 
-    public static void Apply(Health target, int ticks)
+    /// <param name="tickDamage">Sát thương mỗi lần (0 = giữ giá trị của component).</param>
+    public static void Apply(Health target, int ticks, int tickDamage = 0)
     {
         if (target == null || target.IsDead || ticks <= 0) return;
         if (!target.TryGetComponent(out Poison poison)) poison = target.gameObject.AddComponent<Poison>();
+        if (tickDamage > 0) poison.tickDamage = tickDamage;
         poison.ticksLeft = Mathf.Max(poison.ticksLeft, ticks);
         poison.nextTick = Time.time + poison.tickInterval;
         poison.enabled = true;

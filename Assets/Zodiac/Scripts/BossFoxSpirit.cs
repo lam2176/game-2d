@@ -241,7 +241,7 @@ public class BossFoxSpirit : EnemyBase
         if (res != null) ZodiacAudio.Play(res.bossSlam, 1f, 0.05f, feet);
 
         if (PlayerAvailable && player.IsGrounded && ToPlayer.magnitude <= slamRadius)
-            playerHealth?.TakeDamage(new Hit(slamDamage, transform.position, 1.5f) { knockdown = true });
+            HitPlayer(new Hit(slamDamage, transform.position, 1.5f) { knockdown = true });
 
         // Sóng sát đất toả tròn — giai đoạn 2 dày hơn, phải nhảy đúng nhịp hoặc đứng vào khe
         int count = phase2 ? waveCountPhase2 : waveCount;
@@ -250,7 +250,7 @@ public class BossFoxSpirit : EnemyBase
         {
             Vector3 dir = Quaternion.Euler(0f, offset + i * 360f / count, 0f) * Vector3.right;
             var wave = Projectile.Spawn(transform.position + dir * 0.9f + Vector3.up * 0.35f, dir * shockwaveSpeed, 0.7f,
-                                        tailCharge, playerLayer, groundLayer, ZodiacBalance.Unit, true);
+                                        tailCharge, playerLayer, groundLayer, Mathf.RoundToInt(ZodiacBalance.Unit * damageScale), true);
             wave.range = shockwaveRange;
             wave.groundWave = true;
             wave.passWalls = true;
@@ -272,7 +272,7 @@ public class BossFoxSpirit : EnemyBase
         {
             float a = count == 1 ? 0f : Mathf.Lerp(-fireSpread / 2f, fireSpread / 2f, i / (float)(count - 1));
             Vector3 dir = Quaternion.Euler(0f, a, 0f) * aim;
-            var shot = Projectile.Spawn(origin, dir * fireSpeed, 0.5f, fireColor, playerLayer, groundLayer, ZodiacBalance.Unit, true);
+            var shot = Projectile.Spawn(origin, dir * fireSpeed, 0.5f, fireColor, playerLayer, groundLayer, Mathf.RoundToInt(ZodiacBalance.Unit * damageScale), true);
             shot.range = 18f;
             shot.passWalls = true;
         }

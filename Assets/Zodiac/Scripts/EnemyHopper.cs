@@ -86,7 +86,7 @@ public class EnemyHopper : EnemyBase
         if (res != null) ZodiacAudio.Play(res.stomp, 0.8f, 0.1f, transform.position);
         // Sóng chấn: chỉ trúng người chơi đang đứng trên đất trong bán kính
         if (PlayerAvailable && player.IsGrounded && ToPlayer.magnitude <= slamRadius)
-            playerHealth?.TakeDamage(new Hit(slamDamage, transform.position, 1.2f));
+            HitPlayer(new Hit(slamDamage, transform.position, 1.2f));
         state = State.Rest;
         stateEnd = Time.time + restTime;
         ReleaseToken();

@@ -123,7 +123,7 @@ Màn hình chính → **Bắt đầu** vào thẳng **Làng Trung Tâm** (scene 
 | **Bàn thờ tổ** | Mở trang Tu luyện (cộng điểm, luyện Đan) |
 | **Tiệm thuốc bắc** | Mua bình thuốc, Ngọc may mắn, Bùa bảo hộ · Bán đồ (nửa giá, đồ đập cao bán đắt hơn) · **Luyện đan** từ nguyên liệu |
 | **Lò rèn** | **Đập đồ** +0 → +10 (cả đồ đang mặc) · **Phân giải** đồ thừa ra nguyên liệu + đồng |
-| **Cổng làng** | Chọn màn đã mở |
+| **Cổng làng** | Chọn màn đã mở · chọn **độ khó** |
 
 **Đập đồ** (`Forge`): tỉ lệ +1…+3 chắc chắn, rồi 85 · 70 · 55 · 40 · 30 · 20 · 12%. Mỗi lần hỏng liên tiếp +5% cho lần sau.
 Hỏng khi lên +1…+5 giữ cấp; lên **+6 trở lên hỏng thì tụt 1 cấp** — trừ khi dùng **Bùa bảo hộ**. **Ngọc may mắn** +10%.
@@ -131,6 +131,28 @@ Tốn `10 × cấp mới` đồng + nguyên liệu theo ô đồ (vũ khí Mản
 Mỗi cấp +8% chỉ số gốc của món (+10 = gấp đôi).
 
 **Luyện đan** (`Shop.Recipes`): Bình máu lớn, 2 Bình Khí, Mảnh Huyết Đan, Mảnh Khí Đan, Ngọc may mắn — từ nguyên liệu quái rơi.
+
+## Chiều sâu chiến đấu (giai đoạn C1)
+
+**Độ khó** (`ZodiacDifficulty`, chọn ở Cổng làng, lưu trong hồ sơ):
+
+| | Máu quái | Đòn quái | Tinh anh | Đồ rơi / xu | XP |
+|---|---|---|---|---|---|
+| Thường | ×1 | ×1 | 8% | ×1 | ×1 |
+| Khó | ×1.5 | ×1.3 | 20% | ×1.25 | ×1.3 |
+| Ác Mộng (mở khi phá đảo màn cuối) | ×2.2 | ×1.7 | 35% | ×1.6 | ×1.7 |
+
+**Quái tinh anh** (`EliteAffix`): to hơn, vòng hào quang màu dưới chân, chữ "Tinh anh · …" trên đầu, máu ×2.2, XP và đồ rơi ×3,
+40% rơi thêm Bùa bảo hộ / Ngọc may mắn / mảnh Đan. Một trong 5 đặc tính:
+**Cuồng nộ** (nhanh ×1.45, đòn mạnh hơn, choáng ngắn) · **Giáp đá** (+80 giáp, khó đẩy lùi) · **Độc** (đòn trúng gây độc 3 lần) ·
+**Hồi máu** (2 giây không bị đánh thì hồi 4%/giây) · **Phân thân** (chết tách 2 con nhỏ — phải hạ hết mới dọn xong khu).
+
+**Chuỗi đòn & xếp hạng khu** (`ComboCounter`): mỗi đòn trúng quái cộng chuỗi (đứt sau 2.5 giây không trúng hoặc khi bị đánh),
+hiện số lớn ở mép phải từ 3 đòn. Dọn xong khu thì chấm **S / A / B / C** theo thời gian (so với 6 + 3.5 giây mỗi quái),
+máu mất và chuỗi dài nhất. **S**: +10 xu và một món hiếm (mảnh Đan, Ngọc may mắn, Bình máu lớn) · **A**: +5 xu.
+
+**Hũ sành, rương gỗ** (`Breakable`): mỗi khu 2–3 hũ (2 đòn vỡ, rơi xu, đôi khi bình máu / lửa ma trơi), khu lẻ có rương
+(4 lần sát thương, nhiều xu, bình máu / bình Khí / mảnh Đan / Ngọc may mắn). Không tính vào việc dọn khu.
 
 ## Bản đồ
 
@@ -211,18 +233,24 @@ dãy núi và đồi có đường sống lưng tự nhiên + lớp mù chân n�
 - **HUD kiểu game online** (Ngọc Rồng…): góc trái trên là chân dung tròn + tên + máu + 6 ô Khí + nội tại;
   giữa đáy là 4 ô tròn **Q Đánh · W Lướt · E Chiêu · R Tuyệt kỹ** — biểu tượng, nhãn phím, số Khí cần,
   lớp tối quét tròn theo thời gian hồi, ô nảy lên khi bấm; ô R viền vàng nhấp nháy khi đầy Khí.
-- **Tuyệt kỹ** = bản cường hoá của chiêu (`SkillConfig.Empowered`): sát thương ×2, vùng ×1.7, nhiều đạn hơn, lướt xa hơn,
-  choáng lâu hơn, hồi đầy máu (Dê), tàng hình lâu + đánh lén ×5 (Rắn). Khi tung có cảnh cắt: dải đen chéo màn hình,
-  chân dung trượt vào, tên tuyệt kỹ chữ lớn, thời gian chậm lại 0.75 giây.
+- **Tuyệt kỹ riêng** (giai đoạn C2, `PlayerSkill.Ultimates.cs`) — mỗi con một chiêu khác hẳn, không còn là bản phóng to
+  của chiêu thường. Khi tung có cảnh cắt: dải đen chéo màn hình, chân dung trượt vào, tên tuyệt kỹ chữ lớn, chậm thời gian 0.75 giây.
+  "Cả khu" = mọi quái còn sống trong khu đang đánh.
 
-  | Con giáp | Tuyệt kỹ | | Con giáp | Tuyệt kỹ |
-  |---|---|---|---|---|
-  | Chuột | Vạn Ảnh Thử | | Ngựa | Thiên Mã Hành Không |
-  | Trâu | Đại Hồng Chung | | Dê | Xuân Hồi Đại Địa |
-  | Hổ | Mãnh Hổ Hạ Sơn | | Khỉ | Tề Thiên Đại Thánh |
-  | Mèo | Cửu Mệnh Huyền Âm | | Gà | Kim Kê Báo Hiệu |
-  | Rồng | Long Thần Hoả | | Chó | Thiên Cẩu Hống |
-  | Rắn | Vạn Xà Ẩn Hình | | Heo | Bát Giới Trấn Sơn |
+  | Con giáp | Tuyệt kỹ | Tác dụng |
+  |---|---|---|
+  | Chuột | Vạn Ảnh Thử | Chớp tới từng quái trong khu (tối đa 8) chém một nhát, nhát cuối quật ngã cả đám; bất tử |
+  | Trâu | Đại Hồng Chung | Ba hồi chuông, ba vòng sóng chấn bán kính 6, hồi cuối quật ngã; +100 giáp 6 giây |
+  | Hổ | Mãnh Hổ Hạ Sơn | Vồ tới giữa đám đông nhất (4× sát thương, quật ngã), gầm choáng cả khu; +30% công 8 giây |
+  | Mèo | Cửu Mệnh Huyền Âm | Hồi 30% máu, +1 mạng giữ lại, cả khu choáng 2.5 giây |
+  | Rồng | Long Thần Hoả | Đứng phun 22 cầu lửa xuyên thấu toả theo chiều sâu trong 1.6 giây |
+  | Rắn | Vạn Xà Ẩn Hình | Cả khu nhiễm độc; quấn con khoẻ nhất hút máu 2 giây, hồi nửa lượng hút được |
+  | Ngựa | Thiên Mã Hành Không | Phi qua lại hết khu ba lượt, lượt cuối quật ngã; bất tử khi phi |
+  | Dê | Xuân Hồi Đại Địa | Hồi đầy máu, đẩy lùi quái quanh mình; +60 giáp và hồi máu dần 10 giây |
+  | Khỉ | Tề Thiên Đại Thánh | 3 phân thân vàng tự đánh quái 8 giây, Khỉ vẫn đánh tiếp |
+  | Gà | Kim Kê Báo Hiệu | Cả khu choáng 3.5 giây, xoá đạn địch, quái nhận thêm 50% sát thương 6 giây |
+  | Chó | Thiên Cẩu Hống | Quật ngã cả khu (2.5× sát thương); +25% công 8 giây |
+  | Heo | Bát Giới Trấn Sơn | Hút cả khu về trước mặt rồi bật lên dậm đất (4.5×, quật ngã) |
 
 - **Độ nét**: ảnh nhân vật 2048px; texture vẽ bằng code lấy mẫu dày gấp đôi (trước bị phóng to 1.5–3 lần khi hiển thị);
   hình tròn placeholder 256px (trước 64px bị kéo ra vài trăm px).

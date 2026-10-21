@@ -79,6 +79,15 @@ public abstract class EnemyBase : MonoBehaviour
     [Tooltip("Biết người chơi ở đâu ngay từ đầu (quái ra theo đợt từ mép màn hình đi vào).")]
     public bool alwaysAggro;
 
+    [Tooltip("Nhân tốc độ di chuyển (quái tinh anh Cuồng nộ).")]
+    [HideInInspector] public float speedScale = 1f;
+    [Tooltip("Nhân sát thương đòn đánh (độ khó, tinh anh).")]
+    [HideInInspector] public float damageScale = 1f;
+    [Tooltip("Nhân đồ rơi và XP khi chết (độ khó, tinh anh).")]
+    [HideInInspector] public float rewardScale = 1f;
+    /// <summary>Tinh anh (null = quái thường).</summary>
+    public EliteAffix Elite { get; set; }
+
     protected Rigidbody rb;
     protected Collider body;
     protected Health health;
@@ -266,7 +275,22 @@ public abstract class EnemyBase : MonoBehaviour
     protected void SetPlanarVelocity(Vector3 v)
     {
         if (rb.isKinematic) return;
-        rb.linearVelocity = new Vector3(v.x, rb.linearVelocity.y, v.z);
+        rb.linearVelocity = new Vector3(v.x * speedScale, rb.linearVelocity.y, v.z * speedScale);
+    }
+
+    /// <summary>Đòn của quái sau khi nhân độ khó / tinh anh.</summary>
+    protected Hit Scaled(Hit hit)
+    {
+        hit.amount = Mathf.Max(1, Mathf.RoundToInt(hit.amount * damageScale));
+        return hit;
+    }
+
+    /// <summary>Đánh trúng người chơi trực tiếp (dậm đất, lao vào): nhân độ khó và áp hiệu ứng tinh anh.</summary>
+    protected bool HitPlayer(Hit hit)
+    {
+        if (playerHealth == null || !playerHealth.TakeDamage(Scaled(hit))) return false;
+        if (Elite != null) Elite.OnHitPlayer(playerHealth);
+        return true;
     }
 
     protected void FacePlayer()
@@ -283,7 +307,10 @@ public abstract class EnemyBase : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             var target = hits[i].GetComponentInParent<Health>();
-            if (target != null && target != health) return target.TakeDamage(hit);
+            if (target == null || target == health) continue;
+            if (!target.TakeDamage(Scaled(hit))) return false;
+            if (Elite != null) Elite.OnHitPlayer(target);
+            return true;
         }
         return false;
     }
@@ -361,6 +388,7 @@ public abstract class EnemyBase : MonoBehaviour
     protected virtual void OnDamaged(Hit hit)
     {
         punch = 1f;
+        ComboCounter.Register();
         float k = hit.knockback * knockbackTaken;
         Vector3 away = transform.position - hit.source;
         away.y = 0f;
@@ -419,12 +447,31 @@ public abstract class EnemyBase : MonoBehaviour
     /// <summary>Màu mảnh vỡ khi chết.</summary>
     protected Color DebrisColor => debrisColor;
 
+    float hpScaleApplied = 1f;
+
+    /// <summary>
+    /// Áp độ khó lúc quái xuất hiện: máu tối đa ×hp, đòn ×damage, đồ rơi / XP ×reward.
+    /// Gọi một lần ngay sau khi sinh (hoặc khi boss bắt đầu).
+    /// </summary>
+    public void ApplyScaling(float hp, float damage, float reward)
+    {
+        hpScaleApplied *= hp;
+        health.Configure(Mathf.Max(1, Mathf.RoundToInt(health.maxHealth * hp)));
+        damageScale *= damage;
+        rewardScale *= reward;
+    }
+
     protected virtual void OnDied()
     {
         ReleaseToken();
-        LootPickup.DropFrom(loot, coinDrop, transform.position);
+        LootPickup.DropFrom(loot, coinDrop, transform.position, rewardScale);
+        if (Elite != null) Elite.DropBonus(transform.position);
         if (player != null && player.Character != null)
-            PlayerProfile.Current.AddXp(player.Character.name, xpReward > 0 ? xpReward : Progression.XpFor(health.maxHealth, this is BossFoxSpirit));
+        {
+            // XP theo máu gốc (trước khi độ khó / tinh anh nhân lên) rồi nhân thưởng
+            int baseXp = xpReward > 0 ? xpReward : Progression.XpFor(Mathf.RoundToInt(health.maxHealth / Mathf.Max(0.01f, hpScaleApplied)), this is BossFoxSpirit);
+            PlayerProfile.Current.AddXp(player.Character.name, Mathf.RoundToInt(baseXp * rewardScale));
+        }
         ZodiacParticles.Debris(body.bounds.center, DebrisColor, 14, body.bounds.extents.x);
         ZodiacParticles.Sparks(body.bounds.center, Color.white, 10);
         var res = ZodiacResources.Get;

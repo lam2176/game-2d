@@ -66,7 +66,7 @@ public class EnemyTurret : EnemyBase
         Vector3 aim = PlayerCenter - origin;
         aim.y = 0f;   // bay ngang tầm ngực, không cắm xuống đất
         if (aim.sqrMagnitude < 0.01f) aim = Vector3.right * direction;
-        var shot = Projectile.Spawn(origin, aim.normalized * shotSpeed, shotSize, shotColor, playerLayer, groundLayer, shotDamage, true);
+        var shot = Projectile.Spawn(origin, aim.normalized * shotSpeed, shotSize, shotColor, playerLayer, groundLayer, Mathf.RoundToInt(shotDamage * damageScale), true);
         shot.range = shotRange;
         shot.owner = transform;
         shot.passWalls = true;   // tượng đặt sát nhà/vách đá phía sau — đạn không bị chính chỗ đứng chặn

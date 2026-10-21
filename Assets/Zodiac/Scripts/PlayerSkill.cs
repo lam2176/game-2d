@@ -11,11 +11,12 @@ using UnityEngine.InputSystem;
 /// Trong lúc chiêu chiếm quyền di chuyển (lướt, dậm đất, gồng hồi máu) controller ngừng điều khiển vận tốc
 /// và đòn đánh thường bị khoá. Hồi chiêu tính từ lúc chiêu kết thúc.
 /// Mỗi lần tung tốn <see cref="SkillConfig.energyCost"/> Khí (<see cref="PlayerEnergy"/>) — thiếu Khí thì không tung được.
-/// Tuyệt kỹ (action Player/Ultimate — R, RT): bản cường hoá của chiêu (<see cref="SkillConfig.Empowered"/>),
-/// cần đầy thanh Khí và tốn hết; có cảnh cắt chân dung + chậm thời gian (<see cref="UltimateCutIn"/>).
+/// Tuyệt kỹ (action Player/Ultimate — R, RT): chiêu riêng của từng con (PlayerSkill.Ultimates.cs), con nào chưa có thì
+/// dùng bản cường hoá của chiêu (<see cref="SkillConfig.Empowered"/>); cần đầy thanh Khí và tốn hết;
+/// có cảnh cắt chân dung + chậm thời gian (<see cref="UltimateCutIn"/>).
 /// </summary>
 [RequireComponent(typeof(ZodiacPlayerController))]
-public class PlayerSkill : MonoBehaviour
+public partial class PlayerSkill : MonoBehaviour
 {
     [Tooltip("Layer có thể bị chiêu đánh trúng (Enemy).")]
     public LayerMask targetLayers;
@@ -104,7 +105,8 @@ public class PlayerSkill : MonoBehaviour
     {
         var baseCfg = Config;
         if (baseCfg == null || !UltimateReady || !controller.ControlEnabled || controller.IsOverridden) return false;
-        if (baseCfg.type == SkillType.Heal && (!controller.IsGrounded || health == null || health.Current >= health.maxHealth))
+        bool unique = HasUniqueUltimate;
+        if (!unique && baseCfg.type == SkillType.Heal && (!controller.IsGrounded || health == null || health.Current >= health.maxHealth))
             return false;
         var cfg = baseCfg.Empowered();
         energy?.TrySpend(energy.max);
@@ -112,7 +114,8 @@ public class PlayerSkill : MonoBehaviour
         var c = controller.Character;
         UltimateCutIn.Show(c, Theme);
         GameFeel.Shake(0.5f);
-        Execute(cfg);
+        if (unique) RunUniqueUltimate(baseCfg);
+        else Execute(cfg);
         UltimateUsed?.Invoke();
         return true;
     }
