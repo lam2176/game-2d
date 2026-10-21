@@ -91,6 +91,7 @@ public static class ZodiacLevelBuilder
         follow.maxX = def.Length;
 
         var manager = new GameObject("GameManager").AddComponent<ZodiacGameManager>();
+        manager.gameObject.AddComponent<InventoryWindow>();   // hành trang (I / Tab) + thanh dùng nhanh
         manager.player = player;
         manager.nextSceneName = def.nextScene;
         manager.levelTitle = def.title;
@@ -1048,6 +1049,7 @@ public static class ZodiacLevelBuilder
 
         go.AddComponent<PlayerEnergy>();
         go.AddComponent<CharacterStats>();
+        go.AddComponent<PlayerEquipment>();   // đồ đang mặc cộng chỉ số, phím 1/2 dùng nhanh
         var skill = go.AddComponent<PlayerSkill>();
         skill.targetLayers = 1 << ctx.enemyLayer;
         skill.groundLayer = 1 << ctx.groundLayer;

@@ -28,6 +28,8 @@ Tay phải mũi tên, tay trái Space/Shift + QWER (như game hành động onli
 | **W** (L, Ctrl trái, LB) | Lăn né theo hướng phím (cả chéo) — bất tử, xuyên quái và đạn |
 | **E** (K, chuột phải, RB) | Chiêu riêng của con giáp (tốn Khí) |
 | **R** (RT) | **Tuyệt kỹ** — cần đầy thanh Khí (100), tốn hết |
+| **1 / 2** | Dùng nhanh đồ đã gán (bình máu, bình Khí) |
+| **I / Tab** | Hành trang |
 | F5 | Chơi lại màn |
 
 ## Luật chung (tham khảo)
@@ -84,6 +86,19 @@ Giáo và khiên là ảnh riêng để văng ra khi lính mất đồ. Boss H�
 | **Cóc Tía** | `H` | Vòng đỏ hiện dưới chân người chơi → nhảy đè xuống tạo sóng chấn tròn | Chạy ra khỏi vòng hoặc đang nhảy lúc nó đáp | *Hades*, *Castle Crashers* |
 | **Thạch Sư** | `T` | Tượng đá đứng ở làn trong cùng, miệng nạp sáng rồi phun cầu lửa bay ngang các làn | Đổi làn, nhảy, chém tan cầu lửa; phá tượng | Tháp pháo (*Mega Man*) |
 | **Hồ Tinh** (boss) | — | Cáo chín đuôi. Lao vồ dọc làn (dạt sang làn người chơi trước), nhảy đập (vòng báo chỗ đáp + sóng toả tròn sát đất), chùm lửa hình quạt quét các làn. Dưới 50% máu: nhanh hơn, sóng/lửa dày hơn, gọi thêm Ma Trơi | Né theo báo hiệu rồi phản công | Truyền thuyết Lạc Long Quân diệt Hồ Tinh |
+
+## Vật phẩm & hành trang
+
+- **I / Tab** (nút Select tay cầm) mở hành trang, game tạm dừng: 5 ô trang bị (Vũ khí · Giáp · Bùa · Ngọc · Ngọc), bảng chỉ số,
+  túi 6 × 5 ô (viền màu theo độ hiếm: trắng Thường · lục Tốt · lam Hiếm · tím Sử thi · cam Huyền thoại). Bấm vào ô để xem;
+  nút Trang bị / Tháo · Dùng · Gán phím 1 · Gán phím 2 · Vứt · Xếp gọn.
+- **Phím 1 / 2**: dùng nhanh đồ đã gán (bắt đầu game có 3 Bình máu nhỏ ở phím 1). Thanh dùng nhanh + số đồng ở góc dưới trái.
+- **Rơi đồ**: mỗi loại quái có bảng rơi riêng (nguyên liệu, bình thuốc, đôi khi trang bị) và đồng xu; boss rơi Đao rồng + Đuôi Hồ Tinh.
+  Đồ nảy ra trên đất, có cột sáng màu độ hiếm, lại gần là tự hút vào túi. Giáo / khiên lính đánh rơi có 35% thành vật phẩm.
+- Trang bị cộng chỉ số qua `CharacterStats` (Công, Giáp, Máu/Khí tối đa, Hồi Khí, Chí mạng). Nguyên liệu để dành cho thợ rèn ở làng (phần sau).
+- Đồ, trang bị, phím dùng nhanh và tiền giữ qua các màn, lưu ở `zodiac_profile.json` (thư mục `Application.persistentDataPath`).
+- Bảng vật phẩm: `Assets/Zodiac/Editor/ZodiacItemDefs.cs` (biểu tượng vẽ bằng code, giáo/khiên dùng ảnh quái).
+  Bảng rơi đồ từng quái: `ZodiacEnemyFactory.cs`.
 
 ## Bản đồ
 

@@ -91,6 +91,7 @@ public static class ZodiacPrototypeBuilder
         }
         ctx.particleMaterial = ZodiacVisualSetup.EnsureParticleMaterial(ctx.circle.texture);
         ctx.textures = ZodiacTextureFactory.EnsureAll();
+        ZodiacItemDefs.EnsureAll();   // vật phẩm trước quái (bảng rơi đồ trỏ tới)
         ctx.prefabs = ZodiacEnemyFactory.EnsurePrefabs(ctx.square, ctx.circle, ctx.noFriction, groundLayer, playerLayer, enemyLayer);
 
         foreach (var level in ZodiacLevelData.Levels)
