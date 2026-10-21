@@ -85,6 +85,12 @@ public static class ZodiacItemDefs
                   icon = Icon.Shard, color = new Color(0.55f, 0.3f, 0.65f) },
         new Def { id = "da_thach_su", name = "Đá thạch sư", desc = "Mảnh đá còn ấm lửa.", type = ItemType.Material, stack = 99,
                   rarity = ItemRarity.Good, price = 8, icon = Icon.Shard, color = new Color(0.6f, 0.6f, 0.65f) },
+        // ── Đồ cho Lò rèn
+        new Def { id = "bua_bao_ho", name = "Bùa bảo hộ", desc = "Đập đồ hỏng không bị tụt cấp (dùng ở Lò rèn).", type = ItemType.Material,
+                  stack = 20, rarity = ItemRarity.Epic, price = 150, icon = Icon.Charm, color = new Color(0.95f, 0.85f, 0.3f) },
+        new Def { id = "ngoc_may_man", name = "Ngọc may mắn", desc = "+10% tỉ lệ đập đồ thành công (dùng ở Lò rèn).", type = ItemType.Material,
+                  stack = 20, rarity = ItemRarity.Rare, price = 80, icon = Icon.Gem, color = new Color(0.4f, 1f, 0.6f) },
+
         // ── Mảnh Đan: gom 3 mảnh luyện thành một viên (I → Tu luyện) — tăng vĩnh viễn máu / Khí tối đa của con giáp đang chơi
         new Def { id = "manh_huyet_dan", name = "Mảnh Huyết Đan", desc = "Gom đủ 3 mảnh để luyện Huyết Đan (+20 máu tối đa).", type = ItemType.Material,
                   stack = 99, rarity = ItemRarity.Rare, price = 50, icon = Icon.Gem, color = new Color(0.85f, 0.1f, 0.15f) },

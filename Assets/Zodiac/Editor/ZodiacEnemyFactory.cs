@@ -269,7 +269,7 @@ public static class ZodiacEnemyFactory
         ZodiacLights.AddPoint(mouth, new Color(1f, 0.5f, 0.2f), 3f, 1.2f);
         var ai = root.AddComponent<EnemyTurret>();
         Common(ai, v, stone);
-        ai.loot = new[] { L("da_thach_su", 0.7f), L("ngoc_do", 0.1f), L("bua_ho_menh", 0.08f), L("manh_huyet_dan", 0.1f), L("manh_khi_dan", 0.1f) };
+        ai.loot = new[] { L("da_thach_su", 0.7f), L("ngoc_do", 0.1f), L("bua_ho_menh", 0.08f), L("manh_huyet_dan", 0.1f), L("manh_khi_dan", 0.1f), L("ngoc_may_man", 0.08f) };
         ai.coinDrop = new Vector2Int(3, 5);
         ai.mouth = mouth.GetComponent<SpriteRenderer>();
         ai.knockbackTaken = 0f;
@@ -325,7 +325,7 @@ public static class ZodiacEnemyFactory
 
         var ai = root.AddComponent<BossFoxSpirit>();
         Common(ai, v, fur);
-        ai.loot = new[] { L("duoi_ho_tinh", 1f), L("dao_rong", 1f), L("binh_mau_lon", 1f, 2, 2), L("manh_huyet_dan", 1f, 2, 2), L("manh_khi_dan", 1f, 2, 2) };
+        ai.loot = new[] { L("duoi_ho_tinh", 1f), L("dao_rong", 1f), L("binh_mau_lon", 1f, 2, 2), L("manh_huyet_dan", 1f, 2, 2), L("manh_khi_dan", 1f, 2, 2), L("bua_bao_ho", 1f), L("ngoc_may_man", 1f, 2, 2) };
         ai.coinDrop = new Vector2Int(15, 25);
         ai.tails = tails;
         ai.minionPrefab = minion;

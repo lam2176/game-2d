@@ -83,7 +83,7 @@ public static class ZodiacLevelBuilder
         BuildFarBackdrop();
         BuildSky(cam);
 
-        var player = CreatePlayer(RoomEntry(0));
+        var player = CreatePlayer(def.hub ? new Vector3(3f, 0.05f, LaneCenter) : RoomEntry(0));
         var follow = cam.gameObject.AddComponent<ZodiacCameraFollow>();
         follow.target = player.transform;
         follow.laneCenterZ = LaneCenter;
@@ -94,6 +94,8 @@ public static class ZodiacLevelBuilder
         manager.gameObject.AddComponent<InventoryWindow>();   // hành trang (I / Tab) + thanh dùng nhanh
         manager.gameObject.AddComponent<PauseMenu>();         // Esc: tạm dừng, cài đặt
         manager.levelIndex = System.Array.IndexOf(Levels, def);
+        manager.villageScene = Village.sceneName;
+        manager.isHub = def.hub;
         manager.player = player;
         manager.nextSceneName = def.nextScene;
         manager.levelTitle = def.title;
@@ -102,7 +104,8 @@ public static class ZodiacLevelBuilder
         manager.music = ZodiacVisualSetup.Clip(MusicFor(def.backdrop));
         manager.stoneFootsteps = def.backdrop == Backdrop.Cave;
         var canvas = BuildHud(manager, player);
-        BuildRooms(manager, canvas);
+        if (def.hub) BuildHub(manager);
+        else BuildRooms(manager, canvas);
 
         BuildLighting(cam, player);
         BuildAmbientParticles(cam);
@@ -669,6 +672,75 @@ public static class ZodiacLevelBuilder
         return trigger;
     }
 
+    // ───────────────────────────── Làng Trung Tâm ─────────────────────────────
+
+    /// <summary>Bốn điểm dọc đường làng: Bàn thờ tổ · Tiệm thuốc · Lò rèn · Cổng làng (đứng gần bấm F).</summary>
+    static void BuildHub(ZodiacGameManager manager)
+    {
+        var root = new GameObject("Village").transform;
+        var window = manager.gameObject.AddComponent<VillageWindow>();
+        window.levelScenes = System.Array.ConvertAll(Levels, l => l.sceneName);
+        window.levelTitles = System.Array.ConvertAll(Levels, l => l.title);
+        float back = def.laneMax + 0.6f;
+        var wood = Plain("HubWood", WoodColor);
+        var red = Plain("HubRed", GateRed);
+        var dark = Plain("HubIron", new Color(0.22f, 0.22f, 0.25f));
+        var glow = Plain("HubFire", new Color(1f, 0.55f, 0.2f), new Color(1f, 0.45f, 0.1f) * 3f);
+        var candle = Plain("HubCandle", new Color(1f, 0.9f, 0.6f), new Color(1f, 0.8f, 0.4f) * 2f);
+        var jar = Mat("HubJar", ctx.textures.brick.texture, new Color(0.55f, 0.35f, 0.25f));
+
+        // Bàn thờ tổ: bàn sơn đỏ, bát hương, hai cây nến
+        var altar = Station(root, VillageStation.Kind.Altar, 6f, "Bàn thờ tổ", "F: Tu luyện");
+        Box("AltarTable", altar, new Vector3(6f, 0.55f, back), new Vector3(2.2f, 1.1f, 1f), red, 1f);
+        Primitive(PrimitiveType.Cylinder, "Incense", altar, new Vector3(6f, 1.25f, back), new Vector3(0.45f, 0.15f, 0.45f), jar);
+        foreach (float dx in new[] { -0.8f, 0.8f })
+        {
+            var c = Primitive(PrimitiveType.Cylinder, "Candle", altar, new Vector3(6f + dx, 1.35f, back), new Vector3(0.12f, 0.25f, 0.12f), candle);
+            ZodiacLights.AddPoint(c, new Color(1f, 0.75f, 0.4f), 4f, 1.6f);
+        }
+
+        // Tiệm thuốc: quầy gỗ + chum thuốc
+        var shop = Station(root, VillageStation.Kind.Shop, 14f, "Tiệm thuốc bắc", "F: Mua bán · Luyện đan");
+        Box("Counter", shop, new Vector3(14f, 0.55f, back), new Vector3(3f, 1.1f, 1f), wood, 1f);
+        for (int i = 0; i < 4; i++)
+            Primitive(PrimitiveType.Cylinder, "Jar", shop, new Vector3(13f + i * 0.65f, 1.35f, back), new Vector3(0.4f, 0.25f, 0.4f), jar);
+
+        // Lò rèn: đe sắt + lò lửa
+        var forge = Station(root, VillageStation.Kind.Forge, 22f, "Lò rèn", "F: Đập đồ · Phân giải");
+        Box("AnvilBase", forge, new Vector3(21.3f, 0.35f, back - 0.2f), new Vector3(0.6f, 0.7f, 0.5f), dark, 1f);
+        Box("AnvilTop", forge, new Vector3(21.3f, 0.8f, back - 0.2f), new Vector3(1.2f, 0.25f, 0.5f), dark, 1f);
+        Box("Furnace", forge, new Vector3(23f, 1f, back + 0.2f), new Vector3(1.6f, 2f, 1.2f), Mat("HubBrick", ctx.textures.brick.texture, new Color(0.55f, 0.4f, 0.35f)), 1f);
+        var fire = Box("FurnaceFire", forge, new Vector3(23f, 0.7f, back - 0.42f), new Vector3(0.8f, 0.6f, 0.05f), glow, 1f);
+        ZodiacLights.AddPoint(fire, new Color(1f, 0.55f, 0.2f), 6f, 3f);
+
+        // Cổng làng: lên đường vào các màn
+        var gate = Station(root, VillageStation.Kind.Gate, 31f, "Cổng làng", "F: Lên đường");
+        foreach (float z in new[] { def.laneMin - 1.1f, def.laneMax + 1.1f })
+            Box("Pillar", gate, new Vector3(31f, 2.2f, z), new Vector3(0.45f, 4.4f, 0.45f), red, 1f);
+        Box("Beam", gate, new Vector3(31f, 4.1f, LaneCenter), new Vector3(0.35f, 0.35f, def.laneMax - def.laneMin + 2.8f), red, 1f);
+        Box("Roof", gate, new Vector3(31f, 4.65f, LaneCenter), new Vector3(1.4f, 0.35f, def.laneMax - def.laneMin + 3.8f),
+            Mat("GateRoof", ctx.textures.roof.texture, RoofColor), 1f);
+    }
+
+    /// <summary>Một điểm trong làng: tên luôn hiện trên cao, chữ gợi ý "F: …" hiện khi đứng gần.</summary>
+    static Transform Station(Transform parent, VillageStation.Kind kind, float x, string title, string hint)
+    {
+        var go = new GameObject("Station " + title);
+        go.transform.SetParent(parent, false);
+        go.transform.position = new Vector3(x, 0f, LaneCenter);
+        var station = go.AddComponent<VillageStation>();
+        station.kind = kind;
+        var name = ZodiacPrototypeBuilder.CreateText(CreateWorldCanvas(go.transform, new Vector3(x, 3.4f, def.laneMax + 0.6f)), "Name", title, 52,
+                                                     new Color(1f, 0.9f, 0.6f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(600f, 80f), TextAnchor.MiddleCenter);
+        name.transform.parent.GetComponent<RectTransform>().sizeDelta = new Vector2(600f, 80f);
+        var promptCanvas = CreateWorldCanvas(go.transform, new Vector3(x, 2.6f, def.laneMax + 0.6f));
+        promptCanvas.GetComponent<RectTransform>().sizeDelta = new Vector2(600f, 60f);
+        ZodiacPrototypeBuilder.CreateText(promptCanvas, "Prompt", hint, 40, Color.white, new Vector2(0.5f, 0.5f), Vector2.zero,
+                                          new Vector2(600f, 60f), TextAnchor.MiddleCenter);
+        station.prompt = promptCanvas.gameObject;
+        return go.transform;
+    }
+
     // ───────────────────────────── Khu, boss ─────────────────────────────
 
     static Vector3 RoomEntry(int i) => new Vector3(def.RoomX(i) + 1.6f, 0.05f, LaneCenter);
@@ -1218,12 +1290,12 @@ public static class ZodiacLevelBuilder
     static void BuildResultPanels(Transform canvas, ZodiacGameManager manager)
     {
         manager.winPanel = ZodiacPrototypeBuilder.CreateResultPanel(canvas, "WinPanel", "CHIẾN THẮNG!", out Text winDetail,
-            ("Chơi lại", manager.Restart), (string.IsNullOrEmpty(def.nextScene) ? "Màn hình chính" : "Màn tiếp theo", manager.NextLevel));
+            ("Về làng", manager.GoToVillage), (string.IsNullOrEmpty(def.nextScene) ? "Về làng" : "Màn tiếp theo", manager.NextLevel));
         manager.winDetailText = winDetail;
         manager.nextButtonLabel = manager.winPanel.transform.Find("Box/Button 2/Label").GetComponent<Text>();
 
         manager.losePanel = ZodiacPrototypeBuilder.CreateResultPanel(canvas, "LosePanel", "THUA RỒI!", out Text loseDetail,
-            ("Hồi sinh tại đèn lồng", manager.ContinueFromCheckpoint), ("Màn hình chính", manager.BackToMenu));
+            ("Hồi sinh tại đèn lồng", manager.ContinueFromCheckpoint), ("Về làng", manager.GoToVillage));
         loseDetail.text = "Bạn đã bị hạ gục";
         manager.loseDetailText = loseDetail;
     }

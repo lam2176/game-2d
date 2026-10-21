@@ -15,6 +15,8 @@ public class ZodiacStartMenu : MonoBehaviour
     [Tooltip("Scene và tên các màn theo thứ tự (builder điền từ ZodiacLevelData).")]
     public string[] levelScenes = System.Array.Empty<string>();
     public string[] levelTitles = System.Array.Empty<string>();
+    [Tooltip("Làng Trung Tâm — Bắt đầu vào thẳng làng (chọn màn ở Cổng làng).")]
+    public string villageScene = "";
     public ZodiacRoster roster;
 
     [Header("Lưới chọn")]
@@ -112,6 +114,11 @@ public class ZodiacStartMenu : MonoBehaviour
     /// <summary>Nút Bắt đầu: mở bảng chọn màn (chưa có danh sách màn thì vào thẳng màn 1).</summary>
     public void Play()
     {
+        if (!string.IsNullOrEmpty(villageScene))
+        {
+            ScreenFader.LoadScene(villageScene);
+            return;
+        }
         if (levelScenes == null || levelScenes.Length == 0 || levelPanel == null)
         {
             ScreenFader.LoadScene(levelSceneName);

@@ -35,6 +35,10 @@ public class ZodiacGameManager : MonoBehaviour
     public string levelTitle = "";
     [Tooltip("Thứ tự màn (0 = màn 1) — thắng thì mở màn kế trong hồ sơ.")]
     public int levelIndex;
+    [Tooltip("Scene Làng Trung Tâm (nút Về làng).")]
+    public string villageScene = "";
+    [Tooltip("Scene này là làng (không có khu, quái).")]
+    public bool isHub;
     [Tooltip("Các khu theo thứ tự. Cổng đích hiện khi dọn xong khu cuối.")]
     public EncounterZone[] rooms = System.Array.Empty<EncounterZone>();
 
@@ -222,7 +226,7 @@ public class ZodiacGameManager : MonoBehaviour
             PlayerProfile.Current.CompleteLevel(levelIndex);
             winDetailText.text = $"Thu được {collected}/{total} đồng xu";
             if (nextButtonLabel != null)
-                nextButtonLabel.text = string.IsNullOrEmpty(nextSceneName) ? "Màn hình chính" : "Màn tiếp theo";
+                nextButtonLabel.text = string.IsNullOrEmpty(nextSceneName) ? "Về làng" : "Màn tiếp theo";
             winPanel.SetActive(true);
         }
         else
@@ -250,8 +254,14 @@ public class ZodiacGameManager : MonoBehaviour
         Restart();
     }
 
-    public void NextLevel() =>
-        ScreenFader.LoadScene(string.IsNullOrEmpty(nextSceneName) ? startSceneName : nextSceneName);
+    public void NextLevel()
+    {
+        if (!string.IsNullOrEmpty(nextSceneName)) ScreenFader.LoadScene(nextSceneName);
+        else GoToVillage();
+    }
+
+    /// <summary>Về Làng Trung Tâm (không có làng thì về màn hình chính).</summary>
+    public void GoToVillage() => ScreenFader.LoadScene(string.IsNullOrEmpty(villageScene) ? startSceneName : villageScene);
 
     public void BackToMenu() => ScreenFader.LoadScene(startSceneName);
 }

@@ -23,7 +23,8 @@ public partial class InventoryWindow
         }
     }
 
-    void ShowPage(bool training)
+    /// <summary>Đổi trang: Hành trang (false) / Tu luyện (true).</summary>
+    public void ShowPage(bool training)
     {
         bagPage.SetActive(!training);
         trainPage.SetActive(training);

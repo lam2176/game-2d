@@ -27,6 +27,15 @@ public partial class InventoryWindow : MonoBehaviour
     }
 
     public static bool IsOpen { get; private set; }
+    static InventoryWindow instance;
+
+    /// <summary>Mở hành trang ở trang Tu luyện (Bàn thờ tổ trong làng).</summary>
+    public static void OpenTraining()
+    {
+        if (instance == null || IsOpen) return;
+        instance.Open();
+        if (IsOpen) instance.ShowPage(true);
+    }
     /// <summary>Frame vừa đóng cửa sổ (Esc đóng hành trang thì không mở luôn menu tạm dừng cùng frame).</summary>
     public static int ClosedFrame { get; private set; } = -1;
 
@@ -45,6 +54,7 @@ public partial class InventoryWindow : MonoBehaviour
 
     void Awake()
     {
+        instance = this;
         font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         BuildUi();
         window.SetActive(false);
@@ -67,7 +77,7 @@ public partial class InventoryWindow : MonoBehaviour
         if (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame) toggle = true;
         bool escape = kb != null && kb.escapeKey.wasPressedThisFrame;
         if (IsOpen && (toggle || escape)) Close();
-        else if (!IsOpen && toggle && !PauseMenu.IsOpen) Open();
+        else if (!IsOpen && toggle && !PauseMenu.IsOpen && !VillageWindow.IsOpen) Open();
     }
 
     void Open()

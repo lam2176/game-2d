@@ -113,6 +113,25 @@ Giáo và khiên là ảnh riêng để văng ra khi lính mất đồ. Boss H�
   theo độ hiếm (Tốt 1 · Hiếm 2 · Sử thi trở lên 3). Đồ, tiền dùng chung cho 12 con; cấp và Đan riêng từng con.
 - File lưu có trường `version`: file lưu cũ (v1) tự tách đồ trang bị đang chồng thành từng món.
 
+## Làng Trung Tâm, Lò rèn, Tiệm thuốc
+
+Màn hình chính → **Bắt đầu** vào thẳng **Làng Trung Tâm** (scene `Zodiac_Village`, không có quái). Thắng / thua đều có nút **Về làng**.
+Đứng gần một điểm thì hiện "F: …", bấm **F** (tay cầm: nút Y / North):
+
+| Điểm | Chức năng |
+|---|---|
+| **Bàn thờ tổ** | Mở trang Tu luyện (cộng điểm, luyện Đan) |
+| **Tiệm thuốc bắc** | Mua bình thuốc, Ngọc may mắn, Bùa bảo hộ · Bán đồ (nửa giá, đồ đập cao bán đắt hơn) · **Luyện đan** từ nguyên liệu |
+| **Lò rèn** | **Đập đồ** +0 → +10 (cả đồ đang mặc) · **Phân giải** đồ thừa ra nguyên liệu + đồng |
+| **Cổng làng** | Chọn màn đã mở |
+
+**Đập đồ** (`Forge`): tỉ lệ +1…+3 chắc chắn, rồi 85 · 70 · 55 · 40 · 30 · 20 · 12%. Mỗi lần hỏng liên tiếp +5% cho lần sau.
+Hỏng khi lên +1…+5 giữ cấp; lên **+6 trở lên hỏng thì tụt 1 cấp** — trừ khi dùng **Bùa bảo hộ**. **Ngọc may mắn** +10%.
+Tốn `10 × cấp mới` đồng + nguyên liệu theo ô đồ (vũ khí Mảnh gốm · giáp Vảy bọ gai · bùa/ngọc Lửa ma trơi), từ +6 thêm Đá thạch sư.
+Mỗi cấp +8% chỉ số gốc của món (+10 = gấp đôi).
+
+**Luyện đan** (`Shop.Recipes`): Bình máu lớn, 2 Bình Khí, Mảnh Huyết Đan, Mảnh Khí Đan, Ngọc may mắn — từ nguyên liệu quái rơi.
+
 ## Bản đồ
 
 Mỗi màn khai báo trong `Assets/Zodiac/Editor/ZodiacLevelData.cs` là một danh sách **khu**: tên khu, các đợt quái viết bằng mã
@@ -201,7 +220,7 @@ dãy núi và đồi có đường sống lưng tự nhiên + lớp mù chân n�
   | Chuột | Vạn Ảnh Thử | | Ngựa | Thiên Mã Hành Không |
   | Trâu | Đại Hồng Chung | | Dê | Xuân Hồi Đại Địa |
   | Hổ | Mãnh Hổ Hạ Sơn | | Khỉ | Tề Thiên Đại Thánh |
-  | Mèo | Cửu Mệnh Huyền Âm | | Gà | Kim Kê Báo Hiểu |
+  | Mèo | Cửu Mệnh Huyền Âm | | Gà | Kim Kê Báo Hiệu |
   | Rồng | Long Thần Hoả | | Chó | Thiên Cẩu Hống |
   | Rắn | Vạn Xà Ẩn Hình | | Heo | Bát Giới Trấn Sơn |
 

@@ -137,7 +137,7 @@ public static class ZodiacCharacterDefs
         },
         new Def
         {
-            file = "Rooster_Dau", ultimate = "Kim Kê Báo Hiểu", ultimateDesc = "Tiếng kèn rền vang: sóng âm cực rộng, choáng 3.5 giây, xoá sạch đạn địch.", display = "Gà", zodiac = "Dậu", instrument = "Kèn", theme = new Color(0.9f, 0.3f, 0.2f),
+            file = "Rooster_Dau", ultimate = "Kim Kê Báo Hiệu", ultimateDesc = "Tiếng kèn rền vang: sóng âm cực rộng, choáng 3.5 giây, xoá sạch đạn địch.", display = "Gà", zodiac = "Dậu", instrument = "Kèn", theme = new Color(0.9f, 0.3f, 0.2f),
             pivot = new Vector2(0.432f, 0.057f), height = 1.95f, collider = new Vector2(0.8f, 1.45f),
             hp = 5, glide = 2.2f,
             passive = "Cánh phượng", passiveDesc = "Giữ Space khi đang rơi để xoè cánh lượn chậm — lơ lửng lâu, đá bay vào lúc quái sơ hở.",
@@ -215,7 +215,7 @@ public static class ZodiacCharacterDefs
     /// <summary>Tăng khi bảng số liệu đổi cấu trúc (vd. thêm Khí) — asset cũ hơn sẽ được điền lại.</summary>
     // 4: đổi sang thang số ZodiacBalance (máu, công, chiêu ×20; Khí 6 ô → 100).
     // 5: mô tả theo thang số mới và lối chơi beat 'em up (đá bay thay đạp đầu, bỏ vực).
-    const int DataVersion = 5;
+    const int DataVersion = 6;
 
     static ZodiacCharacter EnsureCharacter(Def d, bool overwrite)
     {

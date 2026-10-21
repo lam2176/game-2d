@@ -36,7 +36,8 @@ public class PauseMenu : MonoBehaviour
         var kb = Keyboard.current;
         bool pressed = (kb != null && kb.escapeKey.wasPressedThisFrame) ||
                        (Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame);
-        if (!pressed || InventoryWindow.IsOpen || InventoryWindow.ClosedFrame == Time.frameCount) return;
+        if (!pressed || InventoryWindow.IsOpen || InventoryWindow.ClosedFrame == Time.frameCount ||
+            VillageWindow.IsOpen || VillageWindow.ClosedFrame == Time.frameCount) return;
         if (IsOpen) Close();
         else Open();
     }
@@ -76,6 +77,12 @@ public class PauseMenu : MonoBehaviour
         ZodiacGameManager.Instance?.BackToMenu();
     }
 
+    void BackToVillage()
+    {
+        Close();
+        ZodiacGameManager.Instance?.GoToVillage();
+    }
+
     void ToggleFullscreen()
     {
         Screen.fullScreen = !Screen.fullScreen;
@@ -113,8 +120,13 @@ public class PauseMenu : MonoBehaviour
         var p = panel.transform;
         Label(p, "TẠM DỪNG", 52, Gold, new Vector2(0f, 290f), new Vector2(560f, 70f)).fontStyle = FontStyle.Bold;
         MakeButton(p, "Tiếp tục", new Vector2(0f, 190f), Close);
-        MakeButton(p, "Chơi lại màn", new Vector2(0f, 110f), Restart);
-        MakeButton(p, "Về màn hình chính", new Vector2(0f, 30f), BackToMenu);
+        var gm = FindAnyObjectByType<ZodiacGameManager>();
+        if (gm != null && gm.isHub) MakeButton(p, "Về màn hình chính", new Vector2(0f, 110f), BackToMenu);
+        else
+        {
+            MakeButton(p, "Chơi lại màn", new Vector2(0f, 110f), Restart);
+            MakeButton(p, "Về làng", new Vector2(0f, 30f), BackToVillage);
+        }
 
         Label(p, "Nhạc", 26, Ink, new Vector2(-200f, -70f), new Vector2(160f, 40f));
         MakeSlider(p, new Vector2(60f, -70f), ZodiacAudio.MusicVolume, ZodiacAudio.SetMusicVolume);
