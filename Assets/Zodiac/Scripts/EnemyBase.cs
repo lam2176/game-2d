@@ -70,6 +70,8 @@ public abstract class EnemyBase : MonoBehaviour
     public LootEntry[] loot = System.Array.Empty<LootEntry>();
     [Tooltip("Số đồng xu rơi (thấp nhất, cao nhất).")]
     public Vector2Int coinDrop = new Vector2Int(1, 3);
+    [Tooltip("XP cho con giáp đang chơi khi hạ quái này. 0 = tự tính theo máu tối đa.")]
+    [Min(0)] public int xpReward;
 
     [Header("Vây đánh")]
     [Tooltip("Phải xin lượt mới được tấn công (tối đa MaxAttackers con cùng lúc).")]
@@ -346,7 +348,7 @@ public abstract class EnemyBase : MonoBehaviour
         if (res != null) ZodiacAudio.Play(res.block, 1f, 0.15f, at);
         GameFeel.HitStop(0.06f);
         GameFeel.Shake(0.15f);
-        if (gearItem != null && Random.value < gearItemChance) LootPickup.Spawn(gearItem, 1, 0, gear.position);
+        if (gearItem != null && Random.value < gearItemChance) LootPickup.Spawn(ItemAffixes.Roll(gearItem), 0, gear.position);
         GearDebris.Launch(gear, transform.position - source);
         OnGearLost();
     }
@@ -421,6 +423,8 @@ public abstract class EnemyBase : MonoBehaviour
     {
         ReleaseToken();
         LootPickup.DropFrom(loot, coinDrop, transform.position);
+        if (player != null && player.Character != null)
+            PlayerProfile.Current.AddXp(player.Character.name, xpReward > 0 ? xpReward : Progression.XpFor(health.maxHealth, this is BossFoxSpirit));
         ZodiacParticles.Debris(body.bounds.center, DebrisColor, 14, body.bounds.extents.x);
         ZodiacParticles.Sparks(body.bounds.center, Color.white, 10);
         var res = ZodiacResources.Get;

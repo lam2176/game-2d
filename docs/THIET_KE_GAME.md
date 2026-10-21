@@ -29,7 +29,8 @@ Tay phải mũi tên, tay trái Space/Shift + QWER (như game hành động onli
 | **E** (K, chuột phải, RB) | Chiêu riêng của con giáp (tốn Khí) |
 | **R** (RT) | **Tuyệt kỹ** — cần đầy thanh Khí (100), tốn hết |
 | **1 / 2** | Dùng nhanh đồ đã gán (bình máu, bình Khí) |
-| **I / Tab** | Hành trang |
+| **I / Tab** | Hành trang · trang Tu luyện |
+| **Esc** | Tạm dừng: tiếp tục, chơi lại, về màn hình chính, âm lượng, toàn màn hình |
 | F5 | Chơi lại màn |
 
 ## Luật chung (tham khảo)
@@ -99,6 +100,18 @@ Giáo và khiên là ảnh riêng để văng ra khi lính mất đồ. Boss H�
 - Đồ, trang bị, phím dùng nhanh và tiền giữ qua các màn, lưu ở `zodiac_profile.json` (thư mục `Application.persistentDataPath`).
 - Bảng vật phẩm: `Assets/Zodiac/Editor/ZodiacItemDefs.cs` (biểu tượng vẽ bằng code, giáo/khiên dùng ảnh quái).
   Bảng rơi đồ từng quái: `ZodiacEnemyFactory.cs`.
+
+## Tiến trình (cấp, tu luyện, Đan, màn)
+
+- **Màn hình chính:** Bắt đầu → bảng chọn màn (màn chưa mở bị khoá; thắng màn N mở màn N+1). **Chơi mới** xoá hồ sơ (có hỏi lại).
+- **Cấp & XP riêng từng con giáp** (tối đa cấp 30): hạ quái được XP theo máu tối đa của quái (boss ×4). Lên cấp hồi đầy máu/Khí,
+  được 3 điểm tu luyện. Cấp hiện ở góc dưới trái và trong bảng thông tin màn hình chính.
+- **Tu luyện** (I → Tu luyện): Sinh lực +12 máu · Nội khí +6 Khí, +0.15 hồi Khí/giây · Sức mạnh +2 Công · Thân pháp +1% chí mạng, +3 giáp.
+- **Huyết Đan / Khí Đan:** gom 3 mảnh (rơi từ Thạch Sư, Lính Khiên, Ma Trơi, boss) → luyện thành một viên, +20 máu / Khí tối đa vĩnh viễn
+  cho con giáp đang chơi.
+- **Đồ trang bị là từng món riêng:** có cấp đập (+0 → +10, mỗi cấp +8% chỉ số gốc — đập ở Lò rèn, giai đoạn B) và 0–3 dòng phụ ngẫu nhiên
+  theo độ hiếm (Tốt 1 · Hiếm 2 · Sử thi trở lên 3). Đồ, tiền dùng chung cho 12 con; cấp và Đan riêng từng con.
+- File lưu có trường `version`: file lưu cũ (v1) tự tách đồ trang bị đang chồng thành từng món.
 
 ## Bản đồ
 

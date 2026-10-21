@@ -8,10 +8,11 @@ using UnityEngine.UI;
 ///   • Trái: chân dung, 5 ô trang bị (Vũ khí · Giáp · Bùa · Ngọc · Ngọc) và bảng chỉ số hiện tại.
 ///   • Giữa: túi đồ 6 × 5 ô (viền màu theo độ hiếm, số lượng ở góc, số 1/2 nếu đã gán phím dùng nhanh).
 ///   • Phải: thông tin món đang chọn + nút Trang bị / Tháo · Dùng · Gán phím 1 · Gán phím 2 · Vứt; nút Xếp gọn túi.
-/// Bấm chuột vào ô để chọn. Luôn hiện thanh dùng nhanh 2 ô ở góc dưới trái (phím 1, 2).
+/// Bấm chuột vào ô để chọn. Trang <b>Tu luyện</b>: cấp, XP, cộng điểm 4 thuộc tính, luyện Huyết / Khí Đan
+/// (InventoryWindow.Progression.cs). Luôn hiện thanh dùng nhanh 2 ô, cấp + thanh XP và tiền ở góc dưới trái.
 /// Toàn bộ giao diện dựng bằng code khi vào màn (không phụ thuộc scene).
 /// </summary>
-public class InventoryWindow : MonoBehaviour
+public partial class InventoryWindow : MonoBehaviour
 {
     const float SlotSize = 96f, SlotGap = 10f;
     static readonly Color PanelColor = new Color(0.11f, 0.08f, 0.06f, 0.96f);
@@ -26,9 +27,11 @@ public class InventoryWindow : MonoBehaviour
     }
 
     public static bool IsOpen { get; private set; }
+    /// <summary>Frame vừa đóng cửa sổ (Esc đóng hành trang thì không mở luôn menu tạm dừng cùng frame).</summary>
+    public static int ClosedFrame { get; private set; } = -1;
 
     Font font;
-    GameObject window;
+    GameObject window, bagPage, trainPage;
     readonly List<Slot> bagSlots = new List<Slot>();
     readonly List<Slot> equipSlots = new List<Slot>();
     readonly List<Slot> quickSlots = new List<Slot>();
@@ -64,7 +67,7 @@ public class InventoryWindow : MonoBehaviour
         if (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame) toggle = true;
         bool escape = kb != null && kb.escapeKey.wasPressedThisFrame;
         if (IsOpen && (toggle || escape)) Close();
-        else if (!IsOpen && toggle) Open();
+        else if (!IsOpen && toggle && !PauseMenu.IsOpen) Open();
     }
 
     void Open()
@@ -84,6 +87,7 @@ public class InventoryWindow : MonoBehaviour
     void Close()
     {
         IsOpen = false;
+        ClosedFrame = Time.frameCount;
         window.SetActive(false);
         Time.timeScale = 1f;
         var player = ZodiacPlayerController.Current;
@@ -110,7 +114,9 @@ public class InventoryWindow : MonoBehaviour
             s.icon.color = n > 0 ? Color.white : new Color(1f, 1f, 1f, 0.3f);
         }
         if (coinsText != null) coinsText.text = $"Đồng: {profile.coins}";
+        RefreshLevelHud(profile);
         if (!IsOpen) return;
+        RefreshTraining(profile);
 
         var player = ZodiacPlayerController.Current;
         if (player != null && player.Character != null)
@@ -129,7 +135,7 @@ public class InventoryWindow : MonoBehaviour
 
         var stack = SelectedStack(profile);
         var item = stack?.Def;
-        detailText.text = item != null ? item.Tooltip() : "<i>Chọn một món đồ để xem.</i>";
+        detailText.text = item != null ? item.Tooltip(stack) : "<i>Chọn một món đồ để xem.</i>";
         bool equipment = item != null && item.type == ItemType.Equipment;
         bool consumable = item != null && item.type == ItemType.Consumable;
         equipButton.gameObject.SetActive(equipment);
@@ -152,7 +158,7 @@ public class InventoryWindow : MonoBehaviour
         var def = stack.Def;
         slot.icon.enabled = def != null;
         if (def != null) slot.icon.sprite = def.icon;
-        slot.count.text = def != null && stack.count > 1 ? stack.count.ToString() : "";
+        slot.count.text = def != null && stack.count > 1 ? stack.count.ToString() : def != null && stack.level > 0 ? $"+{stack.level}" : "";
         slot.key.text = key;
         Color border = def != null ? ItemDefinition.RarityColor(def.rarity) : new Color(0.4f, 0.32f, 0.25f);
         slot.frame.color = isSelected ? Color.white : border;
@@ -215,7 +221,7 @@ public class InventoryWindow : MonoBehaviour
         var s = p.bag[selected];
         if (s.IsEmpty) return;
         var player = ZodiacPlayerController.Current;
-        if (player != null) LootPickup.Spawn(s.Def, s.count, 0, player.transform.position + Vector3.right * player.FacingDirection * 1.5f);
+        if (player != null) LootPickup.Spawn(s.Clone(), 0, player.transform.position + Vector3.right * player.FacingDirection * 1.5f);
         p.RemoveAt(selected, s.count);
         selected = -1;
         Refresh();
@@ -246,7 +252,8 @@ public class InventoryWindow : MonoBehaviour
             quickSlots.Add(s);
         }
         coinsText = MakeText(root, "Coins", "", 30, Gold, new Vector2(0f, 0f), new Vector2(30f, 130f), new Vector2(300f, 40f), TextAnchor.MiddleLeft);
-        MakeText(root, "BagHint", "I / Tab: hành trang", 20, Ink, new Vector2(0f, 0f), new Vector2(30f, 100f), new Vector2(300f, 30f), TextAnchor.MiddleLeft);
+        MakeText(root, "BagHint", "I / Tab: hành trang · Esc: tạm dừng", 20, Ink, new Vector2(0f, 0f), new Vector2(30f, 100f), new Vector2(400f, 30f), TextAnchor.MiddleLeft);
+        BuildLevelHud(root);
 
         window = new GameObject("Window", typeof(RectTransform));
         window.transform.SetParent(root, false);
@@ -257,9 +264,18 @@ public class InventoryWindow : MonoBehaviour
         var panel = MakeImage(window.transform, "Panel", PanelColor);
         Place(panel.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1560f, 860f));
         panel.gameObject.AddComponent<Outline>().effectColor = Gold;
-        var p = panel.transform;
-        MakeText(p, "Title", "HÀNH TRANG", 52, Gold, new Vector2(0.5f, 1f), new Vector2(0f, -45f), new Vector2(800f, 70f), TextAnchor.MiddleCenter)
-            .fontStyle = FontStyle.Bold;
+        var panelRoot = panel.transform;
+        MakeButton(panelRoot, "Hành trang", new Vector2(0.5f, 1f), new Vector2(-160f, -45f), new Vector2(280f, 60f), () => ShowPage(false));
+        MakeButton(panelRoot, "Tu luyện", new Vector2(0.5f, 1f), new Vector2(160f, -45f), new Vector2(280f, 60f), () => ShowPage(true));
+        bagPage = new GameObject("BagPage", typeof(RectTransform));
+        bagPage.transform.SetParent(panelRoot, false);
+        Stretch((RectTransform)bagPage.transform);
+        trainPage = new GameObject("TrainPage", typeof(RectTransform));
+        trainPage.transform.SetParent(panelRoot, false);
+        Stretch((RectTransform)trainPage.transform);
+        BuildTraining(trainPage.transform);
+        trainPage.SetActive(false);
+        var p = bagPage.transform;
 
         // Trái: chân dung, trang bị, chỉ số
         portrait = MakeImage(p, "Portrait", Color.white);

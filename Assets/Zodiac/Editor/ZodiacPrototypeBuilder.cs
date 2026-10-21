@@ -118,6 +118,8 @@ public static class ZodiacPrototypeBuilder
         var menu = new GameObject("StartMenu").AddComponent<ZodiacStartMenu>();
         menu.roster = roster;
         menu.levelSceneName = ZodiacLevelData.Levels[0].sceneName;
+        menu.levelScenes = ZodiacLevelData.Levels.Select(l => l.sceneName).ToArray();
+        menu.levelTitles = ZodiacLevelData.Levels.Select(l => l.title).ToArray();
         var canvas = CreateCanvas();
 
         CreateText(canvas, "Title", "12 CON GIÁP", 96, TitleColor, new Vector2(0.5f, 1f), new Vector2(0f, -30f),

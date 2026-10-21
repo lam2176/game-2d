@@ -146,7 +146,7 @@ public static class ZodiacEnemyFactory
         ai.gear = shield;
         ai.gearDurability = 4;   // đỡ 4 đòn (hoặc còn nửa máu) thì khiên vỡ
         ai.gearItem = ZodiacItemDefs.Get("khien_dong");
-        ai.loot = new[] { L("manh_gom", 0.6f, 1, 2), L("binh_mau_nho", 0.15f), L("ao_giap_tre", 0.08f) };
+        ai.loot = new[] { L("manh_gom", 0.6f, 1, 2), L("binh_mau_nho", 0.15f), L("ao_giap_tre", 0.08f), L("manh_huyet_dan", 0.06f) };
         ai.coinDrop = new Vector2Int(2, 4);
         ai.moveSpeed = 1.9f;
         ai.windupTime = 0.65f;
@@ -205,7 +205,7 @@ public static class ZodiacEnemyFactory
         ZodiacLights.AddPoint(root, new Color(0.45f, 0.95f, 1f), 4.5f, 2f);
         var ai = root.AddComponent<EnemyFlyer>();
         Common(ai, v, new Color(0.45f, 0.95f, 0.95f));
-        ai.loot = new[] { L("lua_ma_troi", 0.6f), L("binh_khi", 0.25f), L("bua_khi", 0.04f) };
+        ai.loot = new[] { L("lua_ma_troi", 0.6f), L("binh_khi", 0.25f), L("bua_khi", 0.04f), L("manh_khi_dan", 0.06f) };
         ai.coinDrop = new Vector2Int(1, 2);
         ai.glow = glow.GetComponent<SpriteRenderer>();
         HealthBar(root, 0.8f);
@@ -269,7 +269,7 @@ public static class ZodiacEnemyFactory
         ZodiacLights.AddPoint(mouth, new Color(1f, 0.5f, 0.2f), 3f, 1.2f);
         var ai = root.AddComponent<EnemyTurret>();
         Common(ai, v, stone);
-        ai.loot = new[] { L("da_thach_su", 0.7f), L("ngoc_do", 0.1f), L("bua_ho_menh", 0.08f) };
+        ai.loot = new[] { L("da_thach_su", 0.7f), L("ngoc_do", 0.1f), L("bua_ho_menh", 0.08f), L("manh_huyet_dan", 0.1f), L("manh_khi_dan", 0.1f) };
         ai.coinDrop = new Vector2Int(3, 5);
         ai.mouth = mouth.GetComponent<SpriteRenderer>();
         ai.knockbackTaken = 0f;
@@ -325,7 +325,7 @@ public static class ZodiacEnemyFactory
 
         var ai = root.AddComponent<BossFoxSpirit>();
         Common(ai, v, fur);
-        ai.loot = new[] { L("duoi_ho_tinh", 1f), L("dao_rong", 1f), L("binh_mau_lon", 1f, 2, 2) };
+        ai.loot = new[] { L("duoi_ho_tinh", 1f), L("dao_rong", 1f), L("binh_mau_lon", 1f, 2, 2), L("manh_huyet_dan", 1f, 2, 2), L("manh_khi_dan", 1f, 2, 2) };
         ai.coinDrop = new Vector2Int(15, 25);
         ai.tails = tails;
         ai.minionPrefab = minion;

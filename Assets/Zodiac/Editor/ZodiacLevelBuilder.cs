@@ -92,6 +92,8 @@ public static class ZodiacLevelBuilder
 
         var manager = new GameObject("GameManager").AddComponent<ZodiacGameManager>();
         manager.gameObject.AddComponent<InventoryWindow>();   // hành trang (I / Tab) + thanh dùng nhanh
+        manager.gameObject.AddComponent<PauseMenu>();         // Esc: tạm dừng, cài đặt
+        manager.levelIndex = System.Array.IndexOf(Levels, def);
         manager.player = player;
         manager.nextSceneName = def.nextScene;
         manager.levelTitle = def.title;

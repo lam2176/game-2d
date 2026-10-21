@@ -28,8 +28,8 @@ public class PickupToast : MonoBehaviour
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void Hook() => PlayerProfile.Picked += (def, count) =>
-        Show($"+{count} {def.displayName}", ItemDefinition.RarityColor(def.rarity));
+    static void Hook() => PlayerProfile.Picked += (stack, count) =>
+        Show($"+{count} {stack.DisplayName}", ItemDefinition.RarityColor(stack.Def.rarity));
 
     void Awake()
     {

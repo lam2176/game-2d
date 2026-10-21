@@ -33,6 +33,8 @@ public class ZodiacGameManager : MonoBehaviour
     [Tooltip("Scene màn tiếp theo. Trống = màn cuối, thắng thì về màn hình chính.")]
     public string nextSceneName = "";
     public string levelTitle = "";
+    [Tooltip("Thứ tự màn (0 = màn 1) — thắng thì mở màn kế trong hồ sơ.")]
+    public int levelIndex;
     [Tooltip("Các khu theo thứ tự. Cổng đích hiện khi dọn xong khu cuối.")]
     public EncounterZone[] rooms = System.Array.Empty<EncounterZone>();
 
@@ -217,6 +219,7 @@ public class ZodiacGameManager : MonoBehaviour
         if (res != null) ZodiacAudio.Play(result == State.Won ? res.win : res.lose, 1f, 0f);
         if (result == State.Won)
         {
+            PlayerProfile.Current.CompleteLevel(levelIndex);
             winDetailText.text = $"Thu được {collected}/{total} đồng xu";
             if (nextButtonLabel != null)
                 nextButtonLabel.text = string.IsNullOrEmpty(nextSceneName) ? "Màn hình chính" : "Màn tiếp theo";
