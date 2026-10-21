@@ -264,18 +264,19 @@ public class InventoryWindow : MonoBehaviour
         // Trái: chân dung, trang bị, chỉ số
         portrait = MakeImage(p, "Portrait", Color.white);
         portrait.preserveAspect = true;
-        Place(portrait.rectTransform, new Vector2(0f, 1f), new Vector2(150f, -200f), new Vector2(200f, 200f));
-        nameText = MakeText(p, "Name", "", 26, Ink, new Vector2(0f, 1f), new Vector2(260f, -310f), new Vector2(480f, 40f), TextAnchor.MiddleCenter);
+        // Cột trái (x 40 → 500, lưới túi bắt đầu từ 540): chân dung → tên → 2 hàng ô trang bị → chỉ số
+        Place(portrait.rectTransform, new Vector2(0f, 1f), new Vector2(270f, -195f), new Vector2(190f, 190f));
+        nameText = MakeText(p, "Name", "", 26, Ink, new Vector2(0f, 1f), new Vector2(270f, -312f), new Vector2(440f, 36f), TextAnchor.MiddleCenter);
         for (int i = 0; i < PlayerProfile.EquipSlots.Length; i++)
         {
             int index = i;
-            Vector2 pos = new Vector2(320f + (i % 3) * 110f, -120f - (i / 3) * 135f);
+            Vector2 pos = i < 3 ? new Vector2(150f + i * 120f, -400f) : new Vector2(210f + (i - 3) * 120f, -530f);
             var s = MakeSlot(p, new Vector2(0f, 1f), pos, SlotSize, () => Select(true, index));
             MakeText(s.frame.transform, "Label", ItemDefinition.SlotName(PlayerProfile.EquipSlots[i]), 18, Ink,
                      new Vector2(0.5f, 0f), new Vector2(0f, -16f), new Vector2(120f, 24f), TextAnchor.MiddleCenter);
             equipSlots.Add(s);
         }
-        statsText = MakeText(p, "Stats", "", 24, Ink, new Vector2(0f, 1f), new Vector2(260f, -470f), new Vector2(460f, 230f), TextAnchor.UpperLeft);
+        statsText = MakeText(p, "Stats", "", 24, Ink, new Vector2(0f, 1f), new Vector2(270f, -705f), new Vector2(440f, 170f), TextAnchor.UpperLeft);
 
         // Giữa: túi 6 × 5
         float gridLeft = 540f, gridTop = -120f;

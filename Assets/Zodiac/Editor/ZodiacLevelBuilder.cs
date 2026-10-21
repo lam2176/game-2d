@@ -698,7 +698,8 @@ public static class ZodiacLevelBuilder
             zone.waves = new EncounterZone.Wave[stage.waves.Length];
             for (int w = 0; w < stage.waves.Length; w++) zone.waves[w] = ParseWave(xMin, xMax, w, stage.waves[w]);
             if (stage.boss) BuildBoss(zone, xMin, xMax, canvas);
-            if (last) manager.goal = CreateGoal(go.transform, xMax - 2.2f);
+            // Cổng đích sát mép phải (như lối ra các khu khác): đánh xong cứ đi sang phải là tới
+            if (last) manager.goal = CreateGoal(go.transform, xMax - 0.8f);
             else zone.exit = CreateExit(go.transform, xMax - 0.7f);
             zones[i] = zone;
         }

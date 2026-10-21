@@ -94,7 +94,7 @@ Giáo và khiên là ảnh riêng để văng ra khi lính mất đồ. Boss H�
   nút Trang bị / Tháo · Dùng · Gán phím 1 · Gán phím 2 · Vứt · Xếp gọn.
 - **Phím 1 / 2**: dùng nhanh đồ đã gán (bắt đầu game có 3 Bình máu nhỏ ở phím 1). Thanh dùng nhanh + số đồng ở góc dưới trái.
 - **Rơi đồ**: mỗi loại quái có bảng rơi riêng (nguyên liệu, bình thuốc, đôi khi trang bị) và đồng xu; boss rơi Đao rồng + Đuôi Hồ Tinh.
-  Đồ nảy ra trên đất, có cột sáng màu độ hiếm, lại gần là tự hút vào túi. Giáo / khiên lính đánh rơi có 35% thành vật phẩm.
+  Đồ nảy ra trên đất, có cột sáng màu độ hiếm, lại gần là tự hút vào túi. Giáo / khiên lính đánh rơi có 20% thành vật phẩm.
 - Trang bị cộng chỉ số qua `CharacterStats` (Công, Giáp, Máu/Khí tối đa, Hồi Khí, Chí mạng). Nguyên liệu để dành cho thợ rèn ở làng (phần sau).
 - Đồ, trang bị, phím dùng nhanh và tiền giữ qua các màn, lưu ở `zodiac_profile.json` (thư mục `Application.persistentDataPath`).
 - Bảng vật phẩm: `Assets/Zodiac/Editor/ZodiacItemDefs.cs` (biểu tượng vẽ bằng code, giáo/khiên dùng ảnh quái).

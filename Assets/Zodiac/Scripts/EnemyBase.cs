@@ -64,7 +64,7 @@ public abstract class EnemyBase : MonoBehaviour
     [Range(0f, 1f)] public float gearLostAtHealth = 0.5f;
     [Tooltip("Đồ văng ra thành vật phẩm nhặt được (giáo đồng, khiên trống đồng) với tỉ lệ gearItemChance.")]
     public ItemDefinition gearItem;
-    [Range(0f, 1f)] public float gearItemChance = 0.35f;
+    [Range(0f, 1f)] public float gearItemChance = 0.2f;
 
     [Header("Rơi đồ khi chết")]
     public LootEntry[] loot = System.Array.Empty<LootEntry>();
