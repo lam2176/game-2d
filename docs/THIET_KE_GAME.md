@@ -29,7 +29,8 @@ Tay phải mũi tên, tay trái Space/Shift + QWER (như game hành động onli
 | **E** (K, chuột phải, RB) | Chiêu riêng của con giáp (tốn Khí) |
 | **R** (RT) | **Tuyệt kỹ** — cần đầy thanh Khí (100), tốn hết |
 | **1 / 2** | Dùng nhanh đồ đã gán (bình máu, bình Khí) |
-| **I / Tab** | Hành trang |
+| **I / Tab** | Hành trang · trang Tu luyện |
+| **Esc** | Tạm dừng: tiếp tục, chơi lại, về màn hình chính, âm lượng, toàn màn hình |
 | F5 | Chơi lại màn |
 
 ## Luật chung (tham khảo)
@@ -99,6 +100,37 @@ Giáo và khiên là ảnh riêng để văng ra khi lính mất đồ. Boss H�
 - Đồ, trang bị, phím dùng nhanh và tiền giữ qua các màn, lưu ở `zodiac_profile.json` (thư mục `Application.persistentDataPath`).
 - Bảng vật phẩm: `Assets/Zodiac/Editor/ZodiacItemDefs.cs` (biểu tượng vẽ bằng code, giáo/khiên dùng ảnh quái).
   Bảng rơi đồ từng quái: `ZodiacEnemyFactory.cs`.
+
+## Tiến trình (cấp, tu luyện, Đan, màn)
+
+- **Màn hình chính:** Bắt đầu → bảng chọn màn (màn chưa mở bị khoá; thắng màn N mở màn N+1). **Chơi mới** xoá hồ sơ (có hỏi lại).
+- **Cấp & XP riêng từng con giáp** (tối đa cấp 30): hạ quái được XP theo máu tối đa của quái (boss ×4). Lên cấp hồi đầy máu/Khí,
+  được 3 điểm tu luyện. Cấp hiện ở góc dưới trái và trong bảng thông tin màn hình chính.
+- **Tu luyện** (I → Tu luyện): Sinh lực +12 máu · Nội khí +6 Khí, +0.15 hồi Khí/giây · Sức mạnh +2 Công · Thân pháp +1% chí mạng, +3 giáp.
+- **Huyết Đan / Khí Đan:** gom 3 mảnh (rơi từ Thạch Sư, Lính Khiên, Ma Trơi, boss) → luyện thành một viên, +20 máu / Khí tối đa vĩnh viễn
+  cho con giáp đang chơi.
+- **Đồ trang bị là từng món riêng:** có cấp đập (+0 → +10, mỗi cấp +8% chỉ số gốc — đập ở Lò rèn, giai đoạn B) và 0–3 dòng phụ ngẫu nhiên
+  theo độ hiếm (Tốt 1 · Hiếm 2 · Sử thi trở lên 3). Đồ, tiền dùng chung cho 12 con; cấp và Đan riêng từng con.
+- File lưu có trường `version`: file lưu cũ (v1) tự tách đồ trang bị đang chồng thành từng món.
+
+## Làng Trung Tâm, Lò rèn, Tiệm thuốc
+
+Màn hình chính → **Bắt đầu** vào thẳng **Làng Trung Tâm** (scene `Zodiac_Village`, không có quái). Thắng / thua đều có nút **Về làng**.
+Đứng gần một điểm thì hiện "F: …", bấm **F** (tay cầm: nút Y / North):
+
+| Điểm | Chức năng |
+|---|---|
+| **Bàn thờ tổ** | Mở trang Tu luyện (cộng điểm, luyện Đan) |
+| **Tiệm thuốc bắc** | Mua bình thuốc, Ngọc may mắn, Bùa bảo hộ · Bán đồ (nửa giá, đồ đập cao bán đắt hơn) · **Luyện đan** từ nguyên liệu |
+| **Lò rèn** | **Đập đồ** +0 → +10 (cả đồ đang mặc) · **Phân giải** đồ thừa ra nguyên liệu + đồng |
+| **Cổng làng** | Chọn màn đã mở |
+
+**Đập đồ** (`Forge`): tỉ lệ +1…+3 chắc chắn, rồi 85 · 70 · 55 · 40 · 30 · 20 · 12%. Mỗi lần hỏng liên tiếp +5% cho lần sau.
+Hỏng khi lên +1…+5 giữ cấp; lên **+6 trở lên hỏng thì tụt 1 cấp** — trừ khi dùng **Bùa bảo hộ**. **Ngọc may mắn** +10%.
+Tốn `10 × cấp mới` đồng + nguyên liệu theo ô đồ (vũ khí Mảnh gốm · giáp Vảy bọ gai · bùa/ngọc Lửa ma trơi), từ +6 thêm Đá thạch sư.
+Mỗi cấp +8% chỉ số gốc của món (+10 = gấp đôi).
+
+**Luyện đan** (`Shop.Recipes`): Bình máu lớn, 2 Bình Khí, Mảnh Huyết Đan, Mảnh Khí Đan, Ngọc may mắn — từ nguyên liệu quái rơi.
 
 ## Bản đồ
 
@@ -188,7 +220,7 @@ dãy núi và đồi có đường sống lưng tự nhiên + lớp mù chân n�
   | Chuột | Vạn Ảnh Thử | | Ngựa | Thiên Mã Hành Không |
   | Trâu | Đại Hồng Chung | | Dê | Xuân Hồi Đại Địa |
   | Hổ | Mãnh Hổ Hạ Sơn | | Khỉ | Tề Thiên Đại Thánh |
-  | Mèo | Cửu Mệnh Huyền Âm | | Gà | Kim Kê Báo Hiểu |
+  | Mèo | Cửu Mệnh Huyền Âm | | Gà | Kim Kê Báo Hiệu |
   | Rồng | Long Thần Hoả | | Chó | Thiên Cẩu Hống |
   | Rắn | Vạn Xà Ẩn Hình | | Heo | Bát Giới Trấn Sơn |
 

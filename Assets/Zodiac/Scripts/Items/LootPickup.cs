@@ -18,8 +18,9 @@ public class LootEntry
 /// </summary>
 public class LootPickup : MonoBehaviour
 {
-    public ItemDefinition item;
-    public int count = 1;
+    /// <summary>Món đồ (đã tung dòng phụ) — null khi là đồng xu.</summary>
+    public ItemStack stack;
+    ItemDefinition item;
     [Tooltip("Số đồng (khi là đồng xu rơi).")]
     public int coins;
 
@@ -38,20 +39,22 @@ public class LootPickup : MonoBehaviour
             foreach (var e in table)
             {
                 if (e == null || e.item == null || UnityEngine.Random.value > e.chance) continue;
-                Spawn(e.item, UnityEngine.Random.Range(e.min, e.max + 1), 0, position);
+                int n = UnityEngine.Random.Range(e.min, e.max + 1);
+                if (e.item.Stackable) Spawn(ItemAffixes.Roll(e.item, n), 0, position);
+                else for (int k = 0; k < n; k++) Spawn(ItemAffixes.Roll(e.item), 0, position);   // trang bị: mỗi món một bộ dòng phụ
             }
         int c = coinRange.y > 0 ? UnityEngine.Random.Range(coinRange.x, coinRange.y + 1) : 0;
-        for (int i = 0; i < c; i++) Spawn(null, 0, 1, position);
+        for (int i = 0; i < c; i++) Spawn(null, 1, position);
     }
 
-    /// <summary>Tạo một món rơi (item = null và coins &gt; 0 → đồng xu).</summary>
-    public static LootPickup Spawn(ItemDefinition item, int count, int coins, Vector3 position)
+    /// <summary>Tạo một món rơi (stack = null và coins &gt; 0 → đồng xu).</summary>
+    public static LootPickup Spawn(ItemStack stack, int coins, Vector3 position)
     {
-        var go = new GameObject(item != null ? "Loot " + item.displayName : "Loot Coin");
+        var go = new GameObject(stack != null ? "Loot " + stack.DisplayName : "Loot Coin");
         go.transform.position = position + Vector3.up * 0.6f;
         var p = go.AddComponent<LootPickup>();
-        p.item = item;
-        p.count = count;
+        p.stack = stack;
+        p.item = stack?.Def;
         p.coins = coins;
         float a = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
         p.velocity = new Vector3(Mathf.Cos(a) * 1.8f, UnityEngine.Random.Range(5f, 7f), Mathf.Sin(a) * 1.2f);
@@ -150,11 +153,11 @@ public class LootPickup : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-        int left = profile.Add(item, count);
+        int left = profile.Add(stack);
         if (left > 0)
         {
             // Túi đầy: rơi lại xuống, thử lại sau
-            count = left;
+            stack.count = left;
             attracted = false;
             resting = false;
             velocity = new Vector3(0f, 4f, 0f);

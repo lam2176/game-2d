@@ -39,7 +39,7 @@ public static class ZodiacPrototypeBuilder
     static readonly Color InkColor = new Color(0.25f, 0.15f, 0.1f);
 
     static IEnumerable<string> ScenePaths =>
-        new[] { StartScenePath }.Concat(ZodiacLevelData.Levels.Select(ZodiacLevelBuilder.ScenePath));
+        new[] { StartScenePath, ZodiacLevelBuilder.ScenePath(ZodiacLevelData.Village) }.Concat(ZodiacLevelData.Levels.Select(ZodiacLevelBuilder.ScenePath));
 
     // Menu mờ đi trong Play mode — dựng/lưu scene lúc đó sẽ lỗi InvalidOperationException.
     [MenuItem("Tools/Zodiac/Dựng prototype", true)]
@@ -94,7 +94,7 @@ public static class ZodiacPrototypeBuilder
         ZodiacItemDefs.EnsureAll();   // vật phẩm trước quái (bảng rơi đồ trỏ tới)
         ctx.prefabs = ZodiacEnemyFactory.EnsurePrefabs(ctx.square, ctx.circle, ctx.noFriction, groundLayer, playerLayer, enemyLayer);
 
-        foreach (var level in ZodiacLevelData.Levels)
+        foreach (var level in ZodiacLevelData.Levels.Prepend(ZodiacLevelData.Village))
         {
             EditorUtility.DisplayProgressBar("Zodiac", "Dựng " + level.title, 0.5f);
             ZodiacLevelBuilder.Build(level, ctx);
@@ -118,6 +118,9 @@ public static class ZodiacPrototypeBuilder
         var menu = new GameObject("StartMenu").AddComponent<ZodiacStartMenu>();
         menu.roster = roster;
         menu.levelSceneName = ZodiacLevelData.Levels[0].sceneName;
+        menu.levelScenes = ZodiacLevelData.Levels.Select(l => l.sceneName).ToArray();
+        menu.levelTitles = ZodiacLevelData.Levels.Select(l => l.title).ToArray();
+        menu.villageScene = ZodiacLevelData.Village.sceneName;
         var canvas = CreateCanvas();
 
         CreateText(canvas, "Title", "12 CON GIÁP", 96, TitleColor, new Vector2(0.5f, 1f), new Vector2(0f, -30f),

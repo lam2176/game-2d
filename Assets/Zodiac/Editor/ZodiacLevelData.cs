@@ -51,12 +51,25 @@ public static class ZodiacLevelData
         public Color sky, far, mid, soil, grass, stone, plank;
         public float laneMin = -3f, laneMax = 3f;
         public Stage[] stages = System.Array.Empty<Stage>();
+        /// <summary>Làng Trung Tâm: không có khu / quái, có các điểm Lò rèn, Tiệm thuốc, Bàn thờ, Cổng làng.</summary>
+        public bool hub;
+        public float hubLength = 36f;
 
         /// <summary>Mép trái khu thứ i.</summary>
         public float RoomX(int i) => 4f + i * RoomSpacing;
         /// <summary>Chiều dài cả con đường.</summary>
-        public float Length => RoomX(stages.Length - 1) + RoomWidth + 6f;
+        public float Length => hub ? hubLength : RoomX(stages.Length - 1) + RoomWidth + 6f;
     }
+
+    /// <summary>Làng Trung Tâm — nghỉ chân giữa các màn: đập đồ, mua thuốc, tu luyện, chọn màn.</summary>
+    public static readonly LevelDef Village = new LevelDef
+    {
+        sceneName = "Zodiac_Village", title = "Làng Trung Tâm", subtitle = "Lò rèn, tiệm thuốc, bàn thờ tổ — nghỉ chân trước khi lên đường",
+        backdrop = Backdrop.Village, hub = true,
+        sky = new Color(0.98f, 0.86f, 0.66f), far = new Color(0.62f, 0.72f, 0.70f), mid = new Color(0.55f, 0.70f, 0.40f),
+        soil = new Color(0.66f, 0.5f, 0.34f), grass = new Color(0.42f, 0.68f, 0.32f), stone = new Color(0.68f, 0.6f, 0.5f),
+        plank = new Color(0.80f, 0.62f, 0.32f),
+    };
 
     public static readonly LevelDef[] Levels =
     {

@@ -92,12 +92,16 @@ public class ItemDefinition : ScriptableObject
         return $"{value} {StatName(m.stat)}";
     }
 
-    /// <summary>Mô tả đầy đủ cho khung xem đồ: loại, độ hiếm, chỉ số, hiệu quả, mô tả.</summary>
-    public string Tooltip()
+    /// <summary>Mô tả loại đồ (chưa có cấp đập / dòng phụ).</summary>
+    public string Tooltip() => Tooltip(null);
+
+    /// <summary>Mô tả đầy đủ cho khung xem đồ: tên (+cấp), loại, độ hiếm, chỉ số đã tính cấp đập, dòng phụ, hiệu quả, mô tả.</summary>
+    public string Tooltip(ItemStack stack)
     {
         var sb = new StringBuilder();
         string color = ColorUtility.ToHtmlStringRGB(RarityColor(rarity));
-        sb.Append($"<b><color=#{color}>{displayName}</color></b>\n");
+        string title = stack != null && !stack.IsEmpty ? stack.DisplayName : displayName;
+        sb.Append($"<b><color=#{color}>{title}</color></b>\n");
         string kind = type switch
         {
             ItemType.Equipment => SlotName(slot),
@@ -105,7 +109,10 @@ public class ItemDefinition : ScriptableObject
             _ => "Nguyên liệu",
         };
         sb.Append($"<size=22>{kind} · {RarityName(rarity)}</size>\n");
-        foreach (var m in modifiers) sb.Append($"<color=#9fe39a>{ModifierText(m)}</color>\n");
+        float scale = 1f + (stack != null ? ItemStack.LevelBonus * stack.level : 0f);
+        foreach (var m in modifiers) sb.Append($"<color=#9fe39a>{ModifierText(new StatModifier(m.stat, m.kind, m.value * scale))}</color>\n");
+        if (stack != null && stack.affixes != null)
+            foreach (var a in stack.affixes) sb.Append($"<color=#8fc8ff>{ModifierText(a)}  (phụ)</color>\n");
         if (heal > 0) sb.Append($"<color=#ff9a9a>Hồi {heal} máu</color>\n");
         if (energy > 0) sb.Append($"<color=#8fd3ff>Hồi {energy} Khí</color>\n");
         if (!string.IsNullOrEmpty(description)) sb.Append($"<i>{description}</i>\n");

@@ -7,8 +7,35 @@ using UnityEngine;
 /// </summary>
 public class ZodiacAudio : MonoBehaviour
 {
-    public static float SfxVolume = 0.9f;
-    public static float MusicVolume = 0.55f;
+    const string MusicKey = "Zodiac.MusicVolume", SfxKey = "Zodiac.SfxVolume";
+    static float? sfxVolume, musicVolume;
+    // Đọc PlayerPrefs lúc dùng lần đầu (không được gọi API Unity trong khởi tạo field tĩnh của MonoBehaviour)
+    public static float SfxVolume
+    {
+        get => sfxVolume ??= PlayerPrefs.GetFloat(SfxKey, 0.9f);
+        private set => sfxVolume = value;
+    }
+    public static float MusicVolume
+    {
+        get => musicVolume ??= PlayerPrefs.GetFloat(MusicKey, 0.55f);
+        private set => musicVolume = value;
+    }
+
+    /// <summary>Đổi âm lượng nhạc (menu tạm dừng) — áp ngay cho bài đang phát và lưu lại.</summary>
+    public static void SetMusicVolume(float value)
+    {
+        MusicVolume = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat(MusicKey, MusicVolume);
+        if (host != null && host.music != null && host.music[host.activeMusic].clip != null)
+            host.music[host.activeMusic].volume = MusicVolume;
+    }
+
+    /// <summary>Đổi âm lượng hiệu ứng và lưu lại.</summary>
+    public static void SetSfxVolume(float value)
+    {
+        SfxVolume = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat(SfxKey, SfxVolume);
+    }
 
     const int Voices = 20;
     static ZodiacAudio host;
