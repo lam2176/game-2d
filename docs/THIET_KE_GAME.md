@@ -233,18 +233,24 @@ dãy núi và đồi có đường sống lưng tự nhiên + lớp mù chân n�
 - **HUD kiểu game online** (Ngọc Rồng…): góc trái trên là chân dung tròn + tên + máu + 6 ô Khí + nội tại;
   giữa đáy là 4 ô tròn **Q Đánh · W Lướt · E Chiêu · R Tuyệt kỹ** — biểu tượng, nhãn phím, số Khí cần,
   lớp tối quét tròn theo thời gian hồi, ô nảy lên khi bấm; ô R viền vàng nhấp nháy khi đầy Khí.
-- **Tuyệt kỹ** = bản cường hoá của chiêu (`SkillConfig.Empowered`): sát thương ×2, vùng ×1.7, nhiều đạn hơn, lướt xa hơn,
-  choáng lâu hơn, hồi đầy máu (Dê), tàng hình lâu + đánh lén ×5 (Rắn). Khi tung có cảnh cắt: dải đen chéo màn hình,
-  chân dung trượt vào, tên tuyệt kỹ chữ lớn, thời gian chậm lại 0.75 giây.
+- **Tuyệt kỹ riêng** (giai đoạn C2, `PlayerSkill.Ultimates.cs`) — mỗi con một chiêu khác hẳn, không còn là bản phóng to
+  của chiêu thường. Khi tung có cảnh cắt: dải đen chéo màn hình, chân dung trượt vào, tên tuyệt kỹ chữ lớn, chậm thời gian 0.75 giây.
+  "Cả khu" = mọi quái còn sống trong khu đang đánh.
 
-  | Con giáp | Tuyệt kỹ | | Con giáp | Tuyệt kỹ |
-  |---|---|---|---|---|
-  | Chuột | Vạn Ảnh Thử | | Ngựa | Thiên Mã Hành Không |
-  | Trâu | Đại Hồng Chung | | Dê | Xuân Hồi Đại Địa |
-  | Hổ | Mãnh Hổ Hạ Sơn | | Khỉ | Tề Thiên Đại Thánh |
-  | Mèo | Cửu Mệnh Huyền Âm | | Gà | Kim Kê Báo Hiệu |
-  | Rồng | Long Thần Hoả | | Chó | Thiên Cẩu Hống |
-  | Rắn | Vạn Xà Ẩn Hình | | Heo | Bát Giới Trấn Sơn |
+  | Con giáp | Tuyệt kỹ | Tác dụng |
+  |---|---|---|
+  | Chuột | Vạn Ảnh Thử | Chớp tới từng quái trong khu (tối đa 8) chém một nhát, nhát cuối quật ngã cả đám; bất tử |
+  | Trâu | Đại Hồng Chung | Ba hồi chuông, ba vòng sóng chấn bán kính 6, hồi cuối quật ngã; +100 giáp 6 giây |
+  | Hổ | Mãnh Hổ Hạ Sơn | Vồ tới giữa đám đông nhất (4× sát thương, quật ngã), gầm choáng cả khu; +30% công 8 giây |
+  | Mèo | Cửu Mệnh Huyền Âm | Hồi 30% máu, +1 mạng giữ lại, cả khu choáng 2.5 giây |
+  | Rồng | Long Thần Hoả | Đứng phun 22 cầu lửa xuyên thấu toả theo chiều sâu trong 1.6 giây |
+  | Rắn | Vạn Xà Ẩn Hình | Cả khu nhiễm độc; quấn con khoẻ nhất hút máu 2 giây, hồi nửa lượng hút được |
+  | Ngựa | Thiên Mã Hành Không | Phi qua lại hết khu ba lượt, lượt cuối quật ngã; bất tử khi phi |
+  | Dê | Xuân Hồi Đại Địa | Hồi đầy máu, đẩy lùi quái quanh mình; +60 giáp và hồi máu dần 10 giây |
+  | Khỉ | Tề Thiên Đại Thánh | 3 phân thân vàng tự đánh quái 8 giây, Khỉ vẫn đánh tiếp |
+  | Gà | Kim Kê Báo Hiệu | Cả khu choáng 3.5 giây, xoá đạn địch, quái nhận thêm 50% sát thương 6 giây |
+  | Chó | Thiên Cẩu Hống | Quật ngã cả khu (2.5× sát thương); +25% công 8 giây |
+  | Heo | Bát Giới Trấn Sơn | Hút cả khu về trước mặt rồi bật lên dậm đất (4.5×, quật ngã) |
 
 - **Độ nét**: ảnh nhân vật 2048px; texture vẽ bằng code lấy mẫu dày gấp đôi (trước bị phóng to 1.5–3 lần khi hiển thị);
   hình tròn placeholder 256px (trước 64px bị kéo ra vài trăm px).

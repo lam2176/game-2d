@@ -64,6 +64,14 @@ public class Health : MonoBehaviour
     public Func<Hit, bool> Blocks;
 
     float invulnerableUntil = float.NegativeInfinity;
+    float vulnerableUntil = float.NegativeInfinity, vulnerableScale = 1f;
+
+    /// <summary>Nhận thêm sát thương (×scale) trong seconds giây (tuyệt kỹ của Gà).</summary>
+    public void MakeVulnerable(float seconds, float scale)
+    {
+        vulnerableUntil = Mathf.Max(vulnerableUntil, Time.time + seconds);
+        vulnerableScale = Mathf.Max(1f, scale);
+    }
 
     void Awake() => Current = maxHealth;
 
@@ -100,6 +108,7 @@ public class Health : MonoBehaviour
             Blocked?.Invoke(hit);
             return false;
         }
+        if (Time.time < vulnerableUntil) hit.amount = Mathf.RoundToInt(hit.amount * vulnerableScale);
         hit.amount = ZodiacBalance.Mitigate(hit.amount, defense);
         Current = Mathf.Max(0, Current - hit.amount);
         bool lastStand = Current == 0 && lastStandCharges > 0;
