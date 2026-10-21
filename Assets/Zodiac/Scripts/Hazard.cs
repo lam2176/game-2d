@@ -7,7 +7,7 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class Hazard : MonoBehaviour
 {
-    [Min(1)] public int damage = 1;
+    [Min(1)] public int damage = ZodiacBalance.Unit;
 
     void Awake() => GetComponent<Collider2D>().isTrigger = true;
 

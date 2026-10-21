@@ -72,7 +72,7 @@ public class ZodiacGameManager : MonoBehaviour
         total = items.Length;
         foreach (var item in items) item.Collected += OnCollected;
         if (goal != null) goal.Entered += _ => Finish(State.Won);
-        if (killZone != null) killZone.Entered += _ => HazardHit(1, player.transform.position);
+        if (killZone != null) killZone.Entered += _ => HazardHit(ZodiacBalance.Unit, player.transform.position);
         playerHealth = player.GetComponent<Health>();
         if (playerHealth != null) playerHealth.Died += () => Finish(State.Lost, "Bạn đã bị hạ gục");
 
@@ -110,7 +110,7 @@ public class ZodiacGameManager : MonoBehaviour
     void Update()
     {
         if (Current == State.Playing && !respawning && player.transform.position.y < fallLimitY)
-            HazardHit(1, player.transform.position);
+            HazardHit(ZodiacBalance.Unit, player.transform.position);
         if (Keyboard.current != null && Keyboard.current.f5Key.wasPressedThisFrame) Restart();
     }
 
@@ -122,7 +122,7 @@ public class ZodiacGameManager : MonoBehaviour
         if (c != null && c.coinsPerHeal > 0 && playerHealth != null && ++coinsTowardHeal >= c.coinsPerHeal)
         {
             coinsTowardHeal = 0;
-            if (playerHealth.Heal(1) > 0) ZodiacFx.Ring(player.BodyCollider.bounds.center, 1.5f, new Color(0.5f, 1f, 0.6f, 0.8f));
+            if (playerHealth.Heal(ZodiacBalance.Unit) > 0) ZodiacFx.Ring(player.BodyCollider.bounds.center, 1.5f, new Color(0.5f, 1f, 0.6f, 0.8f));
         }
         RefreshHud();
     }
@@ -130,7 +130,7 @@ public class ZodiacGameManager : MonoBehaviour
     void OnCheckpoint(Checkpoint cp)
     {
         if (ActiveCheckpoint == null || cp.index > ActiveCheckpoint.index) ActiveCheckpoint = cp;
-        playerHealth?.Heal(1);
+        playerHealth?.Heal(ZodiacBalance.Unit);
         ZodiacFx.Ring(cp.transform.position + Vector3.up * 1.5f, 2f, new Color(1f, 0.6f, 0.2f, 0.7f));
     }
 

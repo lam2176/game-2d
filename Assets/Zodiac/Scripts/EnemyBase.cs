@@ -27,12 +27,12 @@ public abstract class EnemyBase : MonoBehaviour
 
     [Header("Va chạm với người chơi")]
     [Tooltip("Sát thương khi chạm ngang/dưới. 0 = tắt.")]
-    [Min(0)] public int contactDamage = 1;
+    [Min(0)] public int contactDamage = ZodiacBalance.Unit;
     [Tooltip("Đạp lên đầu được không.")]
     public bool stompable = true;
     [Tooltip("Lưng có gai: đạp lên thì người chơi bị thương và bật lên.")]
     public bool spiky;
-    [Min(0)] public int stompDamage = 1;
+    [Min(0)] public int stompDamage = ZodiacBalance.Unit;
     [Tooltip("Vận tốc bật lên của người chơi khi đạp đầu.")]
     [Min(0f)] public float stompBounce = 12f;
     [Tooltip("Bàn chân người chơi ở bước trước được phép thấp hơn đỉnh đầu quái tối đa bao nhiêu (unit).")]
@@ -217,7 +217,7 @@ public abstract class EnemyBase : MonoBehaviour
         int multiplier = target.Character != null ? target.Character.stompDamageMultiplier : 1;
         health.TakeDamage(new Hit(stompDamage * multiplier, target.transform.position, 0f, 0.4f));
         target.Bounce(stompBounce);
-        if (target.TryGetComponent(out PlayerEnergy energy)) energy.Gain(1);
+        if (target.TryGetComponent(out PlayerEnergy energy)) energy.Gain(energy.hitGain);
         var res = ZodiacResources.Get;
         if (res != null) ZodiacAudio.Play(res.stomp, 0.9f, 0.08f, transform.position);
         GameFeel.HitStop(0.04f);

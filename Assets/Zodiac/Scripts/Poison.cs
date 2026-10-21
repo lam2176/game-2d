@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Trạng thái nhiễm độc (nội tại của Rắn): mỗi tickInterval trừ 1 máu, không đẩy lùi, cho tới khi hết số lần.
+/// Trạng thái nhiễm độc (nội tại của Rắn): mỗi tickInterval trừ tickDamage máu, không đẩy lùi, cho tới khi hết số lần.
 /// Trúng độc lần nữa thì làm mới số lần trừ máu. Thân quái ánh xanh lục trong lúc nhiễm độc.
 /// </summary>
 [RequireComponent(typeof(Health))]
@@ -10,6 +10,7 @@ public class Poison : MonoBehaviour
     static readonly Color PoisonTint = new Color(0.6f, 1f, 0.5f);
 
     public float tickInterval = 0.8f;
+    public int tickDamage = ZodiacBalance.Unit;
     int ticksLeft;
     float nextTick;
     Health health;
@@ -42,6 +43,6 @@ public class Poison : MonoBehaviour
         if (Time.time < nextTick) return;
         nextTick = Time.time + tickInterval;
         ticksLeft--;
-        health.TakeDamage(new Hit(1, transform.position, 0f));
+        health.TakeDamage(new Hit(tickDamage, transform.position, 0f));
     }
 }

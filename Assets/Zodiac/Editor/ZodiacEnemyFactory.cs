@@ -109,7 +109,7 @@ public static class ZodiacEnemyFactory
         ai.moveSpeed = 1.4f;
         ai.chaseSpeed = 2.2f;
         ai.windupTime = 0.6f;
-        ai.attackDamage = 2;
+        ai.attackDamage = 2 * ZodiacBalance.Unit;
         ai.attackCooldown = 1.6f;
         ai.knockbackTaken = 0.5f;
         ai.attackBoxOffset = new Vector2(0.85f, 0.5f);
@@ -275,7 +275,7 @@ public static class ZodiacEnemyFactory
         rb.gravityScale = 3f;
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
-        root.AddComponent<Health>().maxHealth = hp;
+        root.AddComponent<Health>().maxHealth = hp * ZodiacBalance.Unit;   // hp tính theo tim (thang cũ)
         return root;
     }
 

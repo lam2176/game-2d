@@ -13,7 +13,7 @@ public class Projectile : MonoBehaviour
     public static readonly List<Projectile> Active = new List<Projectile>();
 
     public Vector2 velocity;
-    public int damage = 1;
+    public int damage = ZodiacBalance.Unit;
     public float radius = 0.3f;
     public float range = 10f;
     [Tooltip("-1 = xuyên tất cả.")]
@@ -27,6 +27,8 @@ public class Projectile : MonoBehaviour
     [Tooltip("Đạn của quái (bị chiêu xoá đạn ảnh hưởng).")]
     public bool hostile;
     public Transform owner;
+    [Tooltip("Chỉ số người bắn (đạn người chơi): mỗi lần trúng tung chí mạng riêng. Null = sát thương cố định.")]
+    public CharacterStats attacker;
     public float spin;
 
     readonly HashSet<Health> hits = new HashSet<Health>();
@@ -96,7 +98,8 @@ public class Projectile : MonoBehaviour
         {
             var target = col.GetComponentInParent<Health>();
             if (target == null || target.IsDead || !hits.Add(target)) continue;
-            if (target.TakeDamage(new Hit(damage, transform.position - (Vector3)velocity.normalized, knockback, stun)) && !hostile)
+            var hit = CharacterStats.CreateHit(attacker, damage, transform.position - (Vector3)velocity.normalized, knockback, stun);
+            if (target.TakeDamage(hit) && !hostile)
             {
                 var sr = GetComponent<SpriteRenderer>();
                 ZodiacParticles.Sparks(col.ClosestPoint(transform.position), sr != null ? sr.color : Color.white, 7);

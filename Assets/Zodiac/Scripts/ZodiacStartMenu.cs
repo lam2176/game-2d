@@ -79,12 +79,12 @@ public class ZodiacStartMenu : MonoBehaviour
         }
         if (instrumentText != null) instrumentText.text = string.IsNullOrEmpty(c.instrument) ? "" : $"Nhạc cụ: {c.instrument}";
         if (statsText != null)
-            statsText.text = $"Máu {Bar(c.maxHealth, 8)}   Tốc độ {Bar(Mathf.RoundToInt(c.runSpeed - 4f), 8)}\n" +
-                             $"Nhảy {Bar(Mathf.RoundToInt((c.jumpHeight - 2f) * 2f), 8)}   Sức đánh {Bar(c.attackDamage * 2, 8)}";
+            statsText.text = $"Máu {Bar(c.maxHealth / ZodiacBalance.Unit, 8)} {c.maxHealth}   Tốc độ {Bar(Mathf.RoundToInt(c.runSpeed - 4f), 8)}\n" +
+                             $"Nhảy {Bar(Mathf.RoundToInt((c.jumpHeight - 2f) * 2f), 8)}   Sức đánh {Bar(c.attackDamage * 2 / ZodiacBalance.Unit, 8)} {c.attackDamage}";
         if (passiveText != null) passiveText.text = $"<b>Nội tại — {c.passiveName}</b>\n{c.passiveDescription}";
         if (skillText != null)
             skillText.text = $"<b>Chiêu [E] — {c.skill.name}</b>  <i>({c.skill.energyCost} Khí, hồi {c.skill.cooldown:0.#}s)</i>\n{c.skill.description}\n" +
-                             $"<b>Tuyệt kỹ [R] — {c.ultimateName}</b>  <i>(đầy 6 Khí)</i>\n{c.ultimateDescription}";
+                             $"<b>Tuyệt kỹ [R] — {c.ultimateName}</b>  <i>(đầy {c.maxEnergy} Khí)</i>\n{c.ultimateDescription}";
     }
 
     static string Bar(int value, int max)

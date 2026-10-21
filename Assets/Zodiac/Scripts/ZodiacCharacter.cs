@@ -24,9 +24,10 @@ public class SkillConfig
     public string name = "Chiêu";
     [TextArea] public string description;
     [Min(0.1f)] public float cooldown = 2f;
-    [Tooltip("Số Khí tốn mỗi lần tung chiêu (thanh Khí tối đa 6, đánh trúng thì nạp).")]
-    [Min(0)] public int energyCost = 3;
-    [Min(0)] public int damage = 1;
+    [Tooltip("Số Khí tốn mỗi lần tung chiêu (thanh Khí mặc định 100, đánh trúng thì nạp).")]
+    [Min(0)] public int energyCost = 50;
+    [Tooltip("Sát thương gốc — nhân thêm theo công hiện tại / công gốc (CharacterStats.AttackScale).")]
+    [Min(0)] public int damage = ZodiacBalance.Unit;
 
     [Header("Dash")]
     public float dashSpeed = 20f;
@@ -62,7 +63,7 @@ public class SkillConfig
     public float diveSpeed = 26f;
 
     [Header("Heal / Stealth")]
-    [Min(0)] public int healAmount = 2;
+    [Min(0)] public int healAmount = 2 * ZodiacBalance.Unit;
     public float channelTime = 0.6f;
     public float stealthDuration = 2.5f;
     public float backstabMultiplier = 3f;
@@ -74,7 +75,7 @@ public class SkillConfig
     public SkillConfig Empowered()
     {
         var c = (SkillConfig)MemberwiseClone();
-        c.damage = Mathf.Max(2, damage * 2);
+        c.damage = Mathf.Max(2 * ZodiacBalance.Unit, damage * 2);
         c.radius = radius * 1.7f;
         c.forwardOffset = forwardOffset * 1.3f;
         c.projectileCount = projectileCount == 1 ? 3 : projectileCount * 2 - 1;
@@ -85,7 +86,7 @@ public class SkillConfig
         c.knockback = knockback * 1.5f;
         c.dashTime = dashTime * 1.6f;
         c.dashSpeed = dashSpeed * 1.15f;
-        c.healAmount = 99;
+        c.healAmount = 999999;   // hồi đầy
         c.channelTime = channelTime * 0.6f;
         c.stealthDuration = stealthDuration * 1.8f;
         c.backstabMultiplier = 5f;
@@ -113,12 +114,16 @@ public class ZodiacCharacter : ScriptableObject
     public Vector2 colliderSize = new Vector2(0.8f, 1.9f);
     public Vector2 colliderOffset = new Vector2(0.15f, 0.95f);
 
-    [Header("Chỉ số")]
-    [Min(1)] public int maxHealth = 5;
+    [Header("Chỉ số gốc (thang ZodiacBalance: 1 tim cũ = 20) — CharacterStats cộng thêm trang bị, nâng cấp")]
+    [Min(1)] public int maxHealth = 5 * ZodiacBalance.Unit;
     [Min(0f)] public float walkSpeed = 5f;
     [Min(0f)] public float runSpeed = 8.5f;
     [Min(0f)] public float jumpHeight = 3.2f;
-    [Min(1)] public int attackDamage = 1;
+    [Min(1)] public int attackDamage = ZodiacBalance.Unit;
+    [Min(0)] public int defense = 0;
+    [Min(1)] public int maxEnergy = ZodiacBalance.BaseEnergy;
+    [Tooltip("Khí tự hồi mỗi giây.")]
+    [Min(0f)] public float energyRegen = 2.5f;
 
     [Header("Nội tại")]
     public string passiveName = "";
@@ -131,11 +136,11 @@ public class ZodiacCharacter : ScriptableObject
     [Range(0f, 1f)] public float knockbackResistance = 0f;
     [Tooltip("Số lần giữ lại 1 máu thay vì chết mỗi màn.")]
     [Min(0)] public int lastStandCharges = 0;
-    [Tooltip("Đánh thường gây độc: tổng sát thương độc (0 = không).")]
+    [Tooltip("Đánh thường gây độc: số lần trừ máu (mỗi lần Poison.tickDamage, 0 = không).")]
     [Min(0)] public int poisonDamage = 0;
     [Tooltip("Hút đồng xu trong bán kính này. 0 = tắt.")]
     [Min(0f)] public float coinMagnetRadius = 0f;
-    [Tooltip("Nhặt đủ số đồng xu này thì hồi 1 máu. 0 = tắt.")]
+    [Tooltip("Nhặt đủ số đồng xu này thì hồi 1 tim (ZodiacBalance.Unit máu). 0 = tắt.")]
     [Min(0)] public int coinsPerHeal = 0;
     [Tooltip("Nhân sát thương khi đạp đầu quái.")]
     [Min(1)] public int stompDamageMultiplier = 1;

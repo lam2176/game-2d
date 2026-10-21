@@ -840,6 +840,7 @@ public static class ZodiacLevelBuilder
         attack.targetLayers = 1 << ctx.enemyLayer;
 
         go.AddComponent<PlayerEnergy>();
+        go.AddComponent<CharacterStats>();
         var skill = go.AddComponent<PlayerSkill>();
         skill.targetLayers = 1 << ctx.enemyLayer;
         skill.groundLayer = 1 << ctx.groundLayer;
