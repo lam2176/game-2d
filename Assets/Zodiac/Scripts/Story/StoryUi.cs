@@ -189,14 +189,20 @@ public class StoryUi : MonoBehaviour
             Finish();
             return;
         }
-        bool next = (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame ||
-                                    kb.qKey.wasPressedThisFrame || kb.jKey.wasPressedThisFrame || kb.fKey.wasPressedThisFrame)) ||
+        var attack = ZodiacInput.Find("Attack");
+        var interact = ZodiacInput.Find("Interact");
+        bool next = (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) ||
+                    (attack != null && attack.WasPressedThisFrame()) || (interact != null && interact.WasPressedThisFrame()) ||
                     (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) ||
                     (pad != null && pad.buttonSouth.wasPressedThisFrame);
         if (next) Advance();
     }
 
     Text CurrentText => showingPanels ? panelText : lineText;
+
+    static string NextHint => ZodiacInput.UsingGamepad
+        ? $"{ZodiacInput.PadButton("buttonSouth")} ▶   ·   {ZodiacInput.PadButton("start")}: bỏ qua"
+        : "Space ▶   ·   Esc: bỏ qua";
 
     /// <summary>Hiện hết chữ, hoặc sang câu / khung kế.</summary>
     public static void Next()
@@ -231,6 +237,7 @@ public class StoryUi : MonoBehaviour
     void ShowLine(ZodiacStory.Line line)
     {
         var who = Speaker(line.speaker, out Sprite face);
+        dialogueHint.text = NextHint;
         speakerText.text = who;
         portrait.transform.parent.gameObject.SetActive(face != null);
         if (face != null)
@@ -253,7 +260,7 @@ public class StoryUi : MonoBehaviour
     void ShowPanel(ZodiacStory.Panel p)
     {
         panelTitle.text = p.title;
-        panelPage.text = $"{index + 1} / {pages.Length}   ·   Space ▶   ·   Esc: bỏ qua";
+        panelPage.text = $"{index + 1} / {pages.Length}   ·   {NextHint}";
         picture.sprite = StoryArt.Background(p.art);
         var ic = StoryArt.Icon(p.art);
         icon.gameObject.SetActive(ic != null);

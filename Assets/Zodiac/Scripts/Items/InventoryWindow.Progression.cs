@@ -30,6 +30,7 @@ public partial class InventoryWindow
         trainPage.SetActive(training);
         selected = -1;
         Refresh();
+        SelectFirst();
     }
 
     // ───────── Nhãn cấp + thanh XP (luôn hiện) ─────────

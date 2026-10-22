@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// HUD chiêu thức kiểu game hành động online (Ngọc Rồng…): thanh 4 ô tròn giữa đáy màn hình —
-/// Q Đánh · W Lăn · E Chiêu · R Tuyệt kỹ. Mỗi ô có biểu tượng, phím, số Khí cần,
+/// Q Đánh · W Lăn · E Chiêu · R Tuyệt kỹ (chữ phím theo phím đã đổi / tay cầm). Mỗi ô có biểu tượng, phím, số Khí cần,
 /// lớp tối quét tròn theo thời gian hồi chiêu, nảy lên khi bấm; ô Tuyệt kỹ viền vàng, sáng nhấp nháy khi đầy Khí.
 /// Góc trái trên: chân dung tròn, tên, nội tại, thanh máu (HealthBar riêng) và các ô Khí.
 /// </summary>
@@ -60,10 +60,10 @@ public class SkillHud : MonoBehaviour
         if (characterText != null) characterText.text = $"{character.displayName} · Tuổi {character.zodiacName}";
         if (passiveText != null) passiveText.text = $"Nội tại — {character.passiveName}";
 
-        Setup(attackSlot, ZodiacFx.Crescent, "Q", "Đánh", "");
-        Setup(dodgeSlot, ZodiacFx.Chevrons, "W", "Lăn", "");
-        Setup(skillSlot, character.sprite, "E", character.skill.name, $"{character.skill.energyCost}");
-        Setup(ultimateSlot, character.sprite, "R", character.ultimateName, energy != null ? $"{energy.max}" : "");
+        Setup(attackSlot, ZodiacFx.Crescent, ZodiacInput.Key("Attack"), "Đánh", "");
+        Setup(dodgeSlot, ZodiacFx.Chevrons, ZodiacInput.Key("Dodge"), "Lăn", "");
+        Setup(skillSlot, character.sprite, ZodiacInput.Key("Skill"), character.skill.name, $"{character.skill.energyCost}");
+        Setup(ultimateSlot, character.sprite, ZodiacInput.Key("Ultimate"), character.ultimateName, energy != null ? $"{energy.max}" : "");
         if (ultimateSlot.icon != null) ultimateSlot.icon.color = new Color(1f, 0.9f, 0.6f);
 
         if (attack != null) attack.Swung += (_, __) => attackSlot.punch = 1f;
@@ -75,11 +75,28 @@ public class SkillHud : MonoBehaviour
         }
     }
 
+    void OnEnable() => ZodiacInput.Changed += RefreshKeys;
+    void OnDisable() => ZodiacInput.Changed -= RefreshKeys;
+
+    /// <summary>Chữ phím trên 4 ô theo phím đã đổi / thiết bị đang dùng.</summary>
+    void RefreshKeys()
+    {
+        SetKey(attackSlot, "Attack");
+        SetKey(dodgeSlot, "Dodge");
+        SetKey(skillSlot, "Skill");
+        SetKey(ultimateSlot, "Ultimate");
+    }
+
+    static void SetKey(Slot s, string action)
+    {
+        if (s != null && s.key != null) s.key.text = ZodiacInput.Key(action);
+    }
+
     static void Setup(Slot s, Sprite icon, string key, string label, string cost)
     {
         if (s == null || s.root == null) return;
         if (s.icon != null) { s.icon.sprite = icon; s.icon.preserveAspect = true; }
-        if (s.key != null) s.key.text = key;
+        if (s.key != null) { s.key.text = key; s.key.horizontalOverflow = HorizontalWrapMode.Overflow; }   // "Space", "Shift"… dài hơn ô
         if (s.label != null) s.label.text = label;
         if (s.cost != null)
         {

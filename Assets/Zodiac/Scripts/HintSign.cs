@@ -1,7 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>Biển gỗ hướng dẫn: hiện khung chữ (Canvas world-space trên đầu biển) khi người chơi đứng gần.</summary>
+/// <summary>
+/// Biển gỗ hướng dẫn: hiện khung chữ (Canvas world-space trên đầu biển) khi người chơi đứng gần.
+/// Chữ có thể chứa {Attack}, {Jump}… — thay bằng phím đang dùng (<see cref="ZodiacInput.Format"/>).
+/// </summary>
 public class HintSign : MonoBehaviour
 {
     [TextArea] public string message;
@@ -9,10 +12,18 @@ public class HintSign : MonoBehaviour
     public GameObject bubble;
     public Text text;
 
+    void OnEnable() => ZodiacInput.Changed += RefreshText;
+    void OnDisable() => ZodiacInput.Changed -= RefreshText;
+
     void Start()
     {
-        if (text != null) text.text = message;
+        RefreshText();
         if (bubble != null) bubble.SetActive(false);
+    }
+
+    void RefreshText()
+    {
+        if (text != null) text.text = ZodiacInput.Format(message);
     }
 
     void Update()

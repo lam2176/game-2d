@@ -9,7 +9,8 @@ using UnityEngine.UI;
 ///     Ngọc may mắn; Phân giải đồ thừa ra nguyên liệu (<see cref="Forge"/>).
 ///   • <b>Tiệm thuốc</b>: Mua · Bán · Luyện đan (<see cref="Shop"/>).
 ///   • <b>Cổng làng</b>: chọn màn đã mở để lên đường.
-/// Nội dung dựng lại mỗi lần thao tác (ít phần tử, chỉ chạy khi bấm). Esc / F đóng.
+/// Nội dung dựng lại mỗi lần thao tác (ít phần tử, chỉ chạy khi bấm) — giữ nguyên ô đang chọn cho tay cầm.
+/// Esc / phím Tương tác (F) / B tay cầm: đóng.
 /// </summary>
 public class VillageWindow : MonoBehaviour
 {
@@ -89,12 +90,25 @@ public class VillageWindow : MonoBehaviour
     {
         if (!IsOpen || Time.frameCount == openedFrame) return;
         var kb = Keyboard.current;
-        if (kb != null && (kb.escapeKey.wasPressedThisFrame || kb.fKey.wasPressedThisFrame)) Close();
+        var interact = ZodiacInput.Find("Interact");
+        if ((kb != null && kb.escapeKey.wasPressedThisFrame) || (interact != null && interact.WasPressedThisFrame()) ||
+            (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame)) Close();
     }
 
     void Refresh()
     {
-        foreach (Transform child in content) Destroy(child.gameObject);
+        int keep = Time.frameCount == openedFrame ? -1 : ZodiacUi.SelectedIndex(content);
+        foreach (Transform child in content)
+        {
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
+        Build();
+        ZodiacUi.Reselect(content, keep);
+    }
+
+    void Build()
+    {
         var p = PlayerProfile.Current;
         coinsText.text = $"Đồng: {p.coins}";
         switch (mode)

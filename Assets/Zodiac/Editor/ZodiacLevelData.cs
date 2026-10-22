@@ -84,16 +84,16 @@ public static class ZodiacLevelData
             {
                 new Stage("Đầu làng", "W W", "W W W")
                 {
-                    sign = "← → đi · ↑ ↓ đổi làn · Shift chạy · Space nhảy\nQ đánh (3 đòn — đòn cuối quật ngã) · W lăn né · E chiêu · R tuyệt kỹ",
+                    sign = "{Move} đi · {Lane} đổi làn · {Sprint} chạy · {Jump} nhảy\n{Attack} đánh (3 đòn — đòn cuối quật ngã) · {Dodge} lăn né · {Skill} chiêu · {Ultimate} tuyệt kỹ",
                 },
                 new Stage("Giếng làng", "Q W", "W Q W")
                 {
-                    sign = "Lính Khiên đỡ đòn phía trước — vòng ra sau lưng hoặc đá bay (Space rồi Q).\nĐỡ 4 đòn là vỡ khiên!",
+                    sign = "Lính Khiên đỡ đòn phía trước — vòng ra sau lưng hoặc đá bay ({Jump} rồi {Attack}).\nĐỡ 4 đòn là vỡ khiên!",
                     coinRows = 2,
                 },
                 new Stage("Bờ tre", "S W", "S W S")
                 {
-                    sign = "Bọ Gai rung người là sắp lăn thẳng một đường —\nđổi làn (↑ ↓) hoặc nhảy qua, rồi đánh lúc nó choáng",
+                    sign = "Bọ Gai rung người là sắp lăn thẳng một đường —\nđổi làn ({Lane}) hoặc nhảy qua, rồi đánh lúc nó choáng",
                     hazard = true,
                 },
                 new Stage("Cổng làng", "W Q W", "S W Q W") { coinRows = 2 },
@@ -110,7 +110,7 @@ public static class ZodiacLevelData
             {
                 new Stage("Bìa rừng", "F W", "F F W")
                 {
-                    sign = "Ma Trơi bay ngang tầm đầu — nhảy lên rồi Q (đá bay),\nhoặc chờ nó sáng lên lao xuống thì chém",
+                    sign = "Ma Trơi bay ngang tầm đầu — nhảy lên rồi {Attack} (đá bay),\nhoặc chờ nó sáng lên lao xuống thì chém",
                 },
                 new Stage("Suối trúc", "H W", "H H W")
                 {
