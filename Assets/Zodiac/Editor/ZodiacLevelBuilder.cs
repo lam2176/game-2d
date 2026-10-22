@@ -690,7 +690,7 @@ public static class ZodiacLevelBuilder
         var jar = Mat("HubJar", ctx.textures.brick.texture, new Color(0.55f, 0.35f, 0.25f));
 
         // Bàn thờ tổ: bàn sơn đỏ, bát hương, hai cây nến
-        var altar = Station(root, VillageStation.Kind.Altar, 6f, "Bàn thờ tổ", "F: Tu luyện");
+        var altar = Station(root, VillageStation.Kind.Altar, 6f, "Bàn thờ tổ", "{Interact}: Tu luyện");
         Box("AltarTable", altar, new Vector3(6f, 0.55f, back), new Vector3(2.2f, 1.1f, 1f), red, 1f);
         Primitive(PrimitiveType.Cylinder, "Incense", altar, new Vector3(6f, 1.25f, back), new Vector3(0.45f, 0.15f, 0.45f), jar);
         foreach (float dx in new[] { -0.8f, 0.8f })
@@ -700,13 +700,13 @@ public static class ZodiacLevelBuilder
         }
 
         // Tiệm thuốc: quầy gỗ + chum thuốc
-        var shop = Station(root, VillageStation.Kind.Shop, 14f, "Tiệm thuốc bắc", "F: Mua bán · Luyện đan");
+        var shop = Station(root, VillageStation.Kind.Shop, 14f, "Tiệm thuốc bắc", "{Interact}: Mua bán · Luyện đan");
         Box("Counter", shop, new Vector3(14f, 0.55f, back), new Vector3(3f, 1.1f, 1f), wood, 1f);
         for (int i = 0; i < 4; i++)
             Primitive(PrimitiveType.Cylinder, "Jar", shop, new Vector3(13f + i * 0.65f, 1.35f, back), new Vector3(0.4f, 0.25f, 0.4f), jar);
 
         // Lò rèn: đe sắt + lò lửa
-        var forge = Station(root, VillageStation.Kind.Forge, 22f, "Lò rèn", "F: Đập đồ · Phân giải");
+        var forge = Station(root, VillageStation.Kind.Forge, 22f, "Lò rèn", "{Interact}: Đập đồ · Phân giải");
         Box("AnvilBase", forge, new Vector3(21.3f, 0.35f, back - 0.2f), new Vector3(0.6f, 0.7f, 0.5f), dark, 1f);
         Box("AnvilTop", forge, new Vector3(21.3f, 0.8f, back - 0.2f), new Vector3(1.2f, 0.25f, 0.5f), dark, 1f);
         Box("Furnace", forge, new Vector3(23f, 1f, back + 0.2f), new Vector3(1.6f, 2f, 1.2f), Mat("HubBrick", ctx.textures.brick.texture, new Color(0.55f, 0.4f, 0.35f)), 1f);
@@ -714,7 +714,7 @@ public static class ZodiacLevelBuilder
         ZodiacLights.AddPoint(fire, new Color(1f, 0.55f, 0.2f), 6f, 3f);
 
         // Cổng làng: lên đường vào các màn
-        var gate = Station(root, VillageStation.Kind.Gate, 31f, "Cổng làng", "F: Lên đường");
+        var gate = Station(root, VillageStation.Kind.Gate, 31f, "Cổng làng", "{Interact}: Lên đường");
         foreach (float z in new[] { def.laneMin - 1.1f, def.laneMax + 1.1f })
             Box("Pillar", gate, new Vector3(31f, 2.2f, z), new Vector3(0.45f, 4.4f, 0.45f), red, 1f);
         Box("Beam", gate, new Vector3(31f, 4.1f, LaneCenter), new Vector3(0.35f, 0.35f, def.laneMax - def.laneMin + 2.8f), red, 1f);
@@ -722,7 +722,7 @@ public static class ZodiacLevelBuilder
             Mat("GateRoof", ctx.textures.roof.texture, RoofColor), 1f);
     }
 
-    /// <summary>Một điểm trong làng: tên luôn hiện trên cao, chữ gợi ý "F: …" hiện khi đứng gần.</summary>
+    /// <summary>Một điểm trong làng: tên luôn hiện trên cao, chữ gợi ý "{Interact}: …" hiện khi đứng gần.</summary>
     static Transform Station(Transform parent, VillageStation.Kind kind, float x, string title, string hint)
     {
         var go = new GameObject("Station " + title);

@@ -1,9 +1,10 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 /// <summary>
 /// Một điểm trong Làng Trung Tâm (Lò rèn, Tiệm thuốc, Bàn thờ tổ, Cổng làng): người chơi đứng gần thì hiện chữ
-/// "F: …" trên đầu, bấm F (hoặc nút Y / North tay cầm) để mở. Bàn thờ mở thẳng trang Tu luyện của hành trang.
+/// "F: …" trên đầu (theo phím Tương tác đã đổi / nút tay cầm), bấm phím đó để mở. Bàn thờ mở thẳng trang Tu luyện của hành trang.
 /// </summary>
 public class VillageStation : MonoBehaviour
 {
@@ -16,14 +17,33 @@ public class VillageStation : MonoBehaviour
 
     InputAction interact;
     bool near;
+    Text promptText;
+    string promptTemplate;
 
     void Awake()
     {
         interact = InputSystem.actions.FindAction("Player/Interact");
-        if (prompt != null) prompt.SetActive(false);
+        if (prompt == null) return;
+        prompt.SetActive(false);
+        promptText = prompt.GetComponentInChildren<Text>(true);
+        if (promptText == null) return;
+        promptTemplate = promptText.text;
+        if (promptTemplate.StartsWith("F:")) promptTemplate = "{Interact}" + promptTemplate.Substring(1);   // scene dựng trước khi có đổi phím
+        RefreshPrompt();
     }
 
-    void OnEnable() => interact?.Enable();
+    void OnEnable()
+    {
+        interact?.Enable();
+        ZodiacInput.Changed += RefreshPrompt;
+    }
+
+    void OnDisable() => ZodiacInput.Changed -= RefreshPrompt;
+
+    void RefreshPrompt()
+    {
+        if (promptText != null) promptText.text = ZodiacInput.Format(promptTemplate);
+    }
 
     void Update()
     {
@@ -34,9 +54,7 @@ public class VillageStation : MonoBehaviour
         if (prompt != null && prompt.activeSelf != near) prompt.SetActive(near);
         if (!near || VillageWindow.IsOpen || InventoryWindow.IsOpen || PauseMenu.IsOpen || StoryUi.IsOpen) return;
         if (Time.frameCount == VillageWindow.ClosedFrame) return;   // F vừa đóng cửa sổ thì không mở lại ngay
-        var kb = Keyboard.current;
-        bool pressed = (kb != null && kb.fKey.wasPressedThisFrame) || (interact != null && interact.WasPressedThisFrame());
-        if (!pressed) return;
+        if (interact == null || !interact.WasPressedThisFrame()) return;
         var res = ZodiacResources.Get;
         if (res != null) ZodiacAudio.Play(res.lantern, 0.4f, 0.05f);
         switch (kind)

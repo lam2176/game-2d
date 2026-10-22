@@ -52,6 +52,7 @@ public class ZodiacStartMenu : MonoBehaviour
 
     void Update()
     {
+        if (SettingsWindow.IsOpen) return;
         if ((levelPanel != null && levelPanel.activeSelf) || (confirmPanel != null && confirmPanel.activeSelf))
         {
             var kb = UnityEngine.InputSystem.Keyboard.current;
@@ -155,6 +156,7 @@ public class ZodiacStartMenu : MonoBehaviour
         // Nút Chơi mới (góc phải trên)
         var newGame = MakeButton(canvasGo.transform, "Chơi mới", new Vector2(1f, 1f), new Vector2(-150f, -60f), new Vector2(240f, 64f), AskNewGame);
         newGame.name = "NewGameButton";
+        MakeButton(canvasGo.transform, "Cài đặt", new Vector2(1f, 1f), new Vector2(-410f, -60f), new Vector2(240f, 64f), OpenSettings).name = "SettingsButton";
 
         levelPanel = Overlay(canvasGo.transform, "LevelPanel", "CHỌN MÀN", 760f, 640f);
         var list = new GameObject("List", typeof(RectTransform));
@@ -190,6 +192,16 @@ public class ZodiacStartMenu : MonoBehaviour
             if (open) first = b.gameObject;   // chọn sẵn màn mới nhất đã mở
         }
         if (EventSystem.current != null && first != null) EventSystem.current.SetSelectedGameObject(first);
+    }
+
+    void OpenSettings()
+    {
+        CloseOverlays();
+        SettingsWindow.Open(() =>
+        {
+            if (EventSystem.current != null && slots != null && shown >= 0 && shown < slots.Length)
+                EventSystem.current.SetSelectedGameObject(slots[shown].gameObject);
+        });
     }
 
     void AskNewGame()

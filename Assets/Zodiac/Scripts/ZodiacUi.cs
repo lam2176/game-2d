@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
@@ -80,13 +81,47 @@ public static class ZodiacUi
         var b = img.gameObject.AddComponent<Button>();
         b.targetGraphic = img;
         var colors = b.colors;
-        colors.highlightedColor = new Color(1f, 0.85f, 0.6f);
+        colors.highlightedColor = colors.selectedColor = new Color(1f, 0.85f, 0.6f);   // ô đang chọn bằng tay cầm / phím cũng sáng
         colors.disabledColor = new Color(0.45f, 0.4f, 0.38f, 0.8f);
         b.colors = colors;
         b.onClick.AddListener(onClick);
         var t = MakeText(img.transform, label, Mathf.RoundToInt(Mathf.Min(28f, size.y * 0.45f)), Color.white, new Vector2(0.5f, 0.5f), Vector2.zero, size);
         Stretch(t.rectTransform);
         return b;
+    }
+
+    /// <summary>Thanh trượt 0–1 (nền nâu, phần đầy vàng, núm trắng) — tay cầm chỉnh bằng ← → khi đang chọn.</summary>
+    public static Slider MakeSlider(Transform parent, Vector2 anchor, Vector2 pos, Vector2 size, float value, UnityAction<float> onChange)
+    {
+        var root = new GameObject("Slider", typeof(RectTransform));
+        root.transform.SetParent(parent, false);
+        Place((RectTransform)root.transform, anchor, pos, size);
+        var back = MakeImage(root.transform, "Back", new Color(0.25f, 0.2f, 0.15f));
+        Stretch(back.rectTransform);
+        var fillArea = new GameObject("Fill Area", typeof(RectTransform));
+        fillArea.transform.SetParent(root.transform, false);
+        Stretch((RectTransform)fillArea.transform);
+        var fill = MakeImage(fillArea.transform, "Fill", Gold);
+        Stretch(fill.rectTransform);
+        var handleArea = new GameObject("Handle Area", typeof(RectTransform));
+        handleArea.transform.SetParent(root.transform, false);
+        Stretch((RectTransform)handleArea.transform);
+        var handle = MakeImage(handleArea.transform, "Handle", Color.white);
+        handle.rectTransform.sizeDelta = new Vector2(24f, 0f);
+        handle.rectTransform.anchorMin = new Vector2(0f, 0f);
+        handle.rectTransform.anchorMax = new Vector2(0f, 1f);
+        var slider = root.AddComponent<Slider>();
+        slider.fillRect = fill.rectTransform;
+        slider.handleRect = handle.rectTransform;
+        slider.targetGraphic = handle;
+        var colors = slider.colors;
+        colors.selectedColor = colors.highlightedColor = new Color(1f, 0.85f, 0.6f);
+        slider.colors = colors;
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.value = value;
+        slider.onValueChanged.AddListener(onChange);
+        return slider;
     }
 
     /// <summary>Ô đồ: viền (màu độ hiếm), nền, biểu tượng, số lượng / cấp ở góc. Bấm gọi onClick.</summary>
@@ -112,6 +147,9 @@ public static class ZodiacUi
         {
             var b = frame.gameObject.AddComponent<Button>();
             b.targetGraphic = frame;
+            var colors = b.colors;
+            colors.selectedColor = new Color(1f, 0.75f, 0.35f);   // ô đang chọn bằng tay cầm ngả vàng
+            b.colors = colors;
             b.onClick.AddListener(onClick);
         }
         return (frame, icon, corner);
@@ -126,6 +164,42 @@ public static class ZodiacUi
         slot.corner.text = def == null ? "" : s.count > 1 ? s.count.ToString() : s.level > 0 ? $"+{s.level}" : "";
         Color border = def != null ? ItemDefinition.RarityColor(def.rarity) : new Color(0.4f, 0.32f, 0.25f);
         slot.frame.color = selected ? Color.white : border;
+    }
+
+    // ───────── Chọn bằng tay cầm ─────────
+
+    /// <summary>Thứ tự của ô đang chọn (EventSystem) trong các ô bấm được dưới root; -1 nếu ô đang chọn ở ngoài.</summary>
+    public static int SelectedIndex(Transform root)
+    {
+        var current = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+        if (current == null) return -1;
+        var list = root.GetComponentsInChildren<Selectable>();
+        for (int i = 0; i < list.Length; i++) if (list[i].gameObject == current) return i;
+        return -1;
+    }
+
+    /// <summary>
+    /// Sau khi dựng lại nội dung dưới root: chọn lại ô cùng thứ tự (gần nhất còn bấm được), hoặc ô đầu nếu chưa chọn gì —
+    /// để tay cầm không bị mất chỗ chọn mỗi lần cửa sổ làm mới. Nội dung cũ phải đã tắt (SetActive false) trước khi Destroy.
+    /// </summary>
+    public static void Reselect(Transform root, int index)
+    {
+        var es = EventSystem.current;
+        if (es == null) return;
+        var current = es.currentSelectedGameObject;
+        if (index < 0 && current != null && current.activeInHierarchy) return;
+        var list = root.GetComponentsInChildren<Selectable>();
+        if (list.Length == 0) return;
+        int start = Mathf.Clamp(index, 0, list.Length - 1);
+        for (int d = 0; d < list.Length; d++)
+        {
+            int i = start + d < list.Length ? start + d : start - 1 - (start + d - list.Length);   // tiến tới cuối rồi lùi về đầu
+            if (list[i].interactable)
+            {
+                es.SetSelectedGameObject(list[i].gameObject);
+                return;
+            }
+        }
     }
 
     public static void Place(RectTransform rt, Vector2 anchor, Vector2 pos, Vector2 size)

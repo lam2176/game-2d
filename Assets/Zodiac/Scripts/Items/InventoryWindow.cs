@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -45,7 +46,7 @@ public partial class InventoryWindow : MonoBehaviour
     readonly List<Slot> equipSlots = new List<Slot>();
     readonly List<Slot> quickSlots = new List<Slot>();
     Image portrait;
-    Text nameText, statsText, detailText, coinsText;
+    Text nameText, statsText, detailText, coinsText, bagHint;
     Button equipButton, useButton, quick1Button, quick2Button, dropButton;
     Text equipLabel;
     bool selectedEquip;
@@ -60,22 +61,51 @@ public partial class InventoryWindow : MonoBehaviour
         window.SetActive(false);
     }
 
-    void OnEnable() => PlayerProfile.Changed += Refresh;
+    void OnEnable()
+    {
+        PlayerProfile.Changed += Refresh;
+        ZodiacInput.Changed += RefreshKeys;
+    }
 
     void OnDisable()
     {
         PlayerProfile.Changed -= Refresh;
+        ZodiacInput.Changed -= RefreshKeys;
         if (IsOpen) Close();
     }
 
-    void Start() => Refresh();
+    void Start()
+    {
+        Refresh();
+        RefreshKeys();
+    }
+
+    /// <summary>Nhãn phím dùng nhanh và dòng gợi ý theo phím đã đổi / thiết bị đang dùng.</summary>
+    void RefreshKeys()
+    {
+        for (int i = 0; i < quickSlots.Count; i++) quickSlots[i].key.text = ZodiacInput.Key(i == 0 ? "Previous" : "Next");
+        if (bagHint != null)
+            bagHint.text = ZodiacInput.UsingGamepad
+                ? $"{ZodiacInput.PadButton("select")}: hành trang · {ZodiacInput.PadButton("start")}: tạm dừng"
+                : "I / Tab: hành trang · Esc: tạm dừng";
+    }
+
+    /// <summary>Chọn sẵn ô đầu của trang đang mở để đi bằng tay cầm.</summary>
+    void SelectFirst()
+    {
+        if (EventSystem.current == null) return;
+        var page = trainPage != null && trainPage.activeSelf ? trainPage : bagPage;
+        var first = page != null ? page.GetComponentInChildren<Selectable>() : null;
+        if (first != null) EventSystem.current.SetSelectedGameObject(first.gameObject);
+    }
 
     void Update()
     {
         var kb = Keyboard.current;
         bool toggle = kb != null && (kb.iKey.wasPressedThisFrame || kb.tabKey.wasPressedThisFrame);
         if (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame) toggle = true;
-        bool escape = kb != null && kb.escapeKey.wasPressedThisFrame;
+        bool escape = (kb != null && kb.escapeKey.wasPressedThisFrame) ||
+                      (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame);   // B tay cầm cũng đóng
         if (IsOpen && (toggle || escape)) Close();
         else if (!IsOpen && toggle && !PauseMenu.IsOpen && !VillageWindow.IsOpen && !StoryUi.IsOpen) Open();
     }
@@ -92,6 +122,7 @@ public partial class InventoryWindow : MonoBehaviour
         if (disabledPlayer) player.SetControlEnabled(false);
         selected = -1;
         Refresh();
+        SelectFirst();
     }
 
     void Close()
@@ -257,12 +288,12 @@ public partial class InventoryWindow : MonoBehaviour
         for (int i = 0; i < PlayerProfile.QuickSlots; i++)
         {
             var s = MakeSlot(root, new Vector2(0f, 0f), new Vector2(70f + i * 92f, 190f), 80f);
-            s.key.text = (i + 1).ToString();
+            s.key.horizontalOverflow = HorizontalWrapMode.Overflow;
             s.frame.color = Gold;
             quickSlots.Add(s);
         }
         coinsText = MakeText(root, "Coins", "", 30, Gold, new Vector2(0f, 0f), new Vector2(30f, 130f), new Vector2(300f, 40f), TextAnchor.MiddleLeft);
-        MakeText(root, "BagHint", "I / Tab: hành trang · Esc: tạm dừng", 20, Ink, new Vector2(0f, 0f), new Vector2(30f, 100f), new Vector2(400f, 30f), TextAnchor.MiddleLeft);
+        bagHint = MakeText(root, "BagHint", "", 20, Ink, new Vector2(0f, 0f), new Vector2(30f, 100f), new Vector2(400f, 30f), TextAnchor.MiddleLeft);
         BuildLevelHud(root);
 
         window = new GameObject("Window", typeof(RectTransform));
@@ -355,6 +386,9 @@ public partial class InventoryWindow : MonoBehaviour
         {
             var b = frame.gameObject.AddComponent<Button>();
             b.targetGraphic = frame;
+            var colors = b.colors;
+            colors.selectedColor = new Color(1f, 0.75f, 0.35f);   // ô đang chọn bằng tay cầm ngả vàng
+            b.colors = colors;
             b.onClick.AddListener(onClick);
         }
         else frame.raycastTarget = false;

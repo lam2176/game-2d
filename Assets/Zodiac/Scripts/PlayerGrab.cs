@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Túm & ném quái (đặc trưng beat 'em up): đứng sát một quái đang choáng, bấm F (tay cầm: Y / North) để túm.
+/// Túm & ném quái (đặc trưng beat 'em up): đứng sát một quái đang choáng, bấm phím Tương tác (mặc định F, tay cầm: Y / North) để túm.
 /// Đang túm: đứng yên, quái bị giữ trước mặt; Q thúc gối (tối đa <see cref="maxKnees"/> lần), Q lần nữa hoặc F thì ném
 /// theo hướng đang nhìn (bấm ← / → để quay). Quái bị ném văng đi, ai nó đâm phải (quái khác, hũ, rương) cũng mất máu
 /// và bị quật ngã. Giữ quá <see cref="holdTime"/> giây hoặc bị đánh trúng thì quái tuột ra.
@@ -55,8 +55,7 @@ public class PlayerGrab : MonoBehaviour
 
     void Update()
     {
-        var kb = Keyboard.current;
-        bool interactPressed = (kb != null && kb.fKey.wasPressedThisFrame) || (interact != null && interact.WasPressedThisFrame());
+        bool interactPressed = interact != null && interact.WasPressedThisFrame();
         if (held == null)
         {
             if (interactPressed && controller.ControlEnabled && !controller.IsOverridden && controller.IsGrounded) TryGrab();
