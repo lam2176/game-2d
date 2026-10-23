@@ -14,10 +14,12 @@ public class BlobShadow : MonoBehaviour
     [Tooltip("Đường kính bóng (unit) khi đứng trên đất.")]
     public float size = 1f;
     [Range(0f, 1f)] public float opacity = 0.4f;
+    [Tooltip("Lõi bóng đậm sát chân (0 = tắt) — làm nhân vật trông đứng hẳn trên đất.")]
+    [Range(0f, 1f)] public float contactOpacity = 0.5f;
     [Tooltip("Cao hơn mặt đất từng này thì bóng nhỏ nhất.")]
     public float fadeHeight = 4f;
 
-    SpriteRenderer sr;
+    SpriteRenderer sr, contact;
     Color baseColor;
 
     void Awake()
@@ -26,6 +28,15 @@ public class BlobShadow : MonoBehaviour
         if (target == null) target = transform.parent;
         if (sr.sprite == null) sr.sprite = ZodiacFx.SoftCircle;
         baseColor = new Color(0f, 0f, 0f, opacity);
+        if (contactOpacity <= 0f) return;
+        var go = new GameObject("Contact");
+        go.transform.SetParent(transform, false);
+        go.transform.localPosition = new Vector3(0f, 0f, -0.002f);
+        go.transform.localScale = new Vector3(0.55f, 0.5f, 1f);
+        contact = go.AddComponent<SpriteRenderer>();
+        contact.sprite = sr.sprite;
+        contact.sharedMaterial = sr.sharedMaterial;
+        contact.sortingOrder = sr.sortingOrder + 1;
     }
 
     void LateUpdate()
@@ -39,5 +50,11 @@ public class BlobShadow : MonoBehaviour
         transform.SetPositionAndRotation(new Vector3(p.x, ground + 0.03f, p.z), Quaternion.Euler(90f, 0f, 0f));
         transform.localScale = new Vector3(size * k, size * 0.55f * k, 1f);
         sr.color = new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * k);
+        // Lõi đậm chỉ rõ khi sát đất — nhảy lên thì tan nhanh hơn bóng ngoài
+        if (contact != null)
+        {
+            float near = 1f - Mathf.Clamp01((p.y - ground) / 0.6f);
+            contact.color = new Color(0f, 0f, 0f, contactOpacity * near);
+        }
     }
 }

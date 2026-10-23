@@ -224,16 +224,21 @@ public class CharacterAnimator : MonoBehaviour
         // Bị quật ngã: ngả ra sau nằm hẳn xuống đất, hết thời gian thì bật dậy
         down = Mathf.MoveTowards(down, player.IsKnockedDown ? 1f : 0f, dt * (player.IsKnockedDown ? 5f : 3.5f));
 
+        // Nhún bước chân bằng co giãn thân (pivot ở bàn chân nên chân luôn bám đất), không nhấc cả người lên
+        float stretch = bob / Mathf.Max(1f, c != null ? c.colliderSize.y : 1.6f);
         // Giữ thể tích: kéo dài trục này thì trục kia co lại một phần
-        float sx = 1f + squash.x - squash.y * 0.5f;
-        float sy = 1f + squash.y - squash.x * 0.5f;
+        float sx = 1f + squash.x - squash.y * 0.5f - stretch * 0.5f;
+        float sy = 1f + squash.y - squash.x * 0.5f + stretch;
         t.localScale = new Vector3(Mathf.Max(0.5f, sx), Mathf.Max(0.5f, sy), 1f);
         t.localRotation = Quaternion.Euler(0f, 0f, lean + wobble + kickAngle + spin + down * 82f);
         // Khi lộn vòng thì xoay quanh giữa thân, không quanh chân
         float halfHeight = c != null ? c.colliderSize.y * 0.5f : 1f;
         Vector3 spinOffset = spin != 0f ? (Vector3)(Vector2.up * halfHeight - (Vector2)(Quaternion.Euler(0, 0, spin) * (Vector2.up * halfHeight))) : Vector3.zero;
-        t.localPosition = new Vector3(0f, bob, 0f) + spinOffset;
+        t.localPosition = new Vector3(0f, -FootSink, 0f) + spinOffset;
     }
+
+    /// <summary>Ấn bàn chân ngập nhẹ vào mặt đường — tránh khe sáng nhỏ giữa chân và đất trông như lơ lửng.</summary>
+    const float FootSink = 0.03f;
 
     void Footstep(float run)
     {

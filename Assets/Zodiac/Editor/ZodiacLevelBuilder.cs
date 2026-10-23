@@ -1345,7 +1345,8 @@ public static partial class ZodiacLevelBuilder
         sr.sprite = fallback.sprite;
         sr.sortingOrder = 10;
         sr.sharedMaterial = ZodiacVisualSetup.SpriteLit3D;
-        sr.shadowCastingMode = ShadowCastingMode.On;
+        // Ảnh con giáp có cả cây và đá vẽ phía sau — bóng thật đổ cả hình cây, tách khỏi chân. Dùng bóng tròn dưới chân thay thế.
+        sr.shadowCastingMode = ShadowCastingMode.Off;
         sr.receiveShadows = true;
 
         var flash = go.AddComponent<HitFlash>();
@@ -1404,7 +1405,8 @@ public static partial class ZodiacLevelBuilder
         shadowSr.sortingOrder = -5;
         var blob = shadowGo.AddComponent<BlobShadow>();
         blob.target = go.transform;
-        blob.size = 1.1f;
+        blob.size = Mathf.Max(1.1f, fallback.colliderSize.x * 1.6f);
+        blob.opacity = 0.5f;
         blob.groundLayers = 1 << ctx.groundLayer;
         return pc;
     }
