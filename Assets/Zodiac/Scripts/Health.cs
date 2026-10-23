@@ -59,6 +59,8 @@ public class Health : MonoBehaviour
     public event Action LastStand;
     /// <summary>Đòn bị chặn (khiên) — không mất máu.</summary>
     public event Action<Hit> Blocked;
+    /// <summary>Đòn tới đúng lúc đang bất tử (lăn né…) — để tính né hoàn hảo.</summary>
+    public event Action<Hit> Evaded;
 
     /// <summary>Trả về true nếu đòn này bị chặn (quái cầm khiên đỡ đòn phía trước).</summary>
     public Func<Hit, bool> Blocks;
@@ -102,7 +104,12 @@ public class Health : MonoBehaviour
     /// <summary>Trừ máu. Trả về false nếu đã chết, đang bất tử hoặc amount ≤ 0.</summary>
     public bool TakeDamage(Hit hit)
     {
-        if (IsDead || IsInvulnerable || hit.amount <= 0) return false;
+        if (IsDead || hit.amount <= 0) return false;
+        if (IsInvulnerable)
+        {
+            Evaded?.Invoke(hit);
+            return false;
+        }
         if (Blocks != null && Blocks(hit))
         {
             Blocked?.Invoke(hit);

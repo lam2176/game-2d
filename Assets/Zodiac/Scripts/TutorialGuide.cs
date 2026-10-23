@@ -37,7 +37,7 @@ public class TutorialGuide : MonoBehaviour
         new Step { text = "{Move} đi  ·  {Lane} đổi làn — đi thử vài bước" },
         new Step { text = "{Jump} nhảy  ·  giữ {Sprint} để chạy nhanh" },
         new Step { text = "{Attack} đánh — bấm liền 3 lần thành chuỗi, đòn cuối quật ngã" },
-        new Step { text = "{Dodge} lăn né — lăn xuyên qua đòn đánh của quái" },
+        new Step { text = "{Dodge} lăn né — lăn đúng lúc quái ra đòn: NÉ HOÀN HẢO, rồi {Attack} phản đòn chí mạng" },
         new Step { text = "{Skill} tung chiêu riêng — tốn Khí, đánh trúng quái để nạp Khí" },
         new Step { text = "Đầy Khí: {Ultimate} tuyệt kỹ  ·  quái choáng: {Interact} túm rồi ném", autoAfter = 7f },
         new Step { text = "Dọn sạch quái để sang khu kế  ·  {Previous} / {Next} uống bình  ·  I / Tab: hành trang", autoAfter = 7f },

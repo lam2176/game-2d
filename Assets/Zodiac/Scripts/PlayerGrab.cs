@@ -55,7 +55,8 @@ public class PlayerGrab : MonoBehaviour
 
     void Update()
     {
-        bool interactPressed = interact != null && interact.WasPressedThisFrame();
+        bool interactPressed = interact != null && interact.WasPressedThisFrame() &&
+                               !(TryGetComponent(out PlayerWeapon w) && w.IsHolding) && Time.frameCount != PlayerWeapon.LastDropFrame;
         if (held == null)
         {
             if (interactPressed && controller.ControlEnabled && !controller.IsOverridden && controller.IsGrounded) TryGrab();

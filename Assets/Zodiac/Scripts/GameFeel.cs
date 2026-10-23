@@ -9,8 +9,11 @@ using UnityEngine;
 public class GameFeel : MonoBehaviour
 {
     static GameFeel host;
-    float freezeUntil;
-    bool freezing;
+    float freezeUntil, slowUntil, slowScale = 1f;
+    bool freezing, slowing;
+
+    /// <summary>Tốc độ thời gian "nền" sau khi đứng hình xong (đang chậm thời gian thì giữ chậm).</summary>
+    float BaseScale => slowing ? slowScale : 1f;
 
     static GameFeel Host
     {
@@ -38,8 +41,30 @@ public class GameFeel : MonoBehaviour
         freezing = true;
         Time.timeScale = 0.02f;
         while (Time.unscaledTime < freezeUntil) yield return null;
-        Time.timeScale = 1f;
+        if (Time.timeScale > 0f) Time.timeScale = BaseScale;   // đang mở menu tạm dừng (0) thì không đè
         freezing = false;
+    }
+
+    /// <summary>Chậm thời gian (né hoàn hảo…) trong seconds giây thật, rồi trở lại bình thường.</summary>
+    public static void SlowMotion(float scale, float seconds)
+    {
+        if (!Application.isPlaying || seconds <= 0f) return;
+        var h = Host;
+        h.slowScale = Mathf.Clamp(scale, 0.05f, 1f);
+        h.slowUntil = Mathf.Max(h.slowUntil, Time.unscaledTime + seconds);
+        if (!h.slowing) h.StartCoroutine(h.Slow());
+    }
+
+    IEnumerator Slow()
+    {
+        slowing = true;
+        while (Time.unscaledTime < slowUntil)
+        {
+            if (!freezing && Time.timeScale > 0f) Time.timeScale = slowScale;
+            yield return null;
+        }
+        slowing = false;
+        if (!freezing && Time.timeScale > 0f) Time.timeScale = 1f;
     }
 
     /// <summary>Rung camera: 0.1 nhẹ (đánh thường) … 0.6 mạnh (boss đập đất).</summary>
@@ -57,6 +82,6 @@ public class GameFeel : MonoBehaviour
 
     void OnDisable()
     {
-        if (freezing) Time.timeScale = 1f;
+        if (freezing || slowing) Time.timeScale = 1f;
     }
 }

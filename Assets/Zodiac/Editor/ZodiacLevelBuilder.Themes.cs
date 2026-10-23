@@ -442,6 +442,7 @@ public static partial class ZodiacLevelBuilder
     /// </summary>
     static void BuildRoomGimmick(Transform room, int index, Stage stage, float xMin, float xMax)
     {
+        BuildRoomWeapons(room, index, xMin);
         switch (def.backdrop)
         {
             case Backdrop.Limestone:
@@ -458,6 +459,70 @@ public static partial class ZodiacLevelBuilder
                 CreateBasket(room, new Vector3(xMin + 12.2f, 0f, def.laneMax - 0.5f));
                 CreateBasket(room, new Vector3(xMin + 2.6f, 0f, def.laneMax - 0.5f));
                 break;
+        }
+    }
+
+    /// <summary>
+    /// Vũ khí nhặt ven đường theo cảnh: làng / đồng / rừng có đòn gánh, đêm (đầm, hồ) có đèn lồng, chợ có đủ cả chum vại,
+    /// hang có chum vại. Khu đầu không đặt (để người chơi làm quen đòn tay không), sau đó khu nào cũng có một món.
+    /// </summary>
+    static void BuildRoomWeapons(Transform room, int index, float xMin)
+    {
+        if (index == 0 && def == Levels[0]) return;
+        WeaponPickup.Kind[] pool = def.backdrop switch
+        {
+            Backdrop.Market => new[] { WeaponPickup.Kind.Jar, WeaponPickup.Kind.Lantern, WeaponPickup.Kind.Pole },
+            Backdrop.Pond or Backdrop.Lakeshore => new[] { WeaponPickup.Kind.Lantern, WeaponPickup.Kind.Pole },
+            Backdrop.Cave or Backdrop.Limestone => new[] { WeaponPickup.Kind.Jar, WeaponPickup.Kind.Lantern },
+            _ => new[] { WeaponPickup.Kind.Pole, WeaponPickup.Kind.Jar },
+        };
+        var kind = pool[(index + rnd.Next(pool.Length)) % pool.Length];
+        CreateWeaponPickup(room, new Vector3(xMin + R(4.5f, 9.5f), 0f, def.laneMin + 0.6f), kind);
+        if (def.backdrop == Backdrop.Market && index % 2 == 1)
+            CreateWeaponPickup(room, new Vector3(xMin + R(10f, 12f), 0f, def.laneMax - 0.7f), pool[(index + 1) % pool.Length]);
+    }
+
+    static void CreateWeaponPickup(Transform room, Vector3 position, WeaponPickup.Kind kind)
+    {
+        var go = new GameObject("Weapon " + WeaponPickup.NameOf(kind));
+        go.transform.SetParent(room, false);
+        go.transform.position = position;
+        var pickup = go.AddComponent<WeaponPickup>();
+        pickup.kind = kind;
+        var v = new GameObject("Visual").transform;
+        v.SetParent(go.transform, false);
+        pickup.visual = v;
+        switch (kind)
+        {
+            case WeaponPickup.Kind.Pole:
+            {
+                var wood = Plain("PoleWood", new Color(0.6f, 0.45f, 0.25f));
+                var rope = Plain("PoleRope", new Color(0.75f, 0.65f, 0.45f));
+                // Đòn gánh nằm ngang ven đường; trong tay thì xoay theo PlayerWeapon
+                Box("Pole", v, position + new Vector3(0f, 0.12f, 0f), new Vector3(2f, 0.1f, 0.1f), wood, 1f);
+                Box("RopeL", v, position + new Vector3(-0.85f, 0.12f, 0f), new Vector3(0.08f, 0.14f, 0.14f), rope, 1f);
+                Box("RopeR", v, position + new Vector3(0.85f, 0.12f, 0f), new Vector3(0.08f, 0.14f, 0.14f), rope, 1f);
+                break;
+            }
+            case WeaponPickup.Kind.Lantern:
+            {
+                var red = Plain("HeldLantern", new Color(0.95f, 0.25f, 0.12f), new Color(0.9f, 0.3f, 0.05f) * 2f);
+                var cap = Plain("LanternCap", new Color(0.35f, 0.2f, 0.1f));
+                Box("Handle", v, position + new Vector3(0f, 0.75f, 0f), new Vector3(0.05f, 0.5f, 0.05f), cap, 1f);
+                var body = Primitive(PrimitiveType.Sphere, "Body", v, position + new Vector3(0f, 0.32f, 0f), new Vector3(0.42f, 0.52f, 0.42f), red);
+                body.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+                Primitive(PrimitiveType.Cylinder, "Cap", v, position + new Vector3(0f, 0.6f, 0f), new Vector3(0.28f, 0.04f, 0.28f), cap);
+                ZodiacLights.AddPoint(body, new Color(1f, 0.5f, 0.25f), 3f, 1.4f);
+                break;
+            }
+            default:
+            {
+                var clay = Plain("ThrowJar", new Color(0.6f, 0.36f, 0.22f));
+                var rim = Plain("ThrowJarRim", new Color(0.35f, 0.2f, 0.12f));
+                Primitive(PrimitiveType.Sphere, "Body", v, position + Vector3.up * 0.35f, new Vector3(0.6f, 0.68f, 0.6f), clay);
+                Primitive(PrimitiveType.Cylinder, "Neck", v, position + Vector3.up * 0.72f, new Vector3(0.32f, 0.07f, 0.32f), rim);
+                break;
+            }
         }
     }
 

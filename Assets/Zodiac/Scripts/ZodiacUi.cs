@@ -175,6 +175,22 @@ public static class ZodiacUi
         slot.frame.color = selected ? Color.white : border;
     }
 
+    /// <summary>Chữ gợi ý nhỏ trong thế giới (quay về camera) trên đầu một vật, vd. "F: nhặt".</summary>
+    public static GameObject WorldPrompt(Transform parent, string text, float height)
+    {
+        var go = new GameObject("Prompt", typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = Vector3.up * height;
+        go.transform.localScale = Vector3.one * 0.01f;
+        var canvas = go.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+        canvas.sortingOrder = 40;
+        ((RectTransform)go.transform).sizeDelta = new Vector2(420f, 50f);
+        go.AddComponent<Billboard>().full = true;
+        MakeText(go.transform, text, 30, Color.white, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 50f)).fontStyle = FontStyle.Bold;
+        return go;
+    }
+
     // ───────── Chọn bằng tay cầm ─────────
 
     /// <summary>Thứ tự của ô đang chọn (EventSystem) trong các ô bấm được dưới root; -1 nếu ô đang chọn ở ngoài.</summary>

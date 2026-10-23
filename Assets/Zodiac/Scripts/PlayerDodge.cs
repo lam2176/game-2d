@@ -7,6 +7,8 @@ using UnityEngine.InputSystem;
 /// Né lăn cho mọi con giáp — action Player/Dodge (L, Ctrl trái, LB tay cầm).
 /// Lăn nhanh theo hướng phím di chuyển — cả đổi làn chéo / vào sâu (không bấm thì theo hướng nhìn),
 /// bất tử suốt lúc lăn, đi xuyên quái và đạn. Trên không được né 1 lần cho tới khi chạm đất.
+/// <b>Né hoàn hảo</b>: đòn của quái tới trong <see cref="perfectWindow"/> giây đầu cú lăn → chậm thời gian, hồi lăn ngay,
+/// +Khí, và đòn đánh kế tiếp trong <see cref="counterTime"/> giây thành <b>phản đòn</b> (chí mạng, gấp đôi, quật ngã).
 /// </summary>
 [RequireComponent(typeof(ZodiacPlayerController))]
 public class PlayerDodge : MonoBehaviour
@@ -16,12 +18,27 @@ public class PlayerDodge : MonoBehaviour
     [Tooltip("Từ lúc kết thúc lăn tới khi lăn được lần nữa (giây).")]
     [Min(0f)] public float cooldown = 0.45f;
 
+    [Header("Né hoàn hảo")]
+    [Tooltip("Đòn tới trong khoảng này (giây) tính từ lúc bắt đầu lăn thì là né hoàn hảo.")]
+    public float perfectWindow = 0.2f;
+    public float slowScale = 0.3f;
+    [Tooltip("Thời gian chậm (giây thật).")]
+    public float slowTime = 0.45f;
+    [Tooltip("Có bao lâu (giây) để tung phản đòn.")]
+    public float counterTime = 1.6f;
+    public int perfectEnergy = 15;
+
     ZodiacPlayerController controller;
     PlayerSkill skill;
     Health health;
     InputAction dodgeAction, moveAction;
-    float readyTime;
+    float readyTime, rollStart = -10f, counterUntil, lastPerfect = -10f;
     bool airDodgeUsed;
+
+    /// <summary>Đang có phản đòn (sau né hoàn hảo).</summary>
+    public bool CounterReady => Time.time < counterUntil;
+    /// <summary>Vừa né hoàn hảo.</summary>
+    public event Action PerfectDodged;
 
     public bool IsDodging { get; private set; }
     public bool IsReady => !IsDodging && Time.time >= readyTime && (controller.IsGrounded || !airDodgeUsed);
@@ -42,7 +59,38 @@ public class PlayerDodge : MonoBehaviour
         if (dodgeAction == null) Debug.LogWarning("Thiếu action Player/Dodge — không lăn né được.", this);
     }
 
-    void OnEnable() => dodgeAction?.Enable();
+    void OnEnable()
+    {
+        dodgeAction?.Enable();
+        if (health != null) health.Evaded += OnEvaded;
+    }
+
+    void OnEvaded(Hit hit)
+    {
+        if (!IsDodging || Time.time - rollStart > perfectWindow || Time.time - lastPerfect < 0.8f) return;
+        lastPerfect = Time.time;
+        counterUntil = Time.time + counterTime;
+        readyTime = 0f;   // hồi lăn ngay
+        GetComponent<PlayerEnergy>()?.Gain(perfectEnergy);
+        GameFeel.SlowMotion(slowScale, slowTime);
+        var c = controller.Character != null ? controller.Character.themeColor : Color.white;
+        Vector3 at = controller.BodyCenter;
+        ZodiacFx.Ring(at, 2.6f, new Color(1f, 1f, 1f, 0.9f), 0.35f);
+        ZodiacFx.Ring(transform.position, 3.2f, new Color(c.r, c.g, c.b, 0.8f), 0.5f, flat: true);
+        ZodiacParticles.Sparkle(at, Color.white, 12, 0.5f);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.block, 0.7f, 0f, at);
+        PickupToast.Show(ZodiacInput.Format("NÉ HOÀN HẢO!  {Attack}: phản đòn"), new Color(1f, 0.95f, 0.6f));
+        PerfectDodged?.Invoke();
+    }
+
+    /// <summary>Dùng phản đòn cho đòn đánh này (nếu có). PlayerMeleeAttack gọi khi đòn trúng.</summary>
+    public bool ConsumeCounter()
+    {
+        if (!CounterReady) return false;
+        counterUntil = 0f;
+        return true;
+    }
 
     void Update()
     {
@@ -70,6 +118,7 @@ public class PlayerDodge : MonoBehaviour
     IEnumerator Roll(Vector3 dir)
     {
         IsDodging = true;
+        rollStart = Time.time;
         Direction = dir;
         if (Mathf.Abs(dir.x) > 0.1f) controller.SetFacing(dir.x);
         controller.SetOverride(true, 0f);
@@ -103,6 +152,7 @@ public class PlayerDodge : MonoBehaviour
 
     void OnDisable()
     {
+        if (health != null) health.Evaded -= OnEvaded;
         if (IsDodging && controller != null) controller.SetOverride(false);
         IsDodging = false;
     }

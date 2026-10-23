@@ -129,7 +129,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         if (attackAction.WasPressedThisFrame() && Time.time >= nextAttackTime && (skill == null || !skill.IsBusy) &&
-            (dodge == null || !dodge.IsDodging) && (grab == null || !grab.IsHolding)) StartSwing();
+            (dodge == null || !dodge.IsDodging) && (grab == null || !grab.IsHolding) && !HoldingWeapon) StartSwing();
 
         if (phase == Phase.Startup && Time.time >= phaseEndTime)
         {
@@ -220,6 +220,10 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
+    PlayerWeapon weapon;
+    /// <summary>Đang cầm vũ khí nhặt được — phím Đánh do <see cref="PlayerWeapon"/> xử lý.</summary>
+    bool HoldingWeapon => (weapon != null || TryGetComponent(out weapon)) && weapon.IsHolding;
+
     void EndSwing()
     {
         if (phase == Phase.Active || phase == Phase.Startup) comboExpires = Time.time + comboWindow;
@@ -243,8 +247,21 @@ public class PlayerMeleeAttack : MonoBehaviour
             Vector3 source = transform.position - Vector3.right * (controller.FacingDirection * 2f);
             Hit hit = CharacterStats.CreateHit(stats, damage * multiplier, source, current.knockback);
             hit.knockdown = current.knockdown;
+            bool counter = dodge != null && dodge.CounterReady;
+            if (counter)
+            {
+                // Phản đòn sau né hoàn hảo: chí mạng, gấp đôi, quật ngã
+                hit.amount *= 2;
+                hit.crit = true;
+                hit.knockdown = true;
+            }
             if (target.TakeDamage(hit))
             {
+                if (counter && dodge.ConsumeCounter())
+                {
+                    ZodiacFx.Ring(col.ClosestPoint(center), 2f, new Color(1f, 0.95f, 0.6f), 0.3f);
+                    GameFeel.Shake(0.4f);
+                }
                 passives?.OnMeleeHit(target, LastKind, LastComboStep, targetLayers, groundLayers);
                 energy?.Gain(current.knockdown ? energy.hitGain * 2 : energy.hitGain);
                 Color spark = controller.Character != null ? controller.Character.themeColor : Color.white;
