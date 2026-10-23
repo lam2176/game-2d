@@ -45,7 +45,7 @@ public class EncounterZone : MonoBehaviour
     public float startDelay = 1.2f;
 
     [Header("Boss (không bắt buộc)")]
-    public BossFoxSpirit boss;
+    public BossBase boss;
     public GameObject bossBar;
     public Text bossNameText;
     public AudioClip bossMusic;

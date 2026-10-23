@@ -789,7 +789,7 @@ public static partial class ZodiacLevelBuilder
             BuildRoomGimmick(go.transform, i, stage, xMin, xMax);
             zone.waves = new EncounterZone.Wave[stage.waves.Length];
             for (int w = 0; w < stage.waves.Length; w++) zone.waves[w] = ParseWave(xMin, xMax, w, stage.waves[w]);
-            if (stage.boss) BuildBoss(zone, xMin, xMax, canvas);
+            if (stage.boss) BuildBoss(zone, xMin, xMax, canvas, stage.bossKind);
             if (stage.secret && !last) BuildSecret(root, go.transform, i, stage, xMax);
             // Cổng đích sát mép phải (như lối ra các khu khác): đánh xong cứ đi sang phải là tới
             if (last) manager.goal = CreateGoal(go.transform, xMax - 0.8f);
@@ -1086,11 +1086,18 @@ public static partial class ZodiacLevelBuilder
         return new EncounterZone.Wave { spawns = spawns.ToArray() };
     }
 
-    static void BuildBoss(EncounterZone zone, float xMin, float xMax, Transform canvas)
+    static void BuildBoss(EncounterZone zone, float xMin, float xMax, Transform canvas, BossKind kind)
     {
-        var go = (GameObject)PrefabUtility.InstantiatePrefab(ctx.prefabs.boss);
+        var prefab = kind switch
+        {
+            BossKind.ThuongLuong => ctx.prefabs.serpent,
+            BossKind.OngBaBi => ctx.prefabs.bogeyman,
+            BossKind.ChanTinh => ctx.prefabs.ogre,
+            _ => ctx.prefabs.boss,
+        };
+        var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
         go.transform.position = new Vector3(Mathf.Lerp(xMin, xMax, 0.72f), 0.05f, LaneCenter);
-        var boss = go.GetComponent<BossFoxSpirit>();
+        var boss = go.GetComponent<BossBase>();
         zone.boss = boss;
         zone.bossMusic = ZodiacVisualSetup.Clip("Music/music_boss");
 

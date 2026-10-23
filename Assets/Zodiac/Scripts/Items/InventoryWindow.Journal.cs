@@ -36,20 +36,20 @@ public partial class InventoryWindow
     void BuildJournal(Transform page)
     {
         var tl = new Vector2(0f, 1f);
-        MakeText(page, "BeastHeader", "QUÁI VẬT ĐÃ GẶP", 28, Gold, tl, new Vector2(280f, -112f), new Vector2(460f, 40f), TextAnchor.MiddleCenter);
+        MakeText(page, "BeastHeader", "QUÁI VẬT ĐÃ GẶP", 28, Gold, tl, new Vector2(280f, -100f), new Vector2(460f, 40f), TextAnchor.MiddleCenter);
         for (int i = 0; i < ZodiacJournal.Beasts.Length; i++)
         {
             int index = i;
-            var row = MakeButton(page, "", tl, new Vector2(280f, -172f - i * 80f), new Vector2(460f, 70f), () => SelectBeast(index));
+            var row = MakeButton(page, "", tl, new Vector2(280f, -150f - i * 58f), new Vector2(460f, 52f), () => SelectBeast(index));   // 10 loại vừa một cột
             row.GetComponent<Image>().color = SlotColor;
             beastIcons[i] = MakeImage(row.transform, "Icon", Color.white);
             beastIcons[i].preserveAspect = true;
             beastIcons[i].raycastTarget = false;
-            Place(beastIcons[i].rectTransform, new Vector2(0f, 0.5f), new Vector2(42f, 0f), new Vector2(60f, 60f));
+            Place(beastIcons[i].rectTransform, new Vector2(0f, 0.5f), new Vector2(34f, 0f), new Vector2(46f, 46f));
             beastNames[i] = row.GetComponentInChildren<Text>();
             beastNames[i].alignment = TextAnchor.MiddleLeft;
-            beastNames[i].rectTransform.offsetMin = new Vector2(88f, 0f);
-            beastNames[i].fontSize = 26;
+            beastNames[i].rectTransform.offsetMin = new Vector2(70f, 0f);
+            beastNames[i].fontSize = 24;
         }
 
         beastArt = MakeImage(page, "BeastArt", Color.white);

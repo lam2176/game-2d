@@ -13,7 +13,7 @@ using UnityEngine;
 ///   S  Bọ Gai (lăn dọc làn)     F  Ma Trơi (bay)     H  Cóc Tía (nhảy đè)
 ///   T  Thạch Sư (tượng phun lửa — đứng ở làn trong cùng)
 /// Thêm "!" trước mã (vd. "!W") = quái trùm (<see cref="MiniBoss"/>): to, trâu, thanh máu riêng, chắc chắn rơi mảnh Đan.
-/// Khu có boss = true thì boss Hồ Tinh đứng chờ sẵn.
+/// Khu có boss = true thì boss (bossKind: Hồ Tinh, Thuồng Luồng, Ông Ba Bị, Chằn Tinh) đứng chờ sẵn.
 /// Khu có secret = true: góc trong mép phải có vật đập vỡ được (bụi tre rậm / vách đá nứt) che lối sang khu bí mật
 /// nằm trong khoảng trống trước khu kế — có rương báu và các đợt quái riêng (secretWaves).
 ///
@@ -30,6 +30,9 @@ public static class ZodiacLevelData
     /// <summary>Khoảng cách giữa mép trái hai khu liền nhau (khu kế nằm ngoài tầm nhìn).</summary>
     public const float RoomSpacing = 36f;
 
+    /// <summary>Boss đứng chờ ở khu có boss = true.</summary>
+    public enum BossKind { HoTinh, ThuongLuong, OngBaBi, ChanTinh }
+
     public class Stage
     {
         public string title;
@@ -41,6 +44,7 @@ public static class ZodiacLevelData
         /// <summary>Số cụm 3 đồng xu trong khu.</summary>
         public int coinRows = 1;
         public bool boss;
+        public BossKind bossKind = BossKind.HoTinh;
         /// <summary>Có khu bí mật (lối ẩn sau vật đập vỡ được ở góc khu). Không dùng cho khu cuối.</summary>
         public bool secret;
         public string secretTitle = "";
@@ -176,6 +180,11 @@ public static class ZodiacLevelData
                 },
                 new Stage("Đầm sen nở", "F F F", "H S Q W"),
                 new Stage("Đình bỏ hoang", "W Q F", "H H S", "!Q") { coinRows = 2 },
+                new Stage("Giữa đầm sâu")
+                {
+                    boss = true, bossKind = BossKind.ThuongLuong, coinRows = 0,
+                    sign = "Thuồng Luồng: gợn sóng bám theo là nó sắp trồi lên — chạy khỏi vòng sáng.\nĐuôi rực là sắp quật sát đất — nhảy! Ngóc cổ là sắp phun — đổi làn.",
+                },
             },
         },
         new LevelDef
@@ -195,6 +204,11 @@ public static class ZodiacLevelData
                 },
                 new Stage("Giếng cổ", "F H W Q", "H S F Q"),
                 new Stage("Cổng chợ", "W W Q", "S S F", "!S") { coinRows = 2 },
+                new Stage("Sân đình chợ")
+                {
+                    boss = true, bossKind = BossKind.OngBaBi, coinRows = 0,
+                    sign = "Ông Ba Bị: vòng đỏ là chỗ bao tải rơi — trúng là bị trùm bao!\nKhom người là sắp vồ — đổi làn. Than hồng hắt ra cháy một lúc, đi vòng.",
+                },
             },
         },
         new LevelDef
@@ -217,6 +231,11 @@ public static class ZodiacLevelData
                 },
                 new Stage("Đền thờ đá", "T T Q W", "F H Q W"),
                 new Stage("Bệ đá cổ", "T W W", "Q F H", "!W") { coinRows = 2 },
+                new Stage("Hang Chằn Tinh")
+                {
+                    boss = true, bossKind = BossKind.ChanTinh, coinRows = 0,
+                    sign = "Chằn Tinh: giơ chùy là sắp nện — lùi ra, nhảy qua sóng chấn.\nCào chân là sắp húc — đổi làn; nó đâm vách thì choáng, đánh ngay!",
+                },
             },
         },
         new LevelDef

@@ -11,11 +11,9 @@ using UnityEngine;
 ///   • Giai đoạn 2 (≤ 50% máu): nhanh hơn, sóng và lửa dày hơn, gọi thêm Ma Trơi.
 /// Chỉ hoạt động sau khi <see cref="Activate"/> (người chơi bước vào đấu trường).
 /// </summary>
-public class BossFoxSpirit : EnemyBase
+public class BossFoxSpirit : BossBase
 {
     enum State { Dormant, Idle, DashWindup, Dash, LeapWindup, Leap, CastWindup, Summon }
-
-    public string bossName = "Hồ Tinh";
 
     [Header("Nhịp đánh")]
     public float idleTime = 1f;
@@ -65,7 +63,7 @@ public class BossFoxSpirit : EnemyBase
     float leapLandAfter;
     Vector3 leapTarget;
 
-    public bool IsActive => state != State.Dormant;
+    public override bool IsActive => state != State.Dormant;
     public bool IsPhase2 => phase2;
     public string CurrentState => state.ToString();
     public event Action PhaseChanged;
@@ -81,7 +79,7 @@ public class BossFoxSpirit : EnemyBase
         if (landingMarker != null && landingMarker.sprite == null) landingMarker.sprite = ZodiacFx.RingSprite;
     }
 
-    public void Activate()
+    public override void Activate()
     {
         if (state != State.Dormant || health.IsDead) return;
         EnterIdle(1.2f);
@@ -279,13 +277,6 @@ public class BossFoxSpirit : EnemyBase
         ZodiacFx.Ring(origin, 1.2f, fireColor, 0.25f);
         var res = ZodiacResources.Get;
         if (res != null) ZodiacAudio.Play(res.fireball, 0.9f, 0.1f, origin);
-    }
-
-    void Roar()
-    {
-        GameFeel.Shake(0.4f);
-        var res = ZodiacResources.Get;
-        if (res != null) ZodiacAudio.Play(res.bossRoar, 1f, 0f, transform.position);
     }
 
     void SummonMinions()

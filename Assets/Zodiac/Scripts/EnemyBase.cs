@@ -470,7 +470,7 @@ public abstract class EnemyBase : MonoBehaviour
     /// <summary>Túm được không: đang choáng, đứng trên đất, quật ngã được, không phải boss / trùm.</summary>
     public bool CanBeGrabbed =>
         !health.IsDead && !knockedDown && !held && canBeKnockedDown && rb.useGravity && !rb.isKinematic &&
-        IsStunned && !grabImmune && !(this is BossFoxSpirit);
+        IsStunned && !grabImmune && !(this is BossBase);
 
     /// <summary>Người chơi túm: đứng im trong tay, không tự hành động.</summary>
     public void Grab()
@@ -553,7 +553,7 @@ public abstract class EnemyBase : MonoBehaviour
         else
         {
             // XP theo máu gốc (trước khi độ khó / tinh anh nhân lên) rồi nhân thưởng
-            int baseXp = xpReward > 0 ? xpReward : Progression.XpFor(Mathf.RoundToInt(health.maxHealth / Mathf.Max(0.01f, hpScaleApplied)), this is BossFoxSpirit);
+            int baseXp = xpReward > 0 ? xpReward : Progression.XpFor(Mathf.RoundToInt(health.maxHealth / Mathf.Max(0.01f, hpScaleApplied)), this is BossBase);
             PlayerProfile.Current.AddXp(player.Character.name, Mathf.RoundToInt(baseXp * rewardScale));
         }
         ZodiacParticles.Debris(body.bounds.center, DebrisColor, 14, body.bounds.extents.x);
