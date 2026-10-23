@@ -19,6 +19,13 @@ public static class ZodiacUi
     static Font font;
     public static Font Font => font != null ? font : font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
+    /// <summary>Tiếng gõ mõ nhỏ khi bấm nút (gắn vào mọi nút dựng bằng code).</summary>
+    public static void Click()
+    {
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.uiClick, 0.5f, 0.04f);
+    }
+
     /// <summary>Canvas overlay 1920×1080 co giãn theo màn hình, có bắt chuột.</summary>
     public static Transform Canvas(Transform parent, string name, int sortingOrder)
     {
@@ -84,6 +91,7 @@ public static class ZodiacUi
         colors.highlightedColor = colors.selectedColor = new Color(1f, 0.85f, 0.6f);   // ô đang chọn bằng tay cầm / phím cũng sáng
         colors.disabledColor = new Color(0.45f, 0.4f, 0.38f, 0.8f);
         b.colors = colors;
+        b.onClick.AddListener(Click);
         b.onClick.AddListener(onClick);
         var t = MakeText(img.transform, label, Mathf.RoundToInt(Mathf.Min(28f, size.y * 0.45f)), Color.white, new Vector2(0.5f, 0.5f), Vector2.zero, size);
         Stretch(t.rectTransform);
@@ -150,6 +158,7 @@ public static class ZodiacUi
             var colors = b.colors;
             colors.selectedColor = new Color(1f, 0.75f, 0.35f);   // ô đang chọn bằng tay cầm ngả vàng
             b.colors = colors;
+            b.onClick.AddListener(Click);
             b.onClick.AddListener(onClick);
         }
         return (frame, icon, corner);

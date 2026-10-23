@@ -166,6 +166,21 @@ public static class ZodiacVisualSetup
         Fill(ref res.win, "Synth/win");
         Fill(ref res.lose, "Synth/lose");
         if (res.musicMenu == null) res.musicMenu = Clip("Music/music_menu");
+        Fill(ref res.anvil, "Synth/anvil_*");
+        Fill(ref res.forgeSuccess, "Synth/forge_success");
+        Fill(ref res.forgeBreak, "Synth/forge_break");
+        Fill(ref res.coinsHandle, "SFX/handleCoins");
+        Fill(ref res.page, "Synth/page_*");
+        Fill(ref res.uiClick, "Synth/ui_click");
+        if (res.fireLoop == null) res.fireLoop = Clip("Synth/fire_loop");
+        if (res.enemyArt == null || res.enemyArt.Length == 0 || res.enemyArt.Any(s => s == null))
+            res.enemyArt = AssetDatabase.FindAssets("t:Sprite", new[] { ZodiacEnemyArt.Folder })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(p => Path.GetDirectoryName(p).Replace('\\', '/') == ZodiacEnemyArt.Folder)   // bỏ thư mục Raw
+                .Distinct()
+                .Select(AssetDatabase.LoadAssetAtPath<Sprite>)
+                .Where(s => s != null)
+                .ToArray();
         EditorUtility.SetDirty(res);
         AssetDatabase.SaveAssets();
         return res;

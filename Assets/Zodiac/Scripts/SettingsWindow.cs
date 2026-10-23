@@ -19,7 +19,7 @@ public class SettingsWindow : MonoBehaviour
 
     Action onClosed;
     int openedFrame;
-    Text fullscreenText, resolutionText, qualityText, frameText, fpsText, statusText, moveText;
+    Text fullscreenText, resolutionText, qualityText, frameText, fpsText, tutorialText, statusText, moveText;
     readonly Text[] keyboardTexts = new Text[ZodiacInput.Rebindable.Length];
     readonly Text[] padTexts = new Text[ZodiacInput.Rebindable.Length];
     GameObject firstSelected;
@@ -81,6 +81,7 @@ public class SettingsWindow : MonoBehaviour
         qualityText.text = $"Đồ hoạ: {ZodiacSettings.QualityLabel}";
         frameText.text = $"Khung hình: {ZodiacSettings.FrameCapLabel}";
         fpsText.text = $"Hiện FPS: {(ZodiacSettings.ShowFps ? "Bật" : "Tắt")}";
+        tutorialText.text = TutorialGuide.Done ? "Xem lại hướng dẫn (ở màn 1)" : "Hướng dẫn: sẽ hiện ở màn 1";
         for (int i = 0; i < ZodiacInput.Rebindable.Length; i++)
         {
             string action = ZodiacInput.Rebindable[i].action;
@@ -150,8 +151,9 @@ public class SettingsWindow : MonoBehaviour
         qualityText = Option(panel, new Vector2(left, -50f), size, () => { ZodiacSettings.CycleQuality(); Refresh(); });
         frameText = Option(panel, new Vector2(left, -125f), size, () => { ZodiacSettings.CycleFrameCap(); Refresh(); });
         fpsText = Option(panel, new Vector2(left, -200f), size, () => { ZodiacSettings.ToggleFps(); Refresh(); });
+        tutorialText = Option(panel, new Vector2(left, -275f), size, () => { TutorialGuide.ResetDone(); Refresh(); });
         ZodiacUi.MakeText(panel, "Đồ hoạ Thấp: tắt bớt bóng đổ và hiệu ứng — dùng khi máy giật.\nF3: bật / tắt FPS nhanh trong lúc chơi.",
-                          20, ZodiacUi.Muted, mid, new Vector2(left, -280f), new Vector2(560f, 60f));
+                          20, ZodiacUi.Muted, mid, new Vector2(left, -330f), new Vector2(560f, 50f));
 
         // Cột phải: phím điều khiển
         const float right = 330f, keyX = right + 40f, padX = right + 280f;

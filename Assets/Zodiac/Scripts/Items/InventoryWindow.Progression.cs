@@ -28,6 +28,7 @@ public partial class InventoryWindow
     {
         bagPage.SetActive(!training);
         trainPage.SetActive(training);
+        journalPage.SetActive(false);
         selected = -1;
         Refresh();
         SelectFirst();
