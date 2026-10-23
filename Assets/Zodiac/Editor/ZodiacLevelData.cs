@@ -22,7 +22,8 @@ using UnityEngine;
 /// </summary>
 public static class ZodiacLevelData
 {
-    public enum Backdrop { Village, Bamboo, Cave }
+    /// <summary>Kiểu cảnh — mỗi màn mới có bộ cảnh riêng (xem ZodiacLevelBuilder.Themes).</summary>
+    public enum Backdrop { Village, Bamboo, Cave, Field, Pond, Market, Limestone, Lakeshore }
 
     /// <summary>Bề ngang một khu (unit) — bằng khung hình 16:9 tại làn giữa.</summary>
     public const float RoomWidth = 15f;
@@ -110,7 +111,7 @@ public static class ZodiacLevelData
         new LevelDef
         {
             sceneName = "Zodiac_Level04", title = "Màn 2 — Cánh Đồng Lúa", subtitle = "Lúa chín vàng, đống rơm và miếu thổ địa",
-            nextScene = "Zodiac_Level02", backdrop = Backdrop.Village,
+            nextScene = "Zodiac_Level02", backdrop = Backdrop.Field,
             sky = new Color(1.00f, 0.80f, 0.55f), far = new Color(0.76f, 0.68f, 0.55f), mid = new Color(0.72f, 0.64f, 0.30f),
             soil = new Color(0.58f, 0.42f, 0.26f), grass = new Color(0.78f, 0.68f, 0.28f), stone = new Color(0.70f, 0.60f, 0.46f),
             plank = new Color(0.82f, 0.64f, 0.34f),
@@ -161,7 +162,7 @@ public static class ZodiacLevelData
         new LevelDef
         {
             sceneName = "Zodiac_Level05", title = "Màn 4 — Đầm Sen", subtitle = "Đêm trên đầm, cầu tre và thuyền đắm",
-            nextScene = "Zodiac_Level06", backdrop = Backdrop.Bamboo,
+            nextScene = "Zodiac_Level06", backdrop = Backdrop.Pond,
             sky = new Color(0.14f, 0.18f, 0.32f), far = new Color(0.20f, 0.28f, 0.38f), mid = new Color(0.18f, 0.36f, 0.34f),
             soil = new Color(0.32f, 0.32f, 0.28f), grass = new Color(0.26f, 0.48f, 0.38f), stone = new Color(0.42f, 0.46f, 0.48f),
             plank = new Color(0.56f, 0.58f, 0.38f),
@@ -180,7 +181,7 @@ public static class ZodiacLevelData
         new LevelDef
         {
             sceneName = "Zodiac_Level06", title = "Màn 5 — Chợ Phiên Ma", subtitle = "Chợ đêm Ba Mươi vắng tanh, chỉ còn lính tuần",
-            nextScene = "Zodiac_Level07", backdrop = Backdrop.Village,
+            nextScene = "Zodiac_Level07", backdrop = Backdrop.Market,
             sky = new Color(0.56f, 0.40f, 0.56f), far = new Color(0.44f, 0.38f, 0.52f), mid = new Color(0.42f, 0.42f, 0.40f),
             soil = new Color(0.48f, 0.38f, 0.32f), grass = new Color(0.42f, 0.50f, 0.34f), stone = new Color(0.60f, 0.52f, 0.52f),
             plank = new Color(0.72f, 0.50f, 0.32f),
@@ -199,7 +200,7 @@ public static class ZodiacLevelData
         new LevelDef
         {
             sceneName = "Zodiac_Level07", title = "Màn 6 — Hang Đá Vôi", subtitle = "Nhũ đá, mạch nước ngầm và đền thờ đá",
-            nextScene = "Zodiac_Level08", backdrop = Backdrop.Cave,
+            nextScene = "Zodiac_Level08", backdrop = Backdrop.Limestone,
             sky = new Color(0.30f, 0.22f, 0.16f), far = new Color(0.45f, 0.34f, 0.24f), mid = new Color(0.52f, 0.40f, 0.28f),
             soil = new Color(0.50f, 0.40f, 0.30f), grass = new Color(0.56f, 0.48f, 0.30f), stone = new Color(0.66f, 0.56f, 0.44f),
             plank = new Color(0.62f, 0.44f, 0.28f),
@@ -207,7 +208,7 @@ public static class ZodiacLevelData
             {
                 new Stage("Cửa hang", "T W", "W Q W")
                 {
-                    sign = "Vách đá nứt có thể đánh vỡ — sau đó đôi khi là lối bí mật",
+                    sign = "Nhũ đá trên trần rung lên là sắp rơi — vòng đỏ dưới chân báo chỗ rơi.\nLăn ra khỏi vòng, hoặc dụ quái đứng vào đó!",
                 },
                 new Stage("Nhũ đá", "H S T", "F W W") { hazard = true },
                 new Stage("Mạch nước ngầm", "F F W Q", "S H F")
@@ -221,7 +222,7 @@ public static class ZodiacLevelData
         new LevelDef
         {
             sceneName = "Zodiac_Level08", title = "Màn 7 — Bờ Hồ Tây", subtitle = "Đêm ven hồ, bãi lau và chùa cổ",
-            nextScene = "Zodiac_Level03", backdrop = Backdrop.Village,
+            nextScene = "Zodiac_Level03", backdrop = Backdrop.Lakeshore,
             sky = new Color(0.12f, 0.14f, 0.26f), far = new Color(0.18f, 0.24f, 0.36f), mid = new Color(0.22f, 0.32f, 0.32f),
             soil = new Color(0.36f, 0.32f, 0.30f), grass = new Color(0.28f, 0.42f, 0.34f), stone = new Color(0.46f, 0.46f, 0.52f),
             plank = new Color(0.58f, 0.46f, 0.30f),
