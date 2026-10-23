@@ -14,6 +14,7 @@ public class LootEntry
 /// <summary>
 /// Đồ rơi trên đất (quái chết, lính đánh rơi khiên/giáo): nảy ra rồi nằm nhấp nhô, có cột sáng màu theo độ hiếm,
 /// người chơi lại gần thì bị hút về và cất vào túi (<see cref="PlayerProfile"/>). Túi đầy thì nằm lại chờ.
+/// Đồ người chơi tự vứt (<see cref="discarded"/>) không bị hút lại — đứng gần bấm phím Tương tác mới nhặt.
 /// Đồng xu rơi thì cộng thẳng vào tiền.
 /// </summary>
 public class LootPickup : MonoBehaviour
@@ -24,7 +25,12 @@ public class LootPickup : MonoBehaviour
     [Tooltip("Số đồng (khi là đồng xu rơi).")]
     public int coins;
 
+    /// <summary>Đồ người chơi vứt khỏi túi: không tự hút, phải bấm phím Tương tác để nhặt lại.</summary>
+    [System.NonSerialized] public bool discarded;
+
     const float MagnetRadius = 1.8f;
+    const float ManualRadius = 1.4f;
+    GameObject prompt;
     const float PickRadius = 0.6f;
 
     Vector3 velocity;
@@ -107,7 +113,8 @@ public class LootPickup : MonoBehaviour
         Vector3 target = player != null ? player.BodyCenter : transform.position;
         float dist = player != null ? Vector3.Distance(target, transform.position) : float.MaxValue;
         float magnet = MagnetRadius + PlayerPassives.CoinMagnet * (item == null ? 1f : 0.5f);
-        if (age > 0.5f && Time.time >= retryAt && player != null && player.ControlEnabled && dist <= magnet) attracted = true;
+        if (discarded) UpdateManualPickup(player, dist);
+        else if (age > 0.5f && Time.time >= retryAt && player != null && player.ControlEnabled && dist <= magnet) attracted = true;
 
         if (attracted)
         {
@@ -132,6 +139,37 @@ public class LootPickup : MonoBehaviour
         {
             visual.localPosition = Vector3.up * (Mathf.Sin(Time.time * 3f + bobPhase) * 0.08f);
         }
+    }
+
+    /// <summary>Đồ đã vứt: đứng gần thì hiện "F: nhặt lại", bấm phím Tương tác thì hút về như thường.</summary>
+    void UpdateManualPickup(ZodiacPlayerController player, float dist)
+    {
+        bool near = !attracted && player != null && player.ControlEnabled && dist <= ManualRadius && Time.time >= retryAt;
+        if (near && prompt == null) prompt = MakePrompt();
+        if (prompt != null && prompt.activeSelf != near) prompt.SetActive(near);
+        if (!near || InventoryWindow.IsOpen || PauseMenu.IsOpen) return;
+        var interact = ZodiacInput.Find("Interact");
+        if (interact != null && interact.WasPressedThisFrame())
+        {
+            attracted = true;
+            prompt.SetActive(false);
+        }
+    }
+
+    GameObject MakePrompt()
+    {
+        var go = new GameObject("PickupPrompt", typeof(RectTransform));
+        go.transform.SetParent(transform, false);
+        go.transform.localPosition = Vector3.up * 0.9f;
+        go.transform.localScale = Vector3.one * 0.01f;
+        var canvas = go.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+        canvas.sortingOrder = 40;
+        ((RectTransform)go.transform).sizeDelta = new Vector2(360f, 50f);
+        go.AddComponent<Billboard>().full = true;
+        ZodiacUi.MakeText(go.transform, ZodiacInput.Format("{Interact}: nhặt lại"), 30, Color.white, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(360f, 50f))
+            .fontStyle = FontStyle.Bold;
+        return go;
     }
 
     void KeepInRoom()

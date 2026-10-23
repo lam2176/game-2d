@@ -103,8 +103,8 @@ public class KillCount
 [Serializable]
 public class PlayerProfile
 {
-    /// <summary>2: đồ trang bị là từng món (cấp đập, dòng phụ), tiến trình nhân vật, màn đã mở.</summary>
-    public const int CurrentVersion = 2;
+    /// <summary>2: đồ trang bị là từng món (cấp đập, dòng phụ), tiến trình nhân vật, màn đã mở. 3: tặng phụ kiện khởi đầu.</summary>
+    public const int CurrentVersion = 3;
     public const int BagSize = 30;
     public const int QuickSlots = 2;
     /// <summary>Thứ tự ô trang bị.</summary>
@@ -175,6 +175,7 @@ public class PlayerProfile
         var p = new PlayerProfile { version = CurrentVersion };
         p.bag[0] = new ItemStack { id = "binh_mau_nho", count = 3 };
         p.quick[0] = "binh_mau_nho";
+        if (!p.GiveStarterAccessories()) p.version = 2;   // chưa có dữ liệu đồ: tặng ở lần mở sau
         return p;
     }
 
@@ -211,7 +212,26 @@ public class PlayerProfile
             }
             foreach (var e in extra) PlaceSilently(e);
         }
-        version = CurrentVersion;
+        bool starterOk = version >= 3 || GiveStarterAccessories();
+        version = starterOk ? CurrentVersion : 2;
+    }
+
+    /// <summary>
+    /// Mặc sẵn Vòng bạc trừ tà (ô Bùa) và Ngọc trai (ô Ngọc) nếu các ô đó đang trống — để ô phụ kiện có đồ dùng ngay.
+    /// Trả về false nếu cơ sở dữ liệu đồ chưa có hai món này (chưa dựng lại tài nguyên).
+    /// </summary>
+    bool GiveStarterAccessories()
+    {
+        if (ItemDatabase.Get("vong_bac") == null || ItemDatabase.Get("ngoc_trai") == null) return false;
+        (string id, EquipSlot slot)[] gifts = { ("vong_bac", EquipSlot.Charm), ("ngoc_trai", EquipSlot.Gem) };
+        foreach (var (id, slot) in gifts)
+        {
+            int index = Array.IndexOf(EquipSlots, slot);
+            if (index < 0) continue;
+            if (equipped[index] == null || equipped[index].IsEmpty) equipped[index] = new ItemStack { id = id, count = 1 };
+            else PlaceSilently(new ItemStack { id = id, count = 1 });
+        }
+        return true;
     }
 
     /// <summary>Bỏ hồ sơ đang có, bắt đầu lại từ đầu (chơi mới).</summary>

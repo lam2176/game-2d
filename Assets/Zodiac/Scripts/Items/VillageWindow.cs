@@ -16,7 +16,7 @@ using UnityEngine.UI;
 public class VillageWindow : MonoBehaviour
 {
     public enum Mode { Forge, Shop, Gate }
-    enum ShopTab { Buy, Sell, Craft }
+    enum ShopTab { Buy, Accessory, Sell, Craft }
 
     public static bool IsOpen { get; private set; }
     public static int ClosedFrame { get; private set; } = -1;
@@ -304,17 +304,18 @@ public class VillageWindow : MonoBehaviour
 
     void BuildShop(PlayerProfile p)
     {
-        string[] tabs = { "Mua", "Bán", "Luyện đan" };
+        string[] tabs = { "Thuốc", "Phụ kiện", "Bán", "Luyện đan" };
         for (int i = 0; i < tabs.Length; i++)
         {
             var tab = (ShopTab)i;
-            var b = ZodiacUi.MakeButton(content, tabs[i], new Vector2(0.5f, 1f), new Vector2(-260f + i * 260f, -115f), new Vector2(240f, 54f),
+            var b = ZodiacUi.MakeButton(content, tabs[i], new Vector2(0.5f, 1f), new Vector2(-390f + i * 260f, -115f), new Vector2(240f, 54f),
                                         () => { shopTab = tab; selected = -1; resultText = ""; Refresh(); });
             if (tab == shopTab) b.GetComponent<Image>().color = new Color(0.9f, 0.6f, 0.15f);
         }
         switch (shopTab)
         {
             case ShopTab.Buy: BuildBuy(p); break;
+            case ShopTab.Accessory: BuildAccessories(p); break;
             case ShopTab.Sell: BuildSell(p); break;
             default: BuildCraft(p); break;
         }
@@ -342,6 +343,45 @@ public class VillageWindow : MonoBehaviour
             });
             buy.interactable = p.coins >= price;
         }
+    }
+
+    /// <summary>Quầy phụ kiện: hai cột, mỗi món có chỉ số, số đang có và nút mua. Mua xong vào túi, mặc ở hành trang.</summary>
+    void BuildAccessories(PlayerProfile p)
+    {
+        for (int i = 0; i < Shop.Accessories.Length; i++)
+        {
+            var (id, price) = Shop.Accessories[i];
+            var def = ItemDatabase.Get(id);
+            if (def == null) continue;
+            float x = i % 2 == 0 ? 90f : 830f, y = -215f - (i / 2) * 118f;
+            var slot = ZodiacUi.MakeSlot(content, new Vector2(0f, 1f), new Vector2(x + 30f, y), 84f, null);
+            ZodiacUi.Fill(slot, new ItemStack { id = id, count = 1 }, false);
+            var stats = new System.Text.StringBuilder();
+            foreach (var m in def.modifiers) stats.Append(stats.Length > 0 ? " · " : "").Append(ItemDefinition.ModifierText(m));
+            int owned = OwnedCount(p, id);
+            string color = ColorUtility.ToHtmlStringRGB(ItemDefinition.RarityColor(def.rarity));
+            ZodiacUi.MakeText(content, $"<b><color=#{color}>{def.displayName}</color></b>  <size=18>({ItemDefinition.SlotName(def.slot)}{(owned > 0 ? $" · đang có {owned}" : "")})</size>\n" +
+                                       $"<size=20><color=#9fe39a>{stats}</color></size>",
+                              24, ZodiacUi.Ink, new Vector2(0f, 1f), new Vector2(x + 300f, y), new Vector2(420f, 90f), TextAnchor.MiddleLeft);
+            var buy = ZodiacUi.MakeButton(content, $"{price} đồng", new Vector2(0f, 1f), new Vector2(x + 610f, y), new Vector2(170f, 56f), () =>
+            {
+                bool ok = Shop.Buy(PlayerProfile.Current, id, price);
+                resultText = ok ? $"<color=#9fe39a>Đã mua {def.displayName} — mở hành trang (I) để mặc.</color>" : "<color=#ff8a7a>Không đủ đồng hoặc túi đầy.</color>";
+                if (ok && ZodiacResources.Get != null) Sound(ZodiacResources.Get.coinsHandle, ZodiacResources.Get.coin);
+                Refresh();
+            });
+            buy.interactable = p.coins >= price;
+        }
+        ZodiacUi.MakeText(content, "Bùa mặc ở ô Bùa, ngọc mặc được hai viên. Bùa bảo hộ / Ngọc may mắn là nguyên liệu lò rèn, không mặc được.",
+                          20, ZodiacUi.Muted, new Vector2(0.5f, 0f), new Vector2(0f, 95f), new Vector2(1400f, 30f));
+        Result();
+    }
+
+    static int OwnedCount(PlayerProfile p, string id)
+    {
+        int n = p.CountOf(id);
+        foreach (var e in p.equipped) if (!e.IsEmpty && e.id == id) n++;
+        return n;
     }
 
     void BuildSell(PlayerProfile p)

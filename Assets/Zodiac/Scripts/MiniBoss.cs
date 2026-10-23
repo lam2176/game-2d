@@ -20,7 +20,7 @@ public class MiniBoss : MonoBehaviour
         { "Enemy_ThachSu", "Sư Đá Canh Đền" },
     };
 
-    static readonly string[] Rewards = { "bua_bao_ho", "ngoc_may_man", "binh_khi", "binh_mau_nho" };
+    static readonly string[] Rewards = { "bua_bao_ho", "ngoc_may_man", "ho_phach", "bua_ho_phu", "ngoc_lam", "ngoc_do" };
 
     EnemyBase enemy;
     GameObject bar;
