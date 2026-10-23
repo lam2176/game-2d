@@ -66,7 +66,9 @@ public static class ZodiacLevelData
         public Stage[] stages = System.Array.Empty<Stage>();
         /// <summary>Làng Trung Tâm: không có khu / quái, có các điểm Lò rèn, Tiệm thuốc, Bàn thờ, Cổng làng.</summary>
         public bool hub;
-        public float hubLength = 36f;
+        public float hubLength = 40f;
+        /// <summary>Tháp Mười Hai Canh Giờ: một đấu trường, TowerRun sinh quái theo tầng.</summary>
+        public bool tower;
 
         /// <summary>Mép trái khu thứ i.</summary>
         public float RoomX(int i) => 4f + i * RoomSpacing;
@@ -82,6 +84,17 @@ public static class ZodiacLevelData
         sky = new Color(0.98f, 0.86f, 0.66f), far = new Color(0.62f, 0.72f, 0.70f), mid = new Color(0.55f, 0.70f, 0.40f),
         soil = new Color(0.66f, 0.5f, 0.34f), grass = new Color(0.42f, 0.68f, 0.32f), stone = new Color(0.68f, 0.6f, 0.5f),
         plank = new Color(0.80f, 0.62f, 0.32f),
+    };
+
+    /// <summary>Tháp Mười Hai Canh Giờ — vào từ trạm Tháp canh giờ trong làng (sau khi qua màn 2).</summary>
+    public static readonly LevelDef Tower = new LevelDef
+    {
+        sceneName = "Zodiac_Tower", title = "Tháp Mười Hai Canh Giờ", subtitle = "Vượt tầng vô tận — mỗi tầng một canh giờ, một luật lạ",
+        backdrop = Backdrop.Cave, tower = true,
+        sky = new Color(0.22f, 0.12f, 0.16f), far = new Color(0.32f, 0.18f, 0.22f), mid = new Color(0.4f, 0.22f, 0.24f),
+        soil = new Color(0.42f, 0.3f, 0.28f), grass = new Color(0.5f, 0.32f, 0.3f), stone = new Color(0.55f, 0.42f, 0.38f),
+        plank = new Color(0.62f, 0.4f, 0.26f),
+        stages = new[] { new Stage("Đấu trường canh giờ") { coinRows = 0 } },
     };
 
     public static readonly LevelDef[] Levels =

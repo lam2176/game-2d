@@ -82,8 +82,16 @@ public class PlayerEquipment : MonoBehaviour
         if (quick2 != null && quick2.WasPressedThisFrame()) UseQuick(1);
     }
 
+    /// <summary>Luật tháp "Gà gáy": cấm dùng bình thuốc.</summary>
+    public static bool QuickUseBlocked;
+
     public void UseQuick(int index)
     {
+        if (QuickUseBlocked)
+        {
+            PickupToast.Show("Canh Dậu — không được dùng bình thuốc!", new Color(1f, 0.5f, 0.4f));
+            return;
+        }
         var profile = PlayerProfile.Current;
         string id = profile.quick[index];
         if (string.IsNullOrEmpty(id)) return;

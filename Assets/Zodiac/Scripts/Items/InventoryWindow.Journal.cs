@@ -152,6 +152,6 @@ public partial class InventoryWindow
         foreach (var beast in beasts) if (profile.KillsOf(beast.id) > 0) known2++;
         journalSummary.text = $"Đã hạ {profile.TotalKills} quái · biết {known2}/{beasts.Length} loại\n" +
                               $"Phá đảo {endings}/12 con giáp" + (endings >= 12 ? " — đã thấy kết thúc thật" : "") +
-                              $"\nMàn đã mở: {profile.unlockedLevels}";
+                              $"\nMàn đã mở: {profile.unlockedLevels}" + (profile.towerBest > 0 ? $" · Tháp: {profile.towerBest} tầng" : "");
     }
 }

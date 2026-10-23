@@ -129,6 +129,9 @@ public class PlayerProfile
     public List<string> endingsSeen = new List<string>();
     [Tooltip("Số quái đã hạ theo loại — trang Sổ ghi chép.")]
     public List<KillCount> kills = new List<KillCount>();
+    [Tooltip("Tháp Mười Hai Canh Giờ: số tầng cao nhất đã qua và con giáp lập kỷ lục.")]
+    public int towerBest;
+    public string towerBestCharacter = "";
 
     static PlayerProfile current;
 
@@ -487,6 +490,16 @@ public class PlayerProfile
         var k = kills.Find(x => x.id == id);
         if (k == null) kills.Add(k = new KillCount { id = id });
         k.count++;
+    }
+
+    /// <summary>Ghi kỷ lục tháp (lưu ngay nếu phá kỷ lục). Trả về true nếu là kỷ lục mới.</summary>
+    public bool RecordTower(int floors, string character)
+    {
+        if (floors <= towerBest) return false;
+        towerBest = floors;
+        towerBestCharacter = character ?? "";
+        Commit();
+        return true;
     }
 
     public int KillsOf(string id) => kills.Find(x => x.id == id)?.count ?? 0;
