@@ -69,7 +69,7 @@ public static class ZodiacCharacterDefs
         new Def
         {
             file = "Tiger_Dan", ultimate = "Mãnh Hổ Hạ Sơn", ultimateDesc = "Vồ lên cao, đáp xuống giữa đám quái đông nhất (80 sát thương, quật ngã) rồi gầm: choáng cả khu, công +30% trong 8 giây.", display = "Hổ", zodiac = "Dần", instrument = "Trống cơm", theme = new Color(0.95f, 0.5f, 0.1f),
-            pivot = new Vector2(0.441f, 0.007f), height = 2.2f, collider = new Vector2(0.8f, 1.75f),
+            pivot = new Vector2(0.441f, 0.014f), height = 2.2f, collider = new Vector2(0.8f, 1.75f),
             hp = 5, attack = 2, jump = 3.3f,
             passive = "Mãnh hổ", passiveDesc = "Đòn đánh thường mạnh gấp đôi (40 sát thương).",
             skill = Hold(Skill(SkillType.Dash, "Hổ Vồ", 2.5f, 3,
@@ -90,7 +90,7 @@ public static class ZodiacCharacterDefs
         new Def
         {
             file = "Dragon_Thin", ultimate = "Long Thần Hoả", ultimateDesc = "Đứng phun lửa rồng 1.6 giây: 22 cầu lửa xuyên thấu toả theo chiều sâu.", display = "Rồng", zodiac = "Thìn", instrument = "Đàn tranh", theme = new Color(0.95f, 0.75f, 0.2f),
-            pivot = new Vector2(0.631f, 0.004f), height = 2.3f, collider = new Vector2(0.85f, 1.8f),
+            pivot = new Vector2(0.631f, 0.011f), height = 2.3f, collider = new Vector2(0.85f, 1.8f),
             hp = 6, jump = 4f,
             fireball = true, passive = "Thăng long", passiveDesc = "Nhảy cao nhất, có 120 máu; đòn kết combo phun thêm một cầu lửa nhỏ về phía trước.",
             skill = Hold(Skill(SkillType.Projectile, "Long Hoả", 2.2f, 1,
@@ -141,7 +141,7 @@ public static class ZodiacCharacterDefs
         new Def
         {
             file = "Rooster_Dau", ultimate = "Kim Kê Báo Hiệu", ultimateDesc = "Bình minh bừng sáng cả khu: choáng 3.5 giây, xoá sạch đạn địch, quái nhận thêm 50% sát thương trong 6 giây.", display = "Gà", zodiac = "Dậu", instrument = "Kèn", theme = new Color(0.9f, 0.3f, 0.2f),
-            pivot = new Vector2(0.432f, 0.057f), height = 1.95f, collider = new Vector2(0.8f, 1.45f),
+            pivot = new Vector2(0.432f, 0.025f), height = 1.95f, collider = new Vector2(0.8f, 1.45f),
             hp = 5, glide = 2.2f,
             airStun = 0.6f, passive = "Cánh phượng", passiveDesc = "Giữ Space khi rơi để lượn chậm; đá bay trúng quái làm choáng thêm 0.6 giây.",
             skill = Hold(Skill(SkillType.Burst, "Kèn Hiệu Bình Minh", 5f, 1,
@@ -161,7 +161,7 @@ public static class ZodiacCharacterDefs
         new Def
         {
             file = "Pig_Hoi", ultimate = "Bát Giới Trấn Sơn", ultimateDesc = "Hút cả khu về trước mặt rồi bật lên dậm đất: 90 sát thương, quật ngã mọi quái quanh mình.", display = "Heo", zodiac = "Hợi", instrument = "Sáo trúc", theme = new Color(0.95f, 0.5f, 0.6f),
-            pivot = new Vector2(0.519f, 0.018f), height = 1.95f, collider = new Vector2(1f, 1.45f),
+            pivot = new Vector2(0.519f, 0.006f), height = 1.95f, collider = new Vector2(1f, 1.45f),
             hp = 6, walk = 4.5f, run = 7.5f, stompMult = 2,
             passive = "Phúc hậu", passiveDesc = "120 máu; đá bay (nhảy + Q) gây gấp đôi sát thương.",
             skill = Hold(Skill(SkillType.GroundPound, "Heo Dậm Đất", 3f, 3,
