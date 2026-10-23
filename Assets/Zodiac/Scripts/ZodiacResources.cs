@@ -43,6 +43,24 @@ public class ZodiacResources : ScriptableObject
     public AudioClip[] lose;
     public AudioClip musicMenu;
 
+    [Header("Âm thanh — làng, giao diện")]
+    [Tooltip("Búa gõ đe (lò rèn).")]
+    public AudioClip[] anvil;
+    public AudioClip[] forgeSuccess;
+    [Tooltip("Đập hỏng tụt cấp / phân giải.")]
+    public AudioClip[] forgeBreak;
+    [Tooltip("Tiếng đếm tiền (mua bán ở tiệm).")]
+    public AudioClip[] coinsHandle;
+    [Tooltip("Lật trang (sổ ghi chép, hướng dẫn).")]
+    public AudioClip[] page;
+    public AudioClip[] uiClick;
+    [Tooltip("Lửa lò rèn — lặp liên tục, phát 3D quanh lò rèn trong làng.")]
+    public AudioClip fireLoop;
+
+    [Header("Sổ ghi chép")]
+    [Tooltip("Ảnh quái (Art/Enemies) — sổ ghi chép tìm theo tên file.")]
+    public Sprite[] enemyArt;
+
     static ZodiacResources instance;
     static bool searched;
 

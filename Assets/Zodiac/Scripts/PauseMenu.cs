@@ -178,6 +178,7 @@ public class PauseMenu : MonoBehaviour
         var colors = b.colors;
         colors.highlightedColor = colors.selectedColor = new Color(1f, 0.85f, 0.6f);
         b.colors = colors;
+        b.onClick.AddListener(ZodiacUi.Click);
         b.onClick.AddListener(onClick);
         var t = Label(img.transform, label, 28, Color.white, Vector2.zero, new Vector2(420f, 62f));
         Stretch(t.rectTransform);

@@ -23,6 +23,7 @@ public class VillageStation : MonoBehaviour
     void Awake()
     {
         interact = InputSystem.actions.FindAction("Player/Interact");
+        if (kind == Kind.Forge && GetComponent<ForgeAmbience>() == null) gameObject.AddComponent<ForgeAmbience>();
         if (prompt == null) return;
         prompt.SetActive(false);
         promptText = prompt.GetComponentInChildren<Text>(true);

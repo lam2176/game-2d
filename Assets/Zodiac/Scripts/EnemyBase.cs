@@ -545,7 +545,9 @@ public abstract class EnemyBase : MonoBehaviour
         ReleaseToken();
         LootPickup.DropFrom(loot, coinDrop, transform.position, rewardScale);
         if (Elite != null) Elite.DropBonus(transform.position);
-        if (player != null && player.Character != null)
+        PlayerProfile.Current.RecordKill(ZodiacJournal.IdOf(gameObject));
+        if (player == null || player.Character == null) PlayerProfile.Current.Save();
+        else
         {
             // XP theo máu gốc (trước khi độ khó / tinh anh nhân lên) rồi nhân thưởng
             int baseXp = xpReward > 0 ? xpReward : Progression.XpFor(Mathf.RoundToInt(health.maxHealth / Mathf.Max(0.01f, hpScaleApplied)), this is BossFoxSpirit);

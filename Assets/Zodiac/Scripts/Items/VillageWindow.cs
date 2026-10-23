@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -36,6 +37,7 @@ public class VillageWindow : MonoBehaviour
     bool useCharm, useLuck;
     string resultText = "";
     int openedFrame;
+    bool hammering;
 
     void Awake()
     {
@@ -124,6 +126,10 @@ public class VillageWindow : MonoBehaviour
         if (clip != null) ZodiacAudio.Play(clip, volume, 0.05f);
     }
 
+    /// <summary>Phát clip mới; chưa dựng lại tài nguyên (mảng trống) thì dùng clip cũ thay thế.</summary>
+    void Sound(AudioClip[] clip, AudioClip[] fallback, float volume = 0.7f) =>
+        Sound(clip != null && clip.Length > 0 ? clip : fallback, volume);
+
     // ───────── Lò rèn ─────────
 
     void BuildForge(PlayerProfile p)
@@ -188,7 +194,7 @@ public class VillageWindow : MonoBehaviour
                                          new Vector2(1160f, -620f), new Vector2(500f, 50f), () => { useLuck = !useLuck; Refresh(); });
             bl.interactable = lucks > 0;
             var hammer = ZodiacUi.MakeButton(content, "ĐẬP!", new Vector2(0f, 1f), new Vector2(1060f, -700f), new Vector2(300f, 70f), DoUpgrade);
-            hammer.interactable = Forge.CanAfford(p, cost);
+            hammer.interactable = Forge.CanAfford(p, cost) && !hammering;
         }
         if (!selectedEquipped)
         {
@@ -208,6 +214,7 @@ public class VillageWindow : MonoBehaviour
 
     void Select(bool equipped, int index)
     {
+        if (hammering) return;   // đang gõ búa thì không đổi món
         selectedEquipped = equipped;
         selected = index;
         resultText = "";
@@ -215,6 +222,38 @@ public class VillageWindow : MonoBehaviour
     }
 
     void DoUpgrade()
+    {
+        if (!hammering) StartCoroutine(Hammer());
+    }
+
+    /// <summary>Ba nhát búa gõ đe (game đang tạm dừng nên đợi theo giờ thật) rồi mới ra kết quả — cho hồi hộp.</summary>
+    IEnumerator Hammer()
+    {
+        hammering = true;
+        resultText = "<color=#ffcf8a>Keng…</color>";
+        Refresh();
+        var res = ZodiacResources.Get;
+        for (int i = 0; i < 3; i++)
+        {
+            if (res != null) Sound(res.anvil, res.block, 0.55f + 0.15f * i);
+            GameFeel.Shake(0.05f + 0.03f * i);
+            yield return new WaitForSecondsRealtime(0.32f);
+            if (!IsOpen)
+            {
+                hammering = false;
+                yield break;
+            }
+            if (i < 2)
+            {
+                resultText = i == 0 ? "<color=#ffcf8a>Keng… keng…</color>" : "<color=#ffcf8a>Keng… keng… KENG!</color>";
+                Refresh();
+            }
+        }
+        hammering = false;
+        ApplyUpgrade();
+    }
+
+    void ApplyUpgrade()
     {
         var p = PlayerProfile.Current;
         var res = ZodiacResources.Get;
@@ -225,7 +264,7 @@ public class VillageWindow : MonoBehaviour
         {
             case Forge.Result.Success:
                 resultText = $"<color=#ffd84d>THÀNH CÔNG!  {s.DisplayName}</color>";
-                if (res != null) { Sound(res.block, 1f); Sound(res.win, 0.6f); }
+                if (res != null) { Sound(res.forgeSuccess, res.win, 0.9f); Sound(res.block, 0.5f); }
                 GameFeel.Shake(0.25f);
                 break;
             case Forge.Result.FailKeep:
@@ -234,11 +273,11 @@ public class VillageWindow : MonoBehaviour
                 break;
             case Forge.Result.Protected:
                 resultText = "<color=#9fd3ff>Hỏng — Bùa bảo hộ giữ được cấp!</color>";
-                if (res != null) Sound(res.hurt);
+                if (res != null) { Sound(res.hurt); Sound(res.lantern, 0.6f); }
                 break;
             case Forge.Result.FailDrop:
                 resultText = $"<color=#ff8a7a>Hỏng! Tụt xuống {s.DisplayName}</color>";
-                if (res != null) Sound(res.lose, 0.6f);
+                if (res != null) Sound(res.forgeBreak, res.lose, 0.8f);
                 GameFeel.Shake(0.2f);
                 break;
             case Forge.Result.NotEnough:
@@ -255,7 +294,7 @@ public class VillageWindow : MonoBehaviour
         {
             resultText = "<color=#c8b8a8>Đã phân giải.</color>";
             var res = ZodiacResources.Get;
-            if (res != null) Sound(res.enemyDeath);
+            if (res != null) Sound(res.forgeBreak, res.enemyDeath, 0.5f);
         }
         selected = -1;
         Refresh();
@@ -298,7 +337,7 @@ public class VillageWindow : MonoBehaviour
             {
                 bool ok = Shop.Buy(PlayerProfile.Current, id, price);
                 resultText = ok ? $"<color=#9fe39a>Đã mua {def.displayName}.</color>" : "<color=#ff8a7a>Không đủ đồng hoặc túi đầy.</color>";
-                if (ok && ZodiacResources.Get != null) Sound(ZodiacResources.Get.coin);
+                if (ok && ZodiacResources.Get != null) Sound(ZodiacResources.Get.coinsHandle, ZodiacResources.Get.coin);
                 Refresh();
             });
             buy.interactable = p.coins >= price;
@@ -329,7 +368,7 @@ public class VillageWindow : MonoBehaviour
             if (Shop.Sell(p2, selected))
             {
                 resultText = $"<color=#9fe39a>+{price} đồng</color>";
-                if (ZodiacResources.Get != null) Sound(ZodiacResources.Get.coin);
+                if (ZodiacResources.Get != null) Sound(ZodiacResources.Get.coinsHandle, ZodiacResources.Get.coin);
             }
             if (p2.bag[selected].IsEmpty) selected = -1;
             Refresh();

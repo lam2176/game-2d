@@ -135,6 +135,7 @@ public class ZodiacGameManager : MonoBehaviour
         // Lần đầu vào làng: tranh kể chuyện mở đầu
         if (isHub && !PlayerProfile.Current.HasSeen("intro"))
             StoryUi.ShowPanels(ZodiacStory.Intro, () => PlayerProfile.Current.MarkSeen("intro"));
+        TutorialGuide.TryStart(this);   // màn 1, lần đầu: hướng dẫn từng thao tác
     }
 
     string CharacterKey => player != null && player.Character != null ? player.Character.name : "";

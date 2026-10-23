@@ -94,7 +94,7 @@ public partial class InventoryWindow : MonoBehaviour
     void SelectFirst()
     {
         if (EventSystem.current == null) return;
-        var page = trainPage != null && trainPage.activeSelf ? trainPage : bagPage;
+        var page = journalPage != null && journalPage.activeSelf ? journalPage : trainPage != null && trainPage.activeSelf ? trainPage : bagPage;
         var first = page != null ? page.GetComponentInChildren<Selectable>() : null;
         if (first != null) EventSystem.current.SetSelectedGameObject(first.gameObject);
     }
@@ -158,6 +158,7 @@ public partial class InventoryWindow : MonoBehaviour
         RefreshLevelHud(profile);
         if (!IsOpen) return;
         RefreshTraining(profile);
+        RefreshJournal(profile);
 
         var player = ZodiacPlayerController.Current;
         if (player != null && player.Character != null)
@@ -306,8 +307,9 @@ public partial class InventoryWindow : MonoBehaviour
         Place(panel.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1560f, 860f));
         panel.gameObject.AddComponent<Outline>().effectColor = Gold;
         var panelRoot = panel.transform;
-        MakeButton(panelRoot, "Hành trang", new Vector2(0.5f, 1f), new Vector2(-160f, -45f), new Vector2(280f, 60f), () => ShowPage(false));
-        MakeButton(panelRoot, "Tu luyện", new Vector2(0.5f, 1f), new Vector2(160f, -45f), new Vector2(280f, 60f), () => ShowPage(true));
+        MakeButton(panelRoot, "Hành trang", new Vector2(0.5f, 1f), new Vector2(-320f, -45f), new Vector2(280f, 60f), () => ShowPage(false));
+        MakeButton(panelRoot, "Tu luyện", new Vector2(0.5f, 1f), new Vector2(0f, -45f), new Vector2(280f, 60f), () => ShowPage(true));
+        MakeButton(panelRoot, "Sổ ghi chép", new Vector2(0.5f, 1f), new Vector2(320f, -45f), new Vector2(280f, 60f), ShowJournal);
         bagPage = new GameObject("BagPage", typeof(RectTransform));
         bagPage.transform.SetParent(panelRoot, false);
         Stretch((RectTransform)bagPage.transform);
@@ -316,6 +318,11 @@ public partial class InventoryWindow : MonoBehaviour
         Stretch((RectTransform)trainPage.transform);
         BuildTraining(trainPage.transform);
         trainPage.SetActive(false);
+        journalPage = new GameObject("JournalPage", typeof(RectTransform));
+        journalPage.transform.SetParent(panelRoot, false);
+        Stretch((RectTransform)journalPage.transform);
+        BuildJournal(journalPage.transform);
+        journalPage.SetActive(false);
         var p = bagPage.transform;
 
         // Trái: chân dung, trang bị, chỉ số
@@ -389,6 +396,7 @@ public partial class InventoryWindow : MonoBehaviour
             var colors = b.colors;
             colors.selectedColor = new Color(1f, 0.75f, 0.35f);   // ô đang chọn bằng tay cầm ngả vàng
             b.colors = colors;
+            b.onClick.AddListener(ZodiacUi.Click);
             b.onClick.AddListener(onClick);
         }
         else frame.raycastTarget = false;
@@ -402,8 +410,9 @@ public partial class InventoryWindow : MonoBehaviour
         var b = img.gameObject.AddComponent<Button>();
         b.targetGraphic = img;
         var colors = b.colors;
-        colors.highlightedColor = new Color(1f, 0.85f, 0.6f);
+        colors.highlightedColor = colors.selectedColor = new Color(1f, 0.85f, 0.6f);
         b.colors = colors;
+        b.onClick.AddListener(ZodiacUi.Click);
         b.onClick.AddListener(onClick);
         var t = MakeText(img.transform, "Label", label, 24, Color.white, new Vector2(0.5f, 0.5f), Vector2.zero, size, TextAnchor.MiddleCenter);
         Stretch(t.rectTransform);

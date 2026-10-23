@@ -247,6 +247,7 @@ public class ZodiacStartMenu : MonoBehaviour
         colors.selectedColor = new Color(1f, 0.85f, 0.6f);
         colors.disabledColor = new Color(0.5f, 0.45f, 0.42f, 0.8f);
         b.colors = colors;
+        b.onClick.AddListener(ZodiacUi.Click);
         b.onClick.AddListener(onClick);
         var t = MakeLabel(img.transform, label, 32, Color.white, new Vector2(0.5f, 0.5f), Vector2.zero, size);
         var trt = t.rectTransform;

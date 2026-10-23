@@ -86,6 +86,14 @@ public class CharacterProgress
     public const int PillBonus = 20;
 }
 
+/// <summary>Số quái đã hạ của một loại (sổ ghi chép) — id theo tên prefab, vd. "Enemy_LinhKhien".</summary>
+[Serializable]
+public class KillCount
+{
+    public string id = "";
+    public int count;
+}
+
 /// <summary>
 /// Hồ sơ người chơi giữ qua các màn: túi đồ (<see cref="BagSize"/> ô), 5 ô trang bị (vũ khí, giáp, bùa, 2 ngọc),
 /// 2 ô dùng nhanh (phím 1, 2 — trỏ tới loại đồ dùng trong túi), tiền đồng, tiến trình từng con giáp và màn đã mở.
@@ -119,6 +127,8 @@ public class PlayerProfile
     public List<string> storySeen = new List<string>();
     [Tooltip("Con giáp đã phá đảo (đã xem kết thúc riêng) — đủ 12 thì có kết thúc thật.")]
     public List<string> endingsSeen = new List<string>();
+    [Tooltip("Số quái đã hạ theo loại — trang Sổ ghi chép.")]
+    public List<KillCount> kills = new List<KillCount>();
 
     static PlayerProfile current;
 
@@ -177,6 +187,7 @@ public class PlayerProfile
         characters ??= new List<CharacterProgress>();
         storySeen ??= new List<string>();
         endingsSeen ??= new List<string>();
+        kills ??= new List<KillCount>();
         foreach (var arr in new[] { bag, equipped })
             for (int i = 0; i < arr.Length; i++)
             {
@@ -447,6 +458,27 @@ public class PlayerProfile
         if (string.IsNullOrEmpty(key) || storySeen.Contains(key)) return;
         storySeen.Add(key);
         Commit();
+    }
+
+    /// <summary>Ghi nhận hạ một quái (không lưu ngay — lần cộng XP / nhặt đồ kế tiếp sẽ lưu cùng).</summary>
+    public void RecordKill(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return;
+        var k = kills.Find(x => x.id == id);
+        if (k == null) kills.Add(k = new KillCount { id = id });
+        k.count++;
+    }
+
+    public int KillsOf(string id) => kills.Find(x => x.id == id)?.count ?? 0;
+
+    public int TotalKills
+    {
+        get
+        {
+            int n = 0;
+            foreach (var k in kills) n += k.count;
+            return n;
+        }
     }
 
     /// <summary>Ghi nhận phá đảo với con giáp này. Trả về true nếu giờ đã đủ cả 12 (lần đầu đủ hoặc xem lại).</summary>
