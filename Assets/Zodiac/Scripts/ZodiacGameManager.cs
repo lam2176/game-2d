@@ -66,7 +66,13 @@ public class ZodiacGameManager : MonoBehaviour
     public State Current { get; private set; } = State.Playing;
     public Checkpoint ActiveCheckpoint { get; private set; }
     public int RoomIndex { get; private set; } = -1;
-    public EncounterZone Room => RoomIndex >= 0 && RoomIndex < rooms.Length ? rooms[RoomIndex] : null;
+    /// <summary>Khu đang đứng: khu bí mật nếu đang ở trong đó, không thì khu chính thứ RoomIndex.</summary>
+    public EncounterZone Room => secretRoom != null ? secretRoom : RoomIndex >= 0 && RoomIndex < rooms.Length ? rooms[RoomIndex] : null;
+    public bool InSecret => secretRoom != null;
+
+    EncounterZone secretRoom;
+    Vector3 secretReturn;
+    System.Action secretReturned;
 
     int collected, total, coinsTowardHeal;
     /// <summary>Chỗ hồi sinh (đèn lồng) khi tải lại màn — dịch chuyển hẳn ở Start (Rigidbody đã sẵn sàng).</summary>
@@ -225,6 +231,57 @@ public class ZodiacGameManager : MonoBehaviour
             playerHealth?.SetInvulnerable(1f);
             EnterRoom(next, 0.95f);
         }, 0.35f, "Đang tới khu tiếp theo…" + (string.IsNullOrEmpty(target.title) ? "" : $"\n<size=32>{target.title}</size>"), 0.5f);
+    }
+
+    /// <summary>Đi vào lối bí mật: tối màn hình, sang khu bí mật (không tính vào số khu của màn).</summary>
+    public void EnterSecret(EncounterZone zone, Vector3 returnPoint, System.Action onReturned)
+    {
+        if (Current != State.Playing || zone == null || secretRoom != null) return;
+        secretReturn = returnPoint;
+        secretReturned = onReturned;
+        player.SetControlEnabled(false);
+        ScreenFader.Blink(() =>
+        {
+            if (Current != State.Playing) return;
+            secretRoom = zone;
+            player.SetControlEnabled(true);
+            player.Teleport(zone.entry);
+            player.SetFacing(1f);
+            playerHealth?.SetInvulnerable(1f);
+            LockCamera(zone);
+            if (roomBanner != null)
+            {
+                roomBanner.text = "Khu bí mật" + (string.IsNullOrEmpty(zone.title) ? "" : $"\n<size=34>{zone.title}</size>");
+                if (roomBanner.TryGetComponent(out TimedFade fade)) fade.Restart();
+            }
+            zone.Begin();
+        }, 0.35f, "Lối bí mật…", 0.5f);
+    }
+
+    /// <summary>Đi vào lối ra của khu bí mật: về chỗ lối vào trong khu chính.</summary>
+    public void LeaveSecret()
+    {
+        if (Current != State.Playing || secretRoom == null) return;
+        player.SetControlEnabled(false);
+        ScreenFader.Blink(() =>
+        {
+            if (Current != State.Playing) return;
+            secretRoom = null;
+            player.SetControlEnabled(true);
+            player.Teleport(secretReturn);
+            player.SetFacing(-1f);
+            if (Room != null) LockCamera(Room);
+            secretReturned?.Invoke();
+            secretReturned = null;
+        }, 0.35f, "", 0.4f);
+    }
+
+    static void LockCamera(EncounterZone zone)
+    {
+        var follow = FindAnyObjectByType<ZodiacCameraFollow>();
+        if (follow == null) return;
+        follow.Lock(zone.xMin, zone.xMax);
+        follow.SnapToTarget();
     }
 
     /// <summary>Dính bẫy (gai, lửa): trừ máu, bị đẩy ra khỏi bẫy.</summary>

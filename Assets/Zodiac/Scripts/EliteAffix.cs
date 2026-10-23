@@ -31,6 +31,9 @@ public class EliteAffix : MonoBehaviour
     /// <summary>Báo khu đang đánh có thêm quái (phân thân) để khu chưa coi là dọn xong.</summary>
     public Action<Health> spawned;
 
+    /// <summary>Chữ tên trên đầu (trùm đổi thành tên riêng).</summary>
+    public Text Label { get; private set; }
+
     EnemyBase enemy;
     Health health;
     SpriteRenderer aura;
@@ -96,6 +99,8 @@ public class EliteAffix : MonoBehaviour
         label.AddComponent<Billboard>().full = true;
         var t = ZodiacUi.MakeText(label.transform, $"Tinh anh · {Names[(int)kind]}", 34, c, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 60f));
         t.fontStyle = FontStyle.Bold;
+        t.horizontalOverflow = HorizontalWrapMode.Overflow;
+        Label = t;
     }
 
     void Update()

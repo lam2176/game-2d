@@ -464,10 +464,13 @@ public abstract class EnemyBase : MonoBehaviour
 
     // ───────── Bị túm / ném ─────────
 
-    /// <summary>Túm được không: đang choáng, đứng trên đất, quật ngã được, không phải boss.</summary>
+    /// <summary>Không cho túm (quái trùm <see cref="MiniBoss"/>).</summary>
+    [System.NonSerialized] public bool grabImmune;
+
+    /// <summary>Túm được không: đang choáng, đứng trên đất, quật ngã được, không phải boss / trùm.</summary>
     public bool CanBeGrabbed =>
         !health.IsDead && !knockedDown && !held && canBeKnockedDown && rb.useGravity && !rb.isKinematic &&
-        IsStunned && !(this is BossFoxSpirit);
+        IsStunned && !grabImmune && !(this is BossFoxSpirit);
 
     /// <summary>Người chơi túm: đứng im trong tay, không tự hành động.</summary>
     public void Grab()

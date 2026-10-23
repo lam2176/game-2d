@@ -23,6 +23,8 @@ public class EncounterZone : MonoBehaviour
         public Vector3 position;
         [Tooltip("Ra sau đầu đợt bao lâu (giây).")]
         public float delay;
+        [Tooltip("Quái trùm (MiniBoss): to, trâu, có thanh máu riêng, chắc chắn rơi mảnh Đan.")]
+        public bool miniBoss;
     }
 
     [Serializable]
@@ -123,8 +125,11 @@ public class EncounterZone : MonoBehaviour
         if (go.TryGetComponent(out EnemyBase enemy))
         {
             enemy.alwaysAggro = true;
-            enemy.ApplyScaling(ZodiacDifficulty.HealthScale, ZodiacDifficulty.DamageScale, ZodiacDifficulty.LootScale);
-            if (UnityEngine.Random.value < ZodiacDifficulty.EliteChance || ForceElite)
+            float depth = LevelDepth;
+            enemy.ApplyScaling(ZodiacDifficulty.HealthScale * depth, ZodiacDifficulty.DamageScale * (1f + (depth - 1f) * 0.6f),
+                               ZodiacDifficulty.LootScale * (1f + (depth - 1f) * 0.5f));
+            if (spawn.miniBoss) MiniBoss.Make(enemy, spawn.prefab, Track);
+            else if (UnityEngine.Random.value < ZodiacDifficulty.EliteChance || ForceElite)
                 EliteAffix.Make(enemy, EliteAffix.RandomKind(), spawn.prefab, Track);
         }
         if (go.TryGetComponent(out Health h)) alive.Add(h);
@@ -135,6 +140,18 @@ public class EncounterZone : MonoBehaviour
     public void Track(Health h)
     {
         if (h != null) alive.Add(h);
+    }
+
+    /// <summary>
+    /// Màn càng về sau quái càng trâu: +9% máu mỗi màn (sát thương +5,4%, đồ rơi +4,5%) — người chơi cũng đã lên cấp, đập đồ.
+    /// </summary>
+    static float LevelDepth
+    {
+        get
+        {
+            var gm = ZodiacGameManager.Instance;
+            return 1f + 0.09f * (gm != null ? Mathf.Max(0, gm.levelIndex) : 0);
+        }
     }
 
     /// <summary>Mọi quái sinh ra đều là tinh anh (kiểm thử).</summary>

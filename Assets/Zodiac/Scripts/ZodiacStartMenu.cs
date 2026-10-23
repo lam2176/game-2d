@@ -158,10 +158,10 @@ public class ZodiacStartMenu : MonoBehaviour
         newGame.name = "NewGameButton";
         MakeButton(canvasGo.transform, "Cài đặt", new Vector2(1f, 1f), new Vector2(-410f, -60f), new Vector2(240f, 64f), OpenSettings).name = "SettingsButton";
 
-        levelPanel = Overlay(canvasGo.transform, "LevelPanel", "CHỌN MÀN", 760f, 640f);
+        levelPanel = Overlay(canvasGo.transform, "LevelPanel", "CHỌN MÀN", 1320f, 760f);
         var list = new GameObject("List", typeof(RectTransform));
         list.transform.SetParent(levelPanel.transform.Find("Box"), false);
-        Place((RectTransform)list.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -10f), new Vector2(680f, 420f));
+        Place((RectTransform)list.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -10f), new Vector2(1240f, 520f));
         levelList = list.transform;
         MakeButton(levelPanel.transform.Find("Box"), "Quay lại", new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(260f, 64f), CloseOverlays);
         levelPanel.SetActive(false);
@@ -186,8 +186,10 @@ public class ZodiacStartMenu : MonoBehaviour
             int index = i;
             bool open = i < unlocked;
             string title = i < levelTitles.Length ? levelTitles[i] : levelScenes[i];
-            var b = MakeButton(levelList, open ? title : $"{title}  (chưa mở)", new Vector2(0.5f, 1f), new Vector2(0f, -50f - i * 100f),
-                               new Vector2(640f, 80f), () => ScreenFader.LoadScene(levelScenes[index]));
+            // Hai cột: màn lẻ bên trái, màn chẵn bên phải
+            var b = MakeButton(levelList, open ? title : $"{title}  (chưa mở)", new Vector2(0.5f, 1f),
+                               new Vector2(i % 2 == 0 ? -310f : 310f, -45f - (i / 2) * 96f),
+                               new Vector2(590f, 80f), () => ScreenFader.LoadScene(levelScenes[index]));
             b.interactable = open;
             if (open) first = b.gameObject;   // chọn sẵn màn mới nhất đã mở
         }

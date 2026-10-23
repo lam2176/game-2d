@@ -407,8 +407,10 @@ public class VillageWindow : MonoBehaviour
             int index = i;
             bool open = i < p.unlockedLevels;
             string title = i < levelTitles.Length ? levelTitles[i] : levelScenes[i];
-            var b = ZodiacUi.MakeButton(content, open ? title : $"{title}  (chưa mở)", new Vector2(0.5f, 1f), new Vector2(0f, -200f - i * 110f),
-                                        new Vector2(700f, 84f), () =>
+            // Hai cột cho đủ chỗ 8 màn
+            var b = ZodiacUi.MakeButton(content, open ? title : $"{title}  (chưa mở)", new Vector2(0.5f, 1f),
+                                        new Vector2(i % 2 == 0 ? -360f : 360f, -180f - (i / 2) * 94f),
+                                        new Vector2(680f, 80f), () =>
                                         {
                                             Close();
                                             ScreenFader.LoadScene(levelScenes[index]);
@@ -417,7 +419,7 @@ public class VillageWindow : MonoBehaviour
         }
 
         // Độ khó
-        float y = -230f - levelScenes.Length * 110f;
+        float y = -200f - (levelScenes.Length + 1) / 2 * 94f;
         ZodiacUi.MakeText(content, "Độ khó", 32, ZodiacUi.Gold, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(600f, 44f)).fontStyle = FontStyle.Bold;
         for (int d = 0; d < ZodiacDifficulty.Names.Length; d++)
         {

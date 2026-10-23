@@ -94,12 +94,92 @@ public static class ZodiacStory
             L(Me, "Có tiếng ngân rất khẽ ở cổng làng… Âm Phù đầu tiên ở đây!"),
             L(Fox, "Hi hi… nhanh chân đấy. Nhưng lính của ta đông lắm."),
         },
+        // ───── Màn 2 — Cánh Đồng Lúa ─────
         ["L1-R0"] = new[]
+        {
+            L(Me, "Lúa chín vàng sắp gặt mà lính đất nung giẫm nát cả rồi…"),
+            L(Me, "Ruộng của làng! Ai giẫm lên luống cày của ta thì đừng hòng đi tiếp.", "Ox_Suu"),
+            L(Me, "Đồng lúa thế này mà không ai được ăn Tết… không được!", "Pig_Hoi"),
+        },
+        ["L1-R1"] = new[]
+        {
+            L(Me, "Đống rơm này… có gió lùa ra từ phía sau. Lạ thật."),
+            L(Me, "Ta ngửi thấy có gì đó giấu sau bụi tre kia!", "Dog_Tuat"),
+        },
+        ["L1-R3"] = new[]
+        {
+            L(Fox, "Đội trưởng của ta canh miếu thổ địa. Hắn không dễ chịu như lũ lính đâu."),
+            L(Me, "Thổ địa ơi, cho con mượn sân miếu một lát."),
+        },
+        // ───── Màn 4 — Đầm Sen ─────
+        ["L3-R0"] = new[]
+        {
+            L(Me, "Trời tối hẳn rồi… đầm sen lập loè toàn ma trơi."),
+            L(Me, "Tiếng tỳ bà của tôi… có lẽ gọi được những đốm lửa này về.", "Goat_Mui"),
+            L(Me, "Đêm tối thế này, mắt mèo nhìn rõ hơn ai hết.", "Cat_Mao"),
+        },
+        ["L3-R2"] = new[]
+        {
+            L(Me, "Có ánh sáng tím hắt ra từ bãi sậy… như có chiếc thuyền đắm ở đó."),
+            L(Me, "Thuyền rồng! Ngày xưa tổ tiên ta đi thuyền này.", "Dragon_Thin"),
+        },
+        ["L3-R4"] = new[]
+        {
+            L(Fox, "Sen tàn cả rồi, con giáp nhỏ. Năm cũ cũng sẽ không bao giờ tàn."),
+            L(Me, "Năm cũ phải qua thì năm mới mới tới. Ai cũng biết điều đó."),
+        },
+        // ───── Màn 5 — Chợ Phiên Ma ─────
+        ["L4-R0"] = new[]
+        {
+            L(Me, "Chợ phiên đêm Ba Mươi mà vắng tanh… không một tiếng rao."),
+            L(Me, "Không ai bán lá dong, bánh chưng của ta biết gói bằng gì!", "Pig_Hoi"),
+            L(Me, "Phải phi thật nhanh báo cho các làng: chợ Tết bị chiếm rồi!", "Horse_Ngo"),
+            L(Me, "Chợ vắng thế này… dễ trộm lắm. Ơ, không, ta chỉ nói thế thôi!", "Rat_Ty"),
+        },
+        ["L4-R2"] = new[]
+        {
+            L(Me, "Sạp gốm đổ ngổn ngang… sau đống hàng có cánh cửa kho."),
+            L(Me, "Kho hàng! Chắc chắn có thứ gì quý giá. Tề Thiên đi trước!", "Monkey_Than"),
+        },
+        ["L4-R4"] = new[]
+        {
+            L(Fox, "Nghe thấy không? Tiếng trống đồng đang yếu dần… như tim một kẻ sắp chết."),
+            L(Me, "Vậy thì phải nhanh lên."),
+        },
+        // ───── Màn 6 — Hang Đá Vôi ─────
+        ["L5-R0"] = new[]
+        {
+            L(Me, "Nước nhỏ giọt từ nhũ đá… thạch sư canh khắp lối vào."),
+            L(Me, "Hang tối thì cứ đi sát vách. Ta quen rồi.", "Snake_Ty"),
+        },
+        ["L5-R3"] = new[]
+        {
+            L(Me, "Bức chạm trên vách… một người cưỡi rồng đuổi con cáo chín đuôi."),
+            L(Me, "Lạc Long Quân… tổ tiên ta. Ngài đã đánh nó ở chính nơi này.", "Dragon_Thin"),
+            L(Me, "Gáy một tiếng thật to cho cả hang biết ta tới!", "Rooster_Dau"),
+        },
+        // ───── Màn 7 — Bờ Hồ Tây ─────
+        ["L6-R0"] = new[]
+        {
+            L(Me, "Hồ Tây đây rồi. Mặt nước đen như mực, không một gợn sóng."),
+            L(Me, "Mùi cáo nồng nặc! Nó ở ngay dưới mặt hồ!", "Dog_Tuat"),
+            L(Me, "Chúa sơn lâm không sợ nước. Ừ… không sợ lắm.", "Tiger_Dan"),
+        },
+        ["L6-R3"] = new[]
+        {
+            L(Me, "Chùa cổ ven hồ… chuông chùa cũng câm lặng rồi."),
+            L(Me, "Tiếng chiêng của ta sẽ thay chuông chùa đêm nay.", "Ox_Suu"),
+        },
+        ["L6-R4"] = new[]
+        {
+            L(Fox, "Xuống đây đi. Động của ta chờ các ngươi lâu lắm rồi."),
+        },
+        ["L2-R0"] = new[]
         {
             L(Me, "Sương dày quá… ma trơi bay khắp rừng trúc."),
             L(Me, "Những đốm lửa này… là hồn người làng. Mình phải gọi họ về.", "Goat_Mui"),
         },
-        ["L1-R1"] = new[]
+        ["L2-R1"] = new[]
         {
             L("Cat_Mao", "Hừ. Lại là ngươi. Lần trước ngươi \"quên\" gọi ta dậy, nhớ không?", "Rat_Ty"),
             L(Me, "Ta… ta xin lỗi mà. Đánh cùng nhau một trận rồi tính, được không?", "Rat_Ty"),
@@ -107,27 +187,27 @@ public static class ZodiacStory
             L(Me, "Ta không giận vì thua. Ta giận vì bị bỏ lại. Thôi, đánh đã.", "Cat_Mao"),
             L(Me, "Suối trúc trơn lắm. Cụ ơi, bám chắc vào lưng tôi.", "Ox_Suu"),
         },
-        ["L1-R3"] = new[]
+        ["L2-R3"] = new[]
         {
             L(Fox, "Cứ đi tiếp đi, con giáp nhỏ. Động của ta dưới Hồ Tây đang chờ."),
             L(Me, "Một mình cũng được. Mình làm được mà.", "Goat_Mui"),
             L(Fox, "Này chú khỉ… đổi chũm chọe lấy một pháp bảo thật sự không? Người ta sẽ nhớ tên chú mãi.", "Monkey_Than"),
             L(Me, "…Nghe hay đấy. Nhưng thôi. Bạn bè ta còn đang chờ tiếng chũm chọe này.", "Monkey_Than"),
         },
-        ["L2-R0"] = new[]
+        ["L7-R0"] = new[]
         {
             L(Me, "Hơi lạnh từ đáy Hồ Tây… đây là động của nó."),
             L(Me, "Phong ấn của tổ tiên… vỡ thật rồi.", "Dragon_Thin"),
             L(Me, "Không được để nến tắt trước khi tới đáy động. Chạy!", "Horse_Ngo"),
         },
-        ["L2-R2"] = new[]
+        ["L7-R2"] = new[]
         {
             L(Me, "Một mình ta là đủ! Không cần ai giúp!", "Tiger_Dan"),
             L(Me, "Đền đá… cứ đi trong bóng tối, chúng sẽ không thấy ta.", "Snake_Ty"),
             L(Me, "Ở trên mái đình, Chó và ta đã giữ làng qua một đêm. Đêm nay cũng vậy.", "Rooster_Dau"),
             L(Me, "Có mấy đứa trẻ lạc vào đây… Ta ngửi thấy chúng ở gần!", "Dog_Tuat"),
         },
-        ["L2-R3"] = new[]
+        ["L7-R3"] = new[]
         {
             L(Fox, "Ngàn năm dưới đáy hồ tối om… Các ngươi có biết bóng tối lạnh thế nào không?"),
             L(Fox, "Tổ tiên ngươi dìm ta xuống đây vì ta muốn được nhìn mặt trời. Ngươi có biết điều đó không, cháu Lạc Long Quân?", "Dragon_Thin"),
@@ -145,13 +225,18 @@ public static class ZodiacStory
 
     static readonly Line[][] levelWins =
     {
-        new[] { L(Narrator, "Âm Phù thứ nhất cất tiếng — một nhạc cụ đã tìm lại được giọng của mình."), L(Me, "Còn mười một… Đi tiếp vào rừng trúc!") },
-        new[] { L(Narrator, "Âm Phù thứ hai ngân lên giữa miếu hoang. Sương rừng trúc tan dần."), L(Me, "Dấu cáo dẫn xuống Hồ Tây.") },
+        new[] { L(Narrator, "Âm Phù thứ nhất cất tiếng — một nhạc cụ đã tìm lại được giọng của mình."), L(Me, "Còn mười một… Dấu cáo dẫn ra cánh đồng!") },
+        new[] { L(Narrator, "Âm Phù thứ hai sáng lên giữa sân miếu thổ địa. Gió đồng thổi thơm mùi lúa."), L(Me, "Dấu chân cáo đi vào rừng trúc.") },
+        new[] { L(Narrator, "Âm Phù thứ ba ngân lên giữa miếu hoang. Sương rừng trúc tan dần."), L(Me, "Có tiếng ếch nhái từ đầm sen phía trước…") },
+        new[] { L(Narrator, "Âm Phù thứ tư vang trong đình bỏ hoang. Ma trơi trên đầm tan như sương sớm."), L(Me, "Đi tiếp tới chợ phiên!") },
+        new[] { L(Narrator, "Âm Phù thứ năm cất tiếng — cả chợ vắng như có người rao trở lại."), L(Me, "Dấu cáo dẫn vào núi đá vôi.") },
+        new[] { L(Narrator, "Âm Phù thứ sáu sáng rực trên bệ đá cổ."), L(Me, "Mạch nước ngầm này chảy ra Hồ Tây… nó ở đó.") },
+        new[] { L(Narrator, "Âm Phù thứ bảy. Mặt hồ bỗng gợn sóng — có gì đó đang thở dưới đáy."), L(Me, "Động Hồ Tinh. Đi thôi!") },
         new[]
         {
             L(Fox, "Ba đuôi… ta mất ba đuôi rồi. Nhưng ta vẫn còn sáu đuôi nữa, con giáp ạ."),
             L(Fox, "Năm mới của các ngươi… chưa chắc đã đến đâu."),
-            L(Narrator, "Âm Phù thứ ba sáng lên trong tay. Hồ Tinh tan vào làn nước đen, bỏ chạy."),
+            L(Narrator, "Âm Phù thứ tám sáng lên trong tay. Hồ Tinh tan vào làn nước đen, bỏ chạy."),
         },
     };
 

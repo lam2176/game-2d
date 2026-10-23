@@ -777,12 +777,145 @@ public static class ZodiacLevelBuilder
             zone.waves = new EncounterZone.Wave[stage.waves.Length];
             for (int w = 0; w < stage.waves.Length; w++) zone.waves[w] = ParseWave(xMin, xMax, w, stage.waves[w]);
             if (stage.boss) BuildBoss(zone, xMin, xMax, canvas);
+            if (stage.secret && !last) BuildSecret(root, go.transform, i, stage, xMax);
             // Cổng đích sát mép phải (như lối ra các khu khác): đánh xong cứ đi sang phải là tới
             if (last) manager.goal = CreateGoal(go.transform, xMax - 0.8f);
             else zone.exit = CreateExit(go.transform, xMax - 0.7f);
             zones[i] = zone;
         }
         manager.rooms = zones;
+    }
+
+    // ───────────────────────────── Khu bí mật ─────────────────────────────
+
+    static readonly Color SecretGlow = new Color(0.75f, 0.5f, 1f);
+
+    /// <summary>
+    /// Khu bí mật nằm trong khoảng trống giữa khu i và khu kế ([xMax + 3, xMax + 3 + RoomWidth]) — camera khoá vào đó nên không
+    /// thấy hai khu bên cạnh. Lối vào: vật che (bụi tre rậm / vách đá nứt) ở góc trong mép phải khu i, vỡ thì hiện lối sáng tím.
+    /// Trong khu: đợt quái riêng (secretWaves), 2 rương báu, hũ sành, đèn tím; dọn xong thì lối ra mép phải đưa về chỗ cũ.
+    /// </summary>
+    static void BuildSecret(Transform rooms, Transform room, int i, ZodiacLevelData.Stage stage, float mainXMax)
+    {
+        float sMin = mainXMax + 3f, sMax = sMin + RoomWidth;
+        var go = new GameObject($"Secret {i + 1} — {stage.secretTitle}");
+        go.transform.SetParent(rooms, false);
+        go.transform.position = new Vector3((sMin + sMax) / 2f, 0f, LaneCenter);
+        var zone = go.AddComponent<EncounterZone>();
+        zone.title = stage.secretTitle;
+        zone.xMin = sMin;
+        zone.xMax = sMax;
+        zone.entry = new Vector3(sMin + 1.6f, 0.05f, LaneCenter);
+        zone.startDelay = 0.8f;
+        RoomWall(go.transform, sMin - 0.5f);
+        RoomWall(go.transform, sMax + 0.5f);
+        zone.waves = new EncounterZone.Wave[stage.secretWaves.Length];
+        for (int w = 0; w < stage.secretWaves.Length; w++) zone.waves[w] = ParseWave(sMin, sMax, w, stage.secretWaves[w]);
+
+        CreateTreasureChest(go.transform, new Vector3(sMin + 9.5f, 0f, def.laneMax - 0.6f));
+        CreateTreasureChest(go.transform, new Vector3(sMin + 11.6f, 0f, def.laneMin + 0.7f));
+        CreateJar(go.transform, new Vector3(sMin + 4.5f, 0f, def.laneMax - 0.45f));
+        CreateJar(go.transform, new Vector3(sMin + 5.3f, 0f, def.laneMax - 0.5f));
+        CreateJar(go.transform, new Vector3(sMax - 2.4f, 0f, def.laneMin + 0.45f));
+        var glow = Plain("SecretLamp", SecretGlow, SecretGlow * 1.6f);
+        foreach (float x in new[] { sMin + 2.5f, sMax - 4f })
+        {
+            var post = Box("SecretPost", go.transform, new Vector3(x, 0.7f, def.laneMax + 0.5f), new Vector3(0.18f, 1.4f, 0.18f), Plain("SignWood", WoodColor), 1f);
+            var lamp = Primitive(PrimitiveType.Sphere, "SecretLamp", go.transform, new Vector3(x, 1.55f, def.laneMax + 0.5f), Vector3.one * 0.38f, glow);
+            lamp.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+            ZodiacLights.AddPoint(lamp, SecretGlow, 6f, 2.2f);
+            post.isStatic = true;
+        }
+        zone.exit = CreateSecretDoor(go.transform, new Vector3(sMax - 0.7f, 0f, LaneCenter), def.laneMax - def.laneMin + 1f, true).gameObject;
+
+        // Lối vào trong khu chính, che sau vật đập vỡ được
+        var coverPos = new Vector3(mainXMax - 1.9f, 0f, def.laneMax - 0.4f);
+        var cover = CreateSecretCover(room, coverPos);
+        var door = CreateSecretDoor(room, coverPos, 1.1f, false);
+        door.target = zone;
+        door.cover = cover.GetComponent<Health>();
+    }
+
+    /// <summary>Vật che lối bí mật: bụi tre rậm (làng, rừng) hoặc vách đá nứt (hang). Có đốm sáng tím le lói để tinh mắt thì thấy.</summary>
+    static Breakable CreateSecretCover(Transform parent, Vector3 position)
+    {
+        bool cave = def.backdrop == Backdrop.Cave;
+        var b = BreakableRoot(cave ? "Vách đá nứt" : "Bụi tre rậm", parent, position, new Vector3(1f, 1.9f, 0.8f), ZodiacBalance.Unit * 3);
+        b.coinDrop = Vector2Int.zero;
+        if (cave)
+        {
+            var rock = Plain("CrackRock", def.stone * 0.85f);
+            var crack = Plain("CrackLine", new Color(0.08f, 0.06f, 0.1f));
+            Box("Rock", b.visual, position + Vector3.up * 0.95f, new Vector3(1.1f, 1.9f, 0.7f), rock);
+            Box("Crack1", b.visual, position + new Vector3(-0.1f, 1.1f, -0.36f), new Vector3(0.06f, 1.1f, 0.02f), crack, 1f).transform.rotation = Quaternion.Euler(0f, 0f, 18f);
+            Box("Crack2", b.visual, position + new Vector3(0.15f, 0.6f, -0.36f), new Vector3(0.05f, 0.7f, 0.02f), crack, 1f).transform.rotation = Quaternion.Euler(0f, 0f, -25f);
+            b.debrisColor = def.stone;
+        }
+        else
+        {
+            var stalk = Plain("ThicketStalk", new Color(0.35f, 0.55f, 0.22f));
+            var leaves = Plain("ThicketLeaves", new Color(0.28f, 0.48f, 0.2f));
+            for (int k = 0; k < 6; k++)
+            {
+                float ox = (k % 3 - 1) * 0.28f + R(-0.06f, 0.06f), oz = (k / 3) * 0.25f - 0.12f, h = R(1.5f, 2.1f);
+                Primitive(PrimitiveType.Cylinder, "Stalk", b.visual, position + new Vector3(ox, h / 2f, oz), new Vector3(0.09f, h / 2f, 0.09f), stalk);
+            }
+            Primitive(PrimitiveType.Sphere, "Leaves", b.visual, position + Vector3.up * 1.5f, new Vector3(1.3f, 1f, 0.9f), leaves);
+            b.debrisColor = new Color(0.35f, 0.55f, 0.22f);
+        }
+        var spark = Primitive(PrimitiveType.Sphere, "Glint", b.visual, position + new Vector3(0.2f, 0.5f, -0.42f), Vector3.one * 0.12f,
+                              Plain("SecretGlint", SecretGlow, SecretGlow * 2f));
+        spark.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+        return b;
+    }
+
+    /// <summary>Lối bí mật (cột sáng tím + dấu "?") hoặc lối quay về (cột sáng tím ngang cả mặt đường + "←").</summary>
+    static SecretDoor CreateSecretDoor(Transform parent, Vector3 position, float depth, bool returns)
+    {
+        var go = new GameObject(returns ? "SecretReturn" : "SecretDoor");
+        go.transform.SetParent(parent, false);
+        go.transform.position = position;
+        var box = go.AddComponent<BoxCollider>();
+        box.size = new Vector3(returns ? 1f : 1.2f, 3f, depth);
+        box.center = new Vector3(0f, 1.5f, 0f);
+        var door = go.AddComponent<SecretDoor>();
+        door.returns = returns;
+
+        var beacon = new GameObject("Beacon").transform;
+        beacon.SetParent(go.transform, false);
+        var glow = Plain("SecretGlow", SecretGlow, SecretGlow * 1.5f);
+        float columnZ = returns ? def.laneMax + 0.4f : position.z;
+        var column = Box("LightColumn", beacon, new Vector3(position.x, 1.6f, columnZ), new Vector3(0.3f, 3.2f, 0.3f), glow, 1f);
+        column.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+        if (returns)
+        {
+            var strip = Box("LightStrip", beacon, new Vector3(position.x, 0.02f, LaneCenter), new Vector3(0.35f, 0.03f, def.laneMax - def.laneMin), glow, 1f);
+            strip.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+        }
+        var mark = ZodiacPrototypeBuilder.CreateText(CreateWorldCanvas(beacon, new Vector3(position.x, 3.6f, columnZ)), "Mark", returns ? "←" : "?", 150,
+                                                     new Color(0.85f, 0.7f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200f, 200f), TextAnchor.MiddleCenter);
+        mark.fontStyle = FontStyle.Bold;
+        ZodiacLights.AddPoint(beacon.gameObject, SecretGlow, 6f, 2f);
+        door.beacon = beacon;
+        return door;
+    }
+
+    /// <summary>Rương báu trong khu bí mật: sơn son viền vàng, chắc chắn có mảnh Đan, nhiều xu, cơ hội ra bùa / ngọc.</summary>
+    static void CreateTreasureChest(Transform parent, Vector3 position)
+    {
+        var b = BreakableRoot("Rương báu", parent, position, new Vector3(1.2f, 0.9f, 0.75f), ZodiacBalance.Unit * 4);
+        var lacquer = Plain("TreasureLacquer", new Color(0.62f, 0.1f, 0.08f));
+        var gold = Plain("TreasureGold", new Color(1f, 0.78f, 0.25f), new Color(0.3f, 0.2f, 0f));
+        Box("Body", b.visual, position + Vector3.up * 0.36f, new Vector3(1.2f, 0.72f, 0.75f), lacquer);
+        Box("Lid", b.visual, position + Vector3.up * 0.8f, new Vector3(1.24f, 0.2f, 0.79f), lacquer);
+        Box("Trim", b.visual, position + Vector3.up * 0.72f, new Vector3(1.26f, 0.06f, 0.81f), gold);
+        Box("Lock", b.visual, position + new Vector3(0f, 0.6f, -0.4f), new Vector3(0.2f, 0.24f, 0.04f), gold);
+        b.debrisColor = new Color(0.62f, 0.1f, 0.08f);
+        b.coinDrop = new Vector2Int(10, 16);
+        b.loot = new[]
+        {
+            L("manh_huyet_dan", 0.6f), L("manh_khi_dan", 0.6f), L("bua_bao_ho", 0.25f), L("ngoc_may_man", 0.25f), L("binh_khi", 0.5f),
+        };
     }
 
     static LootEntry L(string id, float chance, int min = 1, int max = 1) =>
@@ -893,8 +1026,10 @@ public static class ZodiacLevelBuilder
         var spawns = new List<EncounterZone.Spawn>();
         var tokens = codes.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
         int walkers = 0, turrets = 0;
-        foreach (var token in tokens)
+        foreach (var raw in tokens)
         {
+            bool miniBoss = raw.StartsWith("!") && raw.Length > 1;   // "!W" = quái trùm
+            string token = miniBoss ? raw.Substring(1) : raw;
             char c = token[0];
             var prefab = c switch
             {
@@ -933,7 +1068,7 @@ public static class ZodiacLevelBuilder
                 delay = walkers * 0.4f;
                 walkers++;
             }
-            spawns.Add(new EncounterZone.Spawn { prefab = prefab, position = pos, delay = delay });
+            spawns.Add(new EncounterZone.Spawn { prefab = prefab, position = pos, delay = delay, miniBoss = miniBoss });
         }
         return new EncounterZone.Wave { spawns = spawns.ToArray() };
     }
