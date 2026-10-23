@@ -132,6 +132,10 @@ public class PlayerProfile
     [Tooltip("Tháp Mười Hai Canh Giờ: số tầng cao nhất đã qua và con giáp lập kỷ lục.")]
     public int towerBest;
     public string towerBestCharacter = "";
+    [Tooltip("Lần lưu gần nhất (giờ máy) — hiện ở bảng ô lưu.")]
+    public string lastSaved = "";
+    [Tooltip("Tổng thời gian chơi trong màn / làng (giây).")]
+    public float playSeconds;
 
     static PlayerProfile current;
 
@@ -142,9 +146,74 @@ public class PlayerProfile
     /// <summary>Lên cấp: (tiến trình của con giáp vừa lên).</summary>
     public static event Action<CharacterProgress> LeveledUp;
 
-    static string FilePath => Path.Combine(Application.persistentDataPath, "zodiac_profile.json");
+    // ───────── Ô lưu ─────────
+
+    public const int SlotCount = 3;
+    const string SlotKey = "zodiac.saveSlot";
+
+    /// <summary>Ô lưu đang dùng (1..SlotCount). Ô 1 dùng tên file cũ — hồ sơ từ trước khi có ô lưu tự nằm ở ô 1.</summary>
+    public static int Slot => Mathf.Clamp(PlayerPrefs.GetInt(SlotKey, 1), 1, SlotCount);
+
+    static string PathFor(int slot) =>
+        Path.Combine(Application.persistentDataPath, slot <= 1 ? "zodiac_profile.json" : $"zodiac_profile_{slot}.json");
+
+    static string FilePath => PathFor(Slot);
 
     public static bool HasSave => File.Exists(FilePath);
+    public static bool SlotExists(int slot) => File.Exists(PathFor(slot));
+
+    /// <summary>Đổi sang ô lưu khác: hồ sơ đang mở được nạp lại từ ô đó (ô trống thì là hồ sơ mới).</summary>
+    public static void SelectSlot(int slot)
+    {
+        PlayerPrefs.SetInt(SlotKey, Mathf.Clamp(slot, 1, SlotCount));
+        PlayerPrefs.Save();
+        current = null;
+        Changed?.Invoke();
+    }
+
+    /// <summary>Đọc hồ sơ của một ô để xem tóm tắt (không đổi ô đang dùng). Ô trống / hỏng thì null.</summary>
+    public static PlayerProfile Peek(int slot)
+    {
+        if (slot == Slot && current != null) return current;
+        try
+        {
+            string path = PathFor(slot);
+            return File.Exists(path) ? JsonUtility.FromJson<PlayerProfile>(File.ReadAllText(path)) : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Xoá hẳn một ô lưu. Xoá ô đang dùng thì hồ sơ đang mở thành hồ sơ mới (chưa lưu).</summary>
+    public static void DeleteSlot(int slot)
+    {
+        try
+        {
+            string path = PathFor(slot);
+            if (File.Exists(path)) File.Delete(path);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Không xoá được ô lưu: " + e.Message);
+        }
+        if (slot == Slot)
+        {
+            current = null;
+            Changed?.Invoke();
+        }
+    }
+
+    /// <summary>Thời gian chơi dạng "3 giờ 05 phút".</summary>
+    public string PlayTimeText
+    {
+        get
+        {
+            int minutes = Mathf.FloorToInt(playSeconds / 60f);
+            return minutes >= 60 ? $"{minutes / 60} giờ {minutes % 60:00} phút" : $"{minutes} phút";
+        }
+    }
 
     public static PlayerProfile Current
     {
@@ -249,6 +318,7 @@ public class PlayerProfile
     {
         try
         {
+            lastSaved = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
             File.WriteAllText(FilePath, JsonUtility.ToJson(this, true));
         }
         catch (Exception e)
