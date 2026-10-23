@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// </summary>
 public class VillageStation : MonoBehaviour
 {
-    public enum Kind { Forge, Shop, Altar, Gate }
+    public enum Kind { Forge, Shop, Altar, Gate, Tower }
 
     public Kind kind;
     [Min(0.5f)] public float radius = 2.4f;
@@ -63,6 +63,7 @@ public class VillageStation : MonoBehaviour
             case Kind.Forge: VillageWindow.Open(VillageWindow.Mode.Forge); break;
             case Kind.Shop: VillageWindow.Open(VillageWindow.Mode.Shop); break;
             case Kind.Gate: VillageWindow.Open(VillageWindow.Mode.Gate); break;
+            case Kind.Tower: VillageWindow.Open(VillageWindow.Mode.Tower); break;
             default: InventoryWindow.OpenTraining(); break;
         }
     }

@@ -16,6 +16,8 @@ public class FallingStalactite : MonoBehaviour
     public float radius = 0.9f;
     [Min(1)] public int damage = ZodiacBalance.Unit;
     public Color debrisColor = new Color(0.8f, 0.75f, 0.65f);
+    [Tooltip("Rơi suốt khi đang chơi, không cần khu chứa nó đang đánh (luật tháp).")]
+    public bool alwaysActive;
 
     enum State { Waiting, Warning, Falling }
 
@@ -34,6 +36,7 @@ public class FallingStalactite : MonoBehaviour
         get
         {
             var gm = ZodiacGameManager.Instance;
+            if (alwaysActive) return gm != null && gm.Current == ZodiacGameManager.State.Playing;
             var room = gm != null ? gm.Room : null;
             return room != null && room.IsActive && gm.Current == ZodiacGameManager.State.Playing &&
                    Mathf.Abs(room.xMin - xMin) < 0.5f;   // chỉ rơi ở khu chứa nó, lúc còn quái

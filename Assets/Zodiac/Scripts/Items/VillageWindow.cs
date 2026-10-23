@@ -15,7 +15,7 @@ using UnityEngine.UI;
 /// </summary>
 public class VillageWindow : MonoBehaviour
 {
-    public enum Mode { Forge, Shop, Gate }
+    public enum Mode { Forge, Shop, Gate, Tower }
     enum ShopTab { Buy, Accessory, Sell, Craft }
 
     public static bool IsOpen { get; private set; }
@@ -25,6 +25,8 @@ public class VillageWindow : MonoBehaviour
     [Tooltip("Scene các màn theo thứ tự (builder điền) — cho Cổng làng.")]
     public string[] levelScenes = System.Array.Empty<string>();
     public string[] levelTitles = System.Array.Empty<string>();
+    [Tooltip("Scene Tháp Mười Hai Canh Giờ (builder điền).")]
+    public string towerScene = "";
 
     Transform canvas;
     GameObject window;
@@ -117,6 +119,7 @@ public class VillageWindow : MonoBehaviour
         {
             case Mode.Forge: titleText.text = "LÒ RÈN"; BuildForge(p); break;
             case Mode.Shop: titleText.text = "TIỆM THUỐC BẮC"; BuildShop(p); break;
+            case Mode.Tower: titleText.text = "THÁP MƯỜI HAI CANH GIỜ"; BuildTower(p); break;
             default: titleText.text = "CỔNG LÀNG — LÊN ĐƯỜNG"; BuildGate(p); break;
         }
     }
@@ -439,6 +442,34 @@ public class VillageWindow : MonoBehaviour
     }
 
     // ───────── Cổng làng ─────────
+
+    /// <summary>Mở sau khi qua màn 2 (đã mở tới màn 3).</summary>
+    const int TowerUnlockLevels = 3;
+
+    void BuildTower(PlayerProfile p)
+    {
+        var mid = new Vector2(0.5f, 1f);
+        ZodiacUi.MakeText(content, "Vượt tầng vô tận trong đấu trường. Mỗi tầng mang luật của một canh giờ, quái mạnh dần, cứ 6 tầng một boss.\n" +
+                                   "Qua tầng: thưởng đồng, hồi máu, mỗi 3 tầng thêm đồ quý — rồi chọn lên tiếp hay rời tháp. Thua thì giữ những gì đã nhặt.",
+                          24, ZodiacUi.Ink, mid, new Vector2(0f, -150f), new Vector2(1400f, 80f));
+        string holder = string.IsNullOrEmpty(p.towerBestCharacter) ? "" : $" ({p.towerBestCharacter.Split('_')[0]})";
+        ZodiacUi.MakeText(content, p.towerBest > 0 ? $"Kỷ lục: qua {p.towerBest} tầng{holder}" : "Chưa có kỷ lục", 30, ZodiacUi.Gold,
+                          mid, new Vector2(0f, -225f), new Vector2(1000f, 44f)).fontStyle = FontStyle.Bold;
+        for (int i = 0; i < TowerRun.Rules.Length; i++)
+        {
+            var r = TowerRun.Rules[i];
+            float x = i % 2 == 0 ? -360f : 360f, y = -290f - (i / 2) * 52f;
+            ZodiacUi.MakeText(content, $"<color=#ffd27a>Canh {r.hour}</color> · <b>{r.name}</b> — <size=20>{r.desc}</size>", 22, ZodiacUi.Ink,
+                              mid, new Vector2(x, y), new Vector2(680f, 44f), TextAnchor.MiddleLeft);
+        }
+        bool open = p.unlockedLevels >= TowerUnlockLevels && !string.IsNullOrEmpty(towerScene);
+        var enter = ZodiacUi.MakeButton(content, open ? "Vào tháp" : "Qua màn 2 để mở tháp", new Vector2(0.5f, 0f), new Vector2(0f, 110f), new Vector2(420f, 72f), () =>
+        {
+            Close();
+            ScreenFader.LoadScene(towerScene);
+        });
+        enter.interactable = open;
+    }
 
     void BuildGate(PlayerProfile p)
     {
