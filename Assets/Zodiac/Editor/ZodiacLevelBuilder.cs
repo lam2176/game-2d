@@ -17,7 +17,7 @@ using static ZodiacLevelData;
 /// Thêm người chơi, camera, HUD và hậu kỳ.
 /// Hình khối 3D (nhà, mái, tường đá…) là mesh hộp UV theo kích thước thật nên texture lát đều, không bị kéo giãn.
 /// </summary>
-public static class ZodiacLevelBuilder
+public static partial class ZodiacLevelBuilder
 {
     public class Context
     {
@@ -78,8 +78,14 @@ public static class ZodiacLevelBuilder
         {
             case Backdrop.Village: BuildVillage(); break;
             case Backdrop.Bamboo: BuildBambooForest(); break;
+            case Backdrop.Field: BuildField(); break;
+            case Backdrop.Pond: BuildPond(); break;
+            case Backdrop.Market: BuildMarket(); break;
+            case Backdrop.Limestone: BuildLimestone(); break;
+            case Backdrop.Lakeshore: BuildLakeshore(); break;
             default: BuildCave(); break;
         }
+        if (IsNight) BuildMoon();
         BuildFarBackdrop();
         BuildSky(cam);
 
@@ -101,8 +107,8 @@ public static class ZodiacLevelBuilder
         manager.levelTitle = def.title;
         manager.laneMinZ = def.laneMin;
         manager.laneMaxZ = def.laneMax;
-        manager.music = ZodiacVisualSetup.Clip(MusicFor(def.backdrop));
-        manager.stoneFootsteps = def.backdrop == Backdrop.Cave;
+        manager.music = ZodiacVisualSetup.Clip(MusicFor(Base(def.backdrop)));
+        manager.stoneFootsteps = Base(def.backdrop) == Backdrop.Cave || def.backdrop == Backdrop.Market || def.backdrop == Backdrop.Lakeshore;
         var canvas = BuildHud(manager, player);
         if (def.hub) BuildHub(manager);
         else BuildRooms(manager, canvas);
@@ -251,7 +257,7 @@ public static class ZodiacLevelBuilder
         var t = ctx.textures;
         float span = def.Length + 80f;
         // Nền rộng ra hai bên con đường (đồng cỏ / nền rừng / nền hang) — mặt trên ở y = 0, có collider
-        Material field = def.backdrop switch
+        Material field = Base(def.backdrop) switch
         {
             Backdrop.Village => Mat("Field", t.turf.texture, def.grass),
             Backdrop.Bamboo => Mat("ForestFloor", t.turf.texture, Color.Lerp(def.grass, def.soil, 0.45f)),
@@ -261,6 +267,10 @@ public static class ZodiacLevelBuilder
         // Mặt đường đi được (đường đất / lối mòn / nền đá) nhô lên 1cm để không nhấp nháy với nền
         Material road = def.backdrop switch
         {
+            Backdrop.Market or Backdrop.Lakeshore => Mat("StoneRoad", t.cobble.texture, def.stone),
+            Backdrop.Pond => Mat("BridgePlanks", t.plank.texture, def.plank),
+            Backdrop.Field => Mat("DirtRoad", t.soil.texture, def.soil),
+            Backdrop.Limestone => Mat("WetRock", t.cobble.texture, def.stone, 0.45f),
             Backdrop.Village => Mat("Road", t.soil.texture, def.soil),
             Backdrop.Bamboo => Mat("Trail", t.soil.texture, def.soil),
             _ => Mat("CaveRoad", t.cobble.texture, def.stone),
@@ -268,7 +278,8 @@ public static class ZodiacLevelBuilder
         float width = def.laneMax - def.laneMin + 1.4f;
         Box("Road", scenery, new Vector3(def.Length / 2f, -0.49f, LaneCenter), new Vector3(def.Length + 30f, 1f, width), road, 2.5f);
         // Mép đường: dải đá viền hai bên cho thấy rõ giới hạn đi được
-        var curb = Mat("Curb", t.cobble.texture, Color.Lerp(def.stone, Color.white, 0.1f));
+        var curb = def.backdrop == Backdrop.Pond ? Mat("BridgeBeam", t.wood.texture, Color.Lerp(def.plank, Color.black, 0.3f))
+                                                 : Mat("Curb", t.cobble.texture, Color.Lerp(def.stone, Color.white, 0.1f));
         foreach (float z in new[] { def.laneMin - 0.75f, def.laneMax + 0.75f })
             Box("Curb", scenery, new Vector3(def.Length / 2f, 0.02f, z), new Vector3(def.Length + 30f, 0.12f, 0.3f), curb, 1f);
     }
@@ -474,7 +485,7 @@ public static class ZodiacLevelBuilder
         var t = ctx.textures;
         var root = new GameObject("FarBackdrop").transform;
         float span = def.Length + 140f;
-        switch (def.backdrop)
+        switch (Base(def.backdrop))
         {
             case Backdrop.Village:
                 Card("Mountains", root, t.ridge, new Vector3(def.Length / 2f, 9f, 95f), new Vector2(span * 1.6f, 22f), Color.Lerp(def.far, def.sky, 0.25f));
@@ -492,7 +503,7 @@ public static class ZodiacLevelBuilder
     /// <summary>Bầu trời chuyển màu gắn vào camera, nằm sau mọi thứ (không chịu sương).</summary>
     static void BuildSky(Camera cam)
     {
-        Color top = def.backdrop switch
+        Color top = IsNight ? Color.Lerp(def.sky, new Color(0.02f, 0.03f, 0.08f), 0.7f) : Base(def.backdrop) switch
         {
             Backdrop.Village => Color.Lerp(def.sky, new Color(0.45f, 0.62f, 0.85f), 0.65f),
             Backdrop.Bamboo => Color.Lerp(def.sky, new Color(0.45f, 0.65f, 0.55f), 0.55f),
@@ -603,7 +614,8 @@ public static class ZodiacLevelBuilder
         box.size = new Vector3(2.5f, 0.6f, zMax - zMin);
         box.center = new Vector3(0f, 0.3f, 0f);
         go.AddComponent<Hazard>();
-        bool cave = def.backdrop == Backdrop.Cave;
+        if (ThemedHazardLook(go, x, zMin, zMax)) return;
+        bool cave = Base(def.backdrop) == Backdrop.Cave;
         var plate = cave ? Plain("EmberBed", new Color(0.25f, 0.1f, 0.05f), new Color(0.8f, 0.25f, 0.05f))
                          : Plain("SpikeBed", Color.Lerp(def.soil, Color.black, 0.35f));
         var spike = cave ? Plain("Ember", new Color(1f, 0.55f, 0.2f), new Color(1f, 0.45f, 0.1f) * 2.5f)
@@ -774,6 +786,7 @@ public static class ZodiacLevelBuilder
             CreateJar(go.transform, new Vector3(xMax - 2.6f, 0f, def.laneMin + 0.45f));
             if (rnd.NextDouble() < 0.5) CreateJar(go.transform, new Vector3(xMax - 3.4f, 0f, def.laneMax - 0.5f));
             if (i % 2 == 1) CreateChest(go.transform, new Vector3(xMin + 8.2f, 0f, def.laneMax - 0.5f));
+            BuildRoomGimmick(go.transform, i, stage, xMin, xMax);
             zone.waves = new EncounterZone.Wave[stage.waves.Length];
             for (int w = 0; w < stage.waves.Length; w++) zone.waves[w] = ParseWave(xMin, xMax, w, stage.waves[w]);
             if (stage.boss) BuildBoss(zone, xMin, xMax, canvas);
@@ -839,7 +852,7 @@ public static class ZodiacLevelBuilder
     /// <summary>Vật che lối bí mật: bụi tre rậm (làng, rừng) hoặc vách đá nứt (hang). Có đốm sáng tím le lói để tinh mắt thì thấy.</summary>
     static Breakable CreateSecretCover(Transform parent, Vector3 position)
     {
-        bool cave = def.backdrop == Backdrop.Cave;
+        bool cave = Base(def.backdrop) == Backdrop.Cave;
         var b = BreakableRoot(cave ? "Vách đá nứt" : "Bụi tre rậm", parent, position, new Vector3(1f, 1.9f, 0.8f), ZodiacBalance.Unit * 3);
         b.coinDrop = Vector2Int.zero;
         if (cave)
@@ -1124,6 +1137,31 @@ public static class ZodiacLevelBuilder
                 fog = Color.Lerp(def.sky, Color.white, 0.2f);
                 fogStart = 10f; fogEnd = 62f;
                 break;
+            case Backdrop.Field:   // nắng chiều vàng, bóng đổ dài
+                ZodiacLights.AddSun(lights, new Color(1f, 0.82f, 0.55f), 1.45f, new Vector3(28f, -40f, 0f), 0.85f);
+                ambient = new Color(0.62f, 0.55f, 0.45f);
+                fog = Color.Lerp(def.sky, Color.white, 0.1f);
+                fogStart = 30f; fogEnd = 130f;
+                break;
+            case Backdrop.Pond:    // trăng xanh, đèn lồng trên cầu
+            case Backdrop.Lakeshore:
+                ZodiacLights.AddSun(lights, new Color(0.6f, 0.7f, 1f), 0.55f, new Vector3(55f, -25f, 0f), 0.6f);
+                ambient = new Color(0.22f, 0.27f, 0.4f);
+                fog = Color.Lerp(def.sky, new Color(0.05f, 0.08f, 0.16f), 0.4f);
+                fogStart = def.backdrop == Backdrop.Pond ? 14f : 30f; fogEnd = def.backdrop == Backdrop.Pond ? 70f : 150f;
+                break;
+            case Backdrop.Market:  // hoàng hôn tím, đèn lồng đỏ
+                ZodiacLights.AddSun(lights, new Color(1f, 0.6f, 0.55f), 0.8f, new Vector3(22f, -30f, 0f), 0.7f);
+                ambient = new Color(0.42f, 0.34f, 0.46f);
+                fog = Color.Lerp(def.sky, new Color(0.3f, 0.2f, 0.35f), 0.3f);
+                fogStart = 18f; fogEnd = 80f;
+                break;
+            case Backdrop.Limestone:   // hang ấm, sáng từ lỗ trần
+                ZodiacLights.AddSun(lights, new Color(1f, 0.85f, 0.65f), 0.55f, new Vector3(80f, -10f, 0f), 0.6f);
+                ambient = new Color(0.34f, 0.28f, 0.22f);
+                fog = Color.Lerp(def.sky, Color.black, 0.1f);
+                fogStart = 12f; fogEnd = 55f;
+                break;
             default:
                 ZodiacLights.AddSun(lights, new Color(0.55f, 0.5f, 0.85f), 0.3f, new Vector3(70f, -10f, 0f), 0.5f);
                 ambient = new Color(0.2f, 0.17f, 0.28f);
@@ -1142,12 +1180,12 @@ public static class ZodiacLevelBuilder
         RenderSettings.fogEndDistance = fogEnd;
         cam.backgroundColor = fog;
 
-        if (def.backdrop == Backdrop.Cave)   // đèn quanh người trong hang tối
+        if (Base(def.backdrop) == Backdrop.Cave || IsNight)   // đèn quanh người trong hang tối / đêm
         {
             var aura = new GameObject("Aura");
             aura.transform.SetParent(player.transform, false);
             aura.transform.localPosition = new Vector3(0f, 1.6f, -0.6f);
-            ZodiacLights.AddPoint(aura, new Color(1f, 0.88f, 0.72f), 6f, 1.6f);
+            ZodiacLights.AddPoint(aura, new Color(1f, 0.88f, 0.72f), 6f, IsNight ? 1.1f : 1.6f);
         }
 
         // Hậu kỳ
@@ -1160,6 +1198,11 @@ public static class ZodiacLevelBuilder
         {
             Backdrop.Village => ZodiacVisualSetup.EnsureVolumeProfile("Village", 0.45f, 0.2f, 12f, 10f, Color.white),
             Backdrop.Bamboo => ZodiacVisualSetup.EnsureVolumeProfile("Bamboo", 0.5f, 0.24f, 4f, 8f, new Color(0.96f, 1f, 0.97f)),
+            Backdrop.Field => ZodiacVisualSetup.EnsureVolumeProfile("Field", 0.4f, 0.22f, 18f, 12f, new Color(1f, 0.95f, 0.85f)),
+            Backdrop.Pond => ZodiacVisualSetup.EnsureVolumeProfile("Pond", 0.9f, 0.34f, 8f, 10f, new Color(0.88f, 0.93f, 1f)),
+            Backdrop.Market => ZodiacVisualSetup.EnsureVolumeProfile("Market", 0.85f, 0.3f, 14f, 12f, new Color(1f, 0.9f, 0.95f)),
+            Backdrop.Limestone => ZodiacVisualSetup.EnsureVolumeProfile("Limestone", 0.7f, 0.3f, 6f, 12f, new Color(1f, 0.95f, 0.88f)),
+            Backdrop.Lakeshore => ZodiacVisualSetup.EnsureVolumeProfile("Lakeshore", 0.95f, 0.32f, 6f, 10f, new Color(0.88f, 0.92f, 1f)),
             _ => ZodiacVisualSetup.EnsureVolumeProfile("Cave", 0.9f, 0.32f, 6f, 14f, new Color(0.95f, 0.93f, 1f)),
         };
     }
@@ -1193,7 +1236,30 @@ public static class ZodiacLevelBuilder
 
         switch (def.backdrop)
         {
+            case Backdrop.Market:    // tàn lửa đèn lồng bay lên
+                emission.rateOverTime = 8f;
+                main.startLifetime = 6f;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.12f);
+                main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.55f, 0.2f, 1f), new Color(1f, 0.3f, 0.15f, 1f));
+                vel.x = new ParticleSystem.MinMaxCurve(-0.2f, 0.2f);
+                vel.y = new ParticleSystem.MinMaxCurve(0.2f, 0.6f);
+                vel.z = new ParticleSystem.MinMaxCurve(-0.1f, 0.1f);
+                noise.strength = 0.5f;
+                noise.frequency = 0.6f;
+                break;
+            case Backdrop.Lakeshore: // đom đóm xanh nhạt trên mặt hồ
+                emission.rateOverTime = 7f;
+                main.startLifetime = 7f;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.14f);
+                main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.6f, 0.9f, 1f, 1f), new Color(0.85f, 1f, 0.9f, 1f));
+                vel.x = new ParticleSystem.MinMaxCurve(-0.3f, 0.1f);
+                vel.y = new ParticleSystem.MinMaxCurve(-0.05f, 0.2f);
+                vel.z = new ParticleSystem.MinMaxCurve(-0.2f, 0.2f);
+                noise.strength = 0.8f;
+                noise.frequency = 0.4f;
+                break;
             case Backdrop.Village:   // lá/hoa vàng bay theo gió
+            case Backdrop.Field:     // trấu, rơm vụn bay
                 emission.rateOverTime = 6f;
                 main.startLifetime = 8f;
                 main.startSize = new ParticleSystem.MinMaxCurve(0.1f, 0.2f);
@@ -1205,6 +1271,7 @@ public static class ZodiacLevelBuilder
                 noise.frequency = 0.3f;
                 break;
             case Backdrop.Bamboo:    // đom đóm
+            case Backdrop.Pond:
                 emission.rateOverTime = 9f;
                 main.startLifetime = 6f;
                 main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.16f);
