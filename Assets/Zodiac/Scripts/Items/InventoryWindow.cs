@@ -263,7 +263,12 @@ public partial class InventoryWindow : MonoBehaviour
         var s = p.bag[selected];
         if (s.IsEmpty) return;
         var player = ZodiacPlayerController.Current;
-        if (player != null) LootPickup.Spawn(s.Clone(), 0, player.transform.position + Vector3.right * player.FacingDirection * 1.5f);
+        if (player != null)
+        {
+            var dropped = LootPickup.Spawn(s.Clone(), 0, player.transform.position + Vector3.right * player.FacingDirection * 1.5f);
+            dropped.discarded = true;   // không tự hút lại — muốn lấy thì đứng gần bấm phím Tương tác
+            PickupToast.Show(ZodiacInput.Format($"Đã vứt {s.DisplayName} — đứng gần bấm {{Interact}} để nhặt lại"), new Color(0.85f, 0.8f, 0.7f));
+        }
         p.RemoveAt(selected, s.count);
         selected = -1;
         Refresh();

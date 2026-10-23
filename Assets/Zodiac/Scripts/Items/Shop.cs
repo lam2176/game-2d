@@ -23,6 +23,19 @@ public static class Shop
         (Forge.CharmId, 150),
     };
 
+    /// <summary>Quầy phụ kiện: bùa (ô Bùa) và ngọc (hai ô Ngọc) mặc lên người — (mã, giá).</summary>
+    public static readonly (string id, int price)[] Accessories =
+    {
+        ("vong_bac", 45),
+        ("ngoc_trai", 40),
+        ("bua_ho_phu", 90),
+        ("bua_ho_menh", 95),
+        ("ngoc_do", 75),
+        ("ngoc_lam", 75),
+        ("ngoc_luc", 115),
+        ("bua_khi", 160),
+    };
+
     public static readonly Recipe[] Recipes =
     {
         new Recipe { result = "binh_mau_lon", count = 1, inputs = new[] { ("binh_mau_nho", 2), ("da_coc", 2) } },

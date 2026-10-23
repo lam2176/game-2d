@@ -65,6 +65,12 @@ public static class ZodiacItemDefs
                   mods = new[] { Flat(StatType.Defense, 28), Flat(StatType.MaxHealth, 20) }, price = 140, icon = Icon.Armor, color = new Color(0.3f, 0.7f, 0.65f) },
 
         // ── Bùa
+        new Def { id = "vong_bac", name = "Vòng bạc trừ tà", desc = "Vòng bạc bà đeo cho cháu từ bé — tà khí tránh xa.", type = ItemType.Equipment,
+                  slot = EquipSlot.Charm, mods = new[] { Flat(StatType.Defense, 6), Flat(StatType.MaxHealth, 10) }, price = 45,
+                  icon = Icon.Charm, color = new Color(0.85f, 0.88f, 0.92f) },
+        new Def { id = "bua_ho_phu", name = "Hổ phù", desc = "Lá bùa hình hổ — người mang ra đòn hăng như chúa sơn lâm.", type = ItemType.Equipment,
+                  slot = EquipSlot.Charm, rarity = ItemRarity.Good, mods = new[] { Flat(StatType.Attack, 4), Flat(StatType.CritChance, 0.04f) }, price = 85,
+                  icon = Icon.Charm, color = new Color(1f, 0.6f, 0.15f) },
         new Def { id = "bua_ho_menh", name = "Bùa hộ mệnh", desc = "Lá bùa đỏ của thầy đồ làng.", type = ItemType.Equipment, slot = EquipSlot.Charm,
                   rarity = ItemRarity.Good, mods = new[] { Flat(StatType.MaxHealth, 30) }, price = 60, icon = Icon.Charm, color = new Color(0.9f, 0.15f, 0.15f) },
         new Def { id = "bua_khi", name = "Bùa tụ khí", desc = "Khí trời tụ về người mang.", type = ItemType.Equipment, slot = EquipSlot.Charm,
@@ -75,6 +81,15 @@ public static class ZodiacItemDefs
                   price = 140, icon = Icon.Charm, color = new Color(1f, 0.8f, 0.25f) },
 
         // ── Ngọc
+        new Def { id = "ngoc_trai", name = "Ngọc trai", desc = "Ngọc trai đầm sen — mát lành, Khí hồi đều.", type = ItemType.Equipment,
+                  slot = EquipSlot.Gem, mods = new[] { Flat(StatType.MaxEnergy, 10), Flat(StatType.EnergyRegen, 0.3f) }, price = 40,
+                  icon = Icon.Gem, color = new Color(0.95f, 0.93f, 0.88f) },
+        new Def { id = "ho_phach", name = "Hổ phách", desc = "Nhựa thông nghìn năm hoá đá — đòn chí mạng đau thấu xương.", type = ItemType.Equipment,
+                  slot = EquipSlot.Gem, rarity = ItemRarity.Rare, mods = new[] { Flat(StatType.CritDamage, 0.3f), Flat(StatType.MaxHealth, 10) }, price = 120,
+                  icon = Icon.Gem, color = new Color(1f, 0.65f, 0.15f) },
+        new Def { id = "ngoc_bich", name = "Ngọc bích Lạc Long", desc = "Viên ngọc xanh thẫm dưới đáy hang, khắc hình rồng.", type = ItemType.Equipment,
+                  slot = EquipSlot.Gem, rarity = ItemRarity.Epic, mods = new[] { Pct(StatType.Attack, 0.1f), Flat(StatType.MaxHealth, 20) }, price = 220,
+                  icon = Icon.Gem, color = new Color(0.15f, 0.75f, 0.5f) },
         new Def { id = "ngoc_do", name = "Ngọc đỏ", desc = "Hồng ngọc ẩn lửa.", type = ItemType.Equipment, slot = EquipSlot.Gem,
                   rarity = ItemRarity.Good, mods = new[] { Pct(StatType.Attack, 0.08f) }, price = 55, icon = Icon.Gem, color = new Color(0.95f, 0.2f, 0.25f) },
         new Def { id = "ngoc_lam", name = "Ngọc lam", desc = "Mắt nhìn thấu chỗ hở.", type = ItemType.Equipment, slot = EquipSlot.Gem,

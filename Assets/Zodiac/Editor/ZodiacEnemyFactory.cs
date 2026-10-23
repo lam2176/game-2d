@@ -103,7 +103,7 @@ public static class ZodiacEnemyFactory
         Common(ai, v, clay);
         ai.gear = spear;   // còn nửa máu thì giáo văng → đánh tay không
         ai.gearItem = ZodiacItemDefs.Get("giao_dong");
-        ai.loot = new[] { L("manh_gom", 0.5f), L("binh_mau_nho", 0.12f), L("kiem_tre", 0.05f) };
+        ai.loot = new[] { L("manh_gom", 0.5f), L("binh_mau_nho", 0.12f), L("kiem_tre", 0.05f), L("vong_bac", 0.05f) };
         ai.coinDrop = new Vector2Int(1, 3);
         Finish(root, v, 1.8f, 1.1f);
         return root;
@@ -149,7 +149,7 @@ public static class ZodiacEnemyFactory
         ai.gear = shield;
         ai.gearDurability = 4;   // đỡ 4 đòn (hoặc còn nửa máu) thì khiên vỡ
         ai.gearItem = ZodiacItemDefs.Get("khien_dong");
-        ai.loot = new[] { L("manh_gom", 0.6f, 1, 2), L("binh_mau_nho", 0.15f), L("ao_giap_tre", 0.08f), L("manh_huyet_dan", 0.06f) };
+        ai.loot = new[] { L("manh_gom", 0.6f, 1, 2), L("binh_mau_nho", 0.15f), L("ao_giap_tre", 0.08f), L("bua_ho_phu", 0.05f), L("manh_huyet_dan", 0.06f) };
         ai.coinDrop = new Vector2Int(2, 4);
         ai.moveSpeed = 1.9f;
         ai.windupTime = 0.65f;
@@ -181,7 +181,7 @@ public static class ZodiacEnemyFactory
         }
         var ai = root.AddComponent<EnemyRoller>();
         Common(ai, v, new Color(0.15f, 0.3f, 0.35f));
-        ai.loot = new[] { L("vay_bo_gai", 0.6f), L("binh_khi", 0.15f), L("ngoc_lam", 0.05f) };
+        ai.loot = new[] { L("vay_bo_gai", 0.6f), L("binh_khi", 0.15f), L("ngoc_lam", 0.08f), L("ngoc_trai", 0.08f) };
         Finish(root, v, 1.25f, 1.1f);
         return root;
     }
@@ -208,7 +208,7 @@ public static class ZodiacEnemyFactory
         ZodiacLights.AddPoint(root, new Color(0.45f, 0.95f, 1f), 4.5f, 2f);
         var ai = root.AddComponent<EnemyFlyer>();
         Common(ai, v, new Color(0.45f, 0.95f, 0.95f));
-        ai.loot = new[] { L("lua_ma_troi", 0.6f), L("binh_khi", 0.25f), L("bua_khi", 0.04f), L("manh_khi_dan", 0.06f) };
+        ai.loot = new[] { L("lua_ma_troi", 0.6f), L("binh_khi", 0.25f), L("bua_khi", 0.06f), L("ngoc_trai", 0.08f), L("manh_khi_dan", 0.06f) };
         ai.coinDrop = new Vector2Int(1, 2);
         ai.glow = glow.GetComponent<SpriteRenderer>();
         HealthBar(root, 0.8f);
@@ -238,7 +238,7 @@ public static class ZodiacEnemyFactory
         }
         var ai = root.AddComponent<EnemyHopper>();
         Common(ai, v, new Color(0.5f, 0.3f, 0.6f));
-        ai.loot = new[] { L("da_coc", 0.6f), L("binh_mau_nho", 0.2f), L("ngoc_luc", 0.05f) };
+        ai.loot = new[] { L("da_coc", 0.6f), L("binh_mau_nho", 0.2f), L("ngoc_luc", 0.07f), L("vong_bac", 0.08f) };
         ai.coinDrop = new Vector2Int(2, 3);
         Finish(root, v, 1.35f, 1.3f);
         return root;
@@ -272,7 +272,7 @@ public static class ZodiacEnemyFactory
         ZodiacLights.AddPoint(mouth, new Color(1f, 0.5f, 0.2f), 3f, 1.2f);
         var ai = root.AddComponent<EnemyTurret>();
         Common(ai, v, stone);
-        ai.loot = new[] { L("da_thach_su", 0.7f), L("ngoc_do", 0.1f), L("bua_ho_menh", 0.08f), L("manh_huyet_dan", 0.1f), L("manh_khi_dan", 0.1f), L("ngoc_may_man", 0.08f) };
+        ai.loot = new[] { L("da_thach_su", 0.7f), L("ngoc_do", 0.12f), L("bua_ho_menh", 0.1f), L("ho_phach", 0.05f), L("manh_huyet_dan", 0.1f), L("manh_khi_dan", 0.1f), L("ngoc_may_man", 0.08f) };
         ai.coinDrop = new Vector2Int(3, 5);
         ai.mouth = mouth.GetComponent<SpriteRenderer>();
         ai.knockbackTaken = 0f;

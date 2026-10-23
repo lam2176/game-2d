@@ -928,6 +928,7 @@ public static partial class ZodiacLevelBuilder
         b.loot = new[]
         {
             L("manh_huyet_dan", 0.6f), L("manh_khi_dan", 0.6f), L("bua_bao_ho", 0.25f), L("ngoc_may_man", 0.25f), L("binh_khi", 0.5f),
+            L("ho_phach", 0.15f), L("bua_ho_phu", 0.15f), L("ngoc_bich", 0.05f),
         };
     }
 
@@ -976,7 +977,8 @@ public static partial class ZodiacLevelBuilder
         Box("Lock", b.visual, position + new Vector3(0f, 0.55f, -0.37f), new Vector3(0.16f, 0.2f, 0.04f), band);
         b.debrisColor = WoodColor;
         b.coinDrop = new Vector2Int(5, 9);
-        b.loot = new[] { L("binh_mau_nho", 0.5f), L("binh_khi", 0.3f), L("manh_huyet_dan", 0.15f), L("manh_khi_dan", 0.15f), L("ngoc_may_man", 0.05f) };
+        b.loot = new[] { L("binh_mau_nho", 0.5f), L("binh_khi", 0.3f), L("manh_huyet_dan", 0.15f), L("manh_khi_dan", 0.15f), L("ngoc_may_man", 0.05f),
+                         L("vong_bac", 0.06f), L("ngoc_trai", 0.06f) };
     }
 
     /// <summary>Tường hai đầu khu — chặn cả người chơi lẫn quái (không ai bị đánh văng ra khỏi khung hình).</summary>

@@ -106,7 +106,7 @@ public class ItemDefinition : ScriptableObject
         {
             ItemType.Equipment => SlotName(slot),
             ItemType.Consumable => "Đồ dùng",
-            _ => "Nguyên liệu",
+            _ => "Nguyên liệu (không mặc được)",
         };
         sb.Append($"<size=22>{kind} · {RarityName(rarity)}</size>\n");
         float scale = 1f + (stack != null ? ItemStack.LevelBonus * stack.level : 0f);
