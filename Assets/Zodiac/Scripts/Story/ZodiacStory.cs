@@ -128,6 +128,13 @@ public static class ZodiacStory
             L(Fox, "Sen tàn cả rồi, con giáp nhỏ. Năm cũ cũng sẽ không bao giờ tàn."),
             L(Me, "Năm cũ phải qua thì năm mới mới tới. Ai cũng biết điều đó."),
         },
+        ["L3-R5"] = new[]
+        {
+            L(Me, "Mặt đầm sủi bọt… có cái gì rất to đang bơi dưới kia."),
+            L(Fox, "Thuồng Luồng ngủ dưới đầm này trăm năm rồi. Ta vừa gọi nó dậy giúp ngươi đấy."),
+            L(Me, "Trâu ta lội nước cả đời, sợ gì một con rắn!", "Ox_Suu"),
+            L(Me, "Rồng còn chưa sợ, huống chi thuồng luồng.", "Dragon_Thin"),
+        },
         // ───── Màn 5 — Chợ Phiên Ma ─────
         ["L4-R0"] = new[]
         {
@@ -146,11 +153,25 @@ public static class ZodiacStory
             L(Fox, "Nghe thấy không? Tiếng trống đồng đang yếu dần… như tim một kẻ sắp chết."),
             L(Me, "Vậy thì phải nhanh lên."),
         },
+        ["L4-R5"] = new[]
+        {
+            L(Narrator, "Giữa sân đình chợ, một lão già gù lưng vác bao tải. Mười hai con mắt cùng mở ra một lúc."),
+            L(Me, "Ông… Ông Ba Bị? Bà bảo ông chỉ có trong chuyện thôi mà!"),
+            L(Me, "Ta là chuột, đâu phải trẻ con! …Có phải không?", "Rat_Ty"),
+            L(Me, "Cái bao đó đựng đầy lá dong của chợ! Trả đây!", "Pig_Hoi"),
+        },
         // ───── Màn 6 — Hang Đá Vôi ─────
         ["L5-R0"] = new[]
         {
             L(Me, "Nước nhỏ giọt từ nhũ đá… thạch sư canh khắp lối vào."),
             L(Me, "Hang tối thì cứ đi sát vách. Ta quen rồi.", "Snake_Ty"),
+        },
+        ["L5-R5"] = new[]
+        {
+            L(Narrator, "Hang rung lên từng nhịp. Một bóng khổng lồ vác chùy đá bước ra từ bóng tối."),
+            L(Me, "Chằn Tinh… con yêu tinh trong chuyện Thạch Sanh!"),
+            L(Me, "Một mình ta là đủ cho mi!", "Tiger_Dan"),
+            L(Me, "Mi to thật đấy. Nhưng to thì chậm.", "Monkey_Than"),
         },
         ["L5-R3"] = new[]
         {
@@ -228,9 +249,9 @@ public static class ZodiacStory
         new[] { L(Narrator, "Âm Phù thứ nhất cất tiếng — một nhạc cụ đã tìm lại được giọng của mình."), L(Me, "Còn mười một… Dấu cáo dẫn ra cánh đồng!") },
         new[] { L(Narrator, "Âm Phù thứ hai sáng lên giữa sân miếu thổ địa. Gió đồng thổi thơm mùi lúa."), L(Me, "Dấu chân cáo đi vào rừng trúc.") },
         new[] { L(Narrator, "Âm Phù thứ ba ngân lên giữa miếu hoang. Sương rừng trúc tan dần."), L(Me, "Có tiếng ếch nhái từ đầm sen phía trước…") },
-        new[] { L(Narrator, "Âm Phù thứ tư vang trong đình bỏ hoang. Ma trơi trên đầm tan như sương sớm."), L(Me, "Đi tiếp tới chợ phiên!") },
-        new[] { L(Narrator, "Âm Phù thứ năm cất tiếng — cả chợ vắng như có người rao trở lại."), L(Me, "Dấu cáo dẫn vào núi đá vôi.") },
-        new[] { L(Narrator, "Âm Phù thứ sáu sáng rực trên bệ đá cổ."), L(Me, "Mạch nước ngầm này chảy ra Hồ Tây… nó ở đó.") },
+        new[] { L(Narrator, "Thuồng Luồng chìm xuống đáy đầm, nhả ra Âm Phù thứ tư. Ma trơi tan như sương sớm."), L(Me, "Đi tiếp tới chợ phiên!") },
+        new[] { L(Narrator, "Ông Ba Bị tan thành làn khói, bao tải rơi xuống — bên trong là Âm Phù thứ năm."), L(Me, "Dấu cáo dẫn vào núi đá vôi.") },
+        new[] { L(Narrator, "Chằn Tinh đổ sập như một ngọn núi nhỏ. Âm Phù thứ sáu sáng rực giữa hang."), L(Me, "Mạch nước ngầm này chảy ra Hồ Tây… nó ở đó.") },
         new[] { L(Narrator, "Âm Phù thứ bảy. Mặt hồ bỗng gợn sóng — có gì đó đang thở dưới đáy."), L(Me, "Động Hồ Tinh. Đi thôi!") },
         new[]
         {

@@ -51,6 +51,24 @@ public static class ZodiacJournal
         },
         new Beast
         {
+            id = "Boss_ThuongLuong", name = "Thuồng Luồng", art = "-", where = "Đầm Sen",
+            lore = "Rắn nước khổng lồ có sừng trong truyện cổ, nằm dưới đáy đầm sâu, hay lật thuyền người qua. Hồ Tinh đánh thức nó bằng tiếng trống vỡ.",
+            tip = "Gợn sóng bám theo là sắp trồi lên — chạy khỏi vòng. Trồi xong nó nằm phơi mình: đánh lúc đó. Đuôi rực sáng thì {Jump}.",
+        },
+        new Beast
+        {
+            id = "Boss_OngBaBi", name = "Ông Ba Bị", art = "-", where = "Chợ Phiên Ma",
+            lore = "\"Ông ba bị chín quai mười hai con mắt\" — lão vác bao tải đi bắt trẻ hư trong lời doạ của bà. Đêm nay lão có thật.",
+            tip = "Vòng đỏ là chỗ bao tải rơi. Khom người là sắp vồ — đổi làn ({Lane}). Biến mất trong khói là sắp hiện sau lưng — {Dodge} ngay.",
+        },
+        new Beast
+        {
+            id = "Boss_ChanTinh", name = "Chằn Tinh", art = "-", where = "Hang Đá Vôi",
+            lore = "Yêu tinh khổng lồ trong truyện Thạch Sanh, từng bắt dân làng nộp người hằng năm. Hồ Tinh hứa trả lại cho nó cả một năm không có ban ngày.",
+            tip = "Giơ chùy là sắp nện — lùi ra rồi nhảy qua sóng chấn. Để nó húc vào vách: nó choáng, tha hồ đánh.",
+        },
+        new Beast
+        {
             id = "Boss_HoTinh", name = "Hồ Tinh", art = "", where = "Động Hồ Tinh (dưới Hồ Tây)",
             lore = "Cáo chín đuôi bị Lạc Long Quân đánh chìm dưới đáy Hồ Tây từ ngàn năm trước. Sống lại nhờ oán khí, nó đập vỡ Trống Đồng Thiên Âm thành mười hai Âm Phù để năm cũ không bao giờ hết.",
             tip = "Đuôi sáng xanh là sắp ra đòn: đổi làn tránh cú vồ, chạy khỏi vòng xanh, nhảy qua sóng chấn.",
@@ -70,6 +88,7 @@ public static class ZodiacJournal
     public static Sprite Art(Beast b)
     {
         if (string.IsNullOrEmpty(b.art)) return StoryArt.Icon(StoryArt.Kind.Fox);
+        if (b.art == "-") return null;   // boss dựng bằng hình khối, chưa có ảnh vẽ
         var res = ZodiacResources.Get;
         if (res == null || res.enemyArt == null) return null;
         foreach (var s in res.enemyArt)

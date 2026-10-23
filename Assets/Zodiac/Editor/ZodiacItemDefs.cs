@@ -50,6 +50,9 @@ public static class ZodiacItemDefs
         new Def { id = "dao_rong", name = "Đao rồng", desc = "Thanh đao chạm rồng lấy từ hang Hồ Tinh.", type = ItemType.Equipment, slot = EquipSlot.Weapon,
                   rarity = ItemRarity.Rare, mods = new[] { Flat(StatType.Attack, 12), Flat(StatType.CritDamage, 0.3f) }, price = 150,
                   icon = Icon.Sword, color = new Color(1f, 0.75f, 0.2f) },
+        new Def { id = "chuy_chan_tinh", name = "Chùy đá Chằn Tinh", desc = "Nặng trịch, nện đâu vỡ đó — rơi từ Chằn Tinh.", type = ItemType.Equipment,
+                  slot = EquipSlot.Weapon, rarity = ItemRarity.Rare, mods = new[] { Flat(StatType.Attack, 10), Flat(StatType.Defense, 10) }, price = 140,
+                  icon = Icon.Sword, color = new Color(0.65f, 0.58f, 0.48f) },
 
         // ── Giáp
         new Def { id = "ao_giap_tre", name = "Áo giáp tre", desc = "Nan tre đan dày.", type = ItemType.Equipment, slot = EquipSlot.Armor,
@@ -57,6 +60,9 @@ public static class ZodiacItemDefs
         new Def { id = "khien_dong", name = "Khiên trống đồng", desc = "Mặt khiên chạm hoa văn trống đồng Đông Sơn.", type = ItemType.Equipment,
                   slot = EquipSlot.Armor, rarity = ItemRarity.Good, mods = new[] { Flat(StatType.Defense, 20), Flat(StatType.MaxHealth, 10) },
                   price = 60, icon = Icon.Art, art = "Khien" },
+        new Def { id = "giap_vay_thuong_luong", name = "Giáp vảy Thuồng Luồng", desc = "Vảy rắn nước lấp lánh, dao chém trượt — rơi từ Thuồng Luồng.",
+                  type = ItemType.Equipment, slot = EquipSlot.Armor, rarity = ItemRarity.Rare,
+                  mods = new[] { Flat(StatType.Defense, 28), Flat(StatType.MaxHealth, 20) }, price = 140, icon = Icon.Armor, color = new Color(0.3f, 0.7f, 0.65f) },
 
         // ── Bùa
         new Def { id = "bua_ho_menh", name = "Bùa hộ mệnh", desc = "Lá bùa đỏ của thầy đồ làng.", type = ItemType.Equipment, slot = EquipSlot.Charm,
@@ -64,6 +70,9 @@ public static class ZodiacItemDefs
         new Def { id = "bua_khi", name = "Bùa tụ khí", desc = "Khí trời tụ về người mang.", type = ItemType.Equipment, slot = EquipSlot.Charm,
                   rarity = ItemRarity.Rare, mods = new[] { Flat(StatType.MaxEnergy, 25), Flat(StatType.EnergyRegen, 1f) }, price = 90,
                   icon = Icon.Charm, color = new Color(0.3f, 0.6f, 1f) },
+        new Def { id = "bua_mat_ba_bi", name = "Bùa mười hai mắt", desc = "Mắt của Ông Ba Bị — nhìn ra chỗ hở của mọi kẻ địch.", type = ItemType.Equipment,
+                  slot = EquipSlot.Charm, rarity = ItemRarity.Rare, mods = new[] { Flat(StatType.CritChance, 0.08f), Flat(StatType.CritDamage, 0.25f) },
+                  price = 140, icon = Icon.Charm, color = new Color(1f, 0.8f, 0.25f) },
 
         // ── Ngọc
         new Def { id = "ngoc_do", name = "Ngọc đỏ", desc = "Hồng ngọc ẩn lửa.", type = ItemType.Equipment, slot = EquipSlot.Gem,
