@@ -58,6 +58,7 @@ public class PlayerEquipment : MonoBehaviour
         var profile = PlayerProfile.Current;
         foreach (var e in profile.equipped)
             foreach (var m in e.EffectiveModifiers()) stats.AddModifier(m, this);
+        foreach (var m in ItemSets.ActiveBonuses(profile.equipped)) stats.AddModifier(m, this);
         if (!string.IsNullOrEmpty(CharacterKey))
             foreach (var m in Progression.Modifiers(profile.Progress(CharacterKey))) stats.AddModifier(m, this);
     }

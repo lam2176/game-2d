@@ -37,6 +37,53 @@ public static class Forge
     /// <summary>Hỏng khi đập lên cấp kế có bị tụt cấp không.</summary>
     public static bool DropsOnFail(ItemStack s) => s.level + 1 >= 6;
 
+    // ───────── Khảm ngọc ─────────
+
+    public const int SocketCost = 20, UnsocketCost = 40;
+
+    /// <summary>Số ô khảm: vũ khí / giáp — thường, tốt 1 ô; hiếm 2; sử thi trở lên 3; đập tới +7 thêm 1 ô (tối đa 3).</summary>
+    public static int SocketsOf(ItemStack s)
+    {
+        var def = s?.Def;
+        if (def == null || def.type != ItemType.Equipment || (def.slot != EquipSlot.Weapon && def.slot != EquipSlot.Armor)) return 0;
+        int n = def.rarity <= ItemRarity.Good ? 1 : def.rarity == ItemRarity.Rare ? 2 : 3;
+        if (s.level >= 7) n++;
+        return Mathf.Min(3, n);
+    }
+
+    static ItemStack Target(PlayerProfile p, bool equipped, int index) =>
+        index < 0 ? null : equipped ? (index < p.equipped.Length ? p.equipped[index] : null) : (index < p.bag.Length ? p.bag[index] : null);
+
+    /// <summary>Khảm viên ngọc ở ô túi gemBagIndex vào món đồ (tốn đồng, viên ngọc mất khỏi túi).</summary>
+    public static bool Socket(PlayerProfile p, bool equipped, int index, int gemBagIndex)
+    {
+        var s = Target(p, equipped, index);
+        if (s == null || s.IsEmpty || gemBagIndex < 0 || gemBagIndex >= p.bag.Length) return false;
+        if (!equipped && gemBagIndex == index) return false;
+        var gem = p.bag[gemBagIndex];
+        var gemDef = gem.Def;
+        if (gemDef == null || gemDef.type != ItemType.Equipment || gemDef.slot != EquipSlot.Gem) return false;
+        s.gems ??= new List<string>();
+        if (s.gems.Count >= SocketsOf(s) || p.coins < SocketCost) return false;
+        p.coins -= SocketCost;
+        s.gems.Add(gem.id);
+        p.RemoveAt(gemBagIndex);   // RemoveAt đã Commit
+        return true;
+    }
+
+    /// <summary>Tháo viên ngọc thứ gemSlot trả về túi (tốn đồng, cần ô trống).</summary>
+    public static bool Unsocket(PlayerProfile p, bool equipped, int index, int gemSlot)
+    {
+        var s = Target(p, equipped, index);
+        if (s == null || s.IsEmpty || s.gems == null || gemSlot < 0 || gemSlot >= s.gems.Count) return false;
+        if (p.coins < UnsocketCost || p.FreeSlots == 0) return false;
+        string id = s.gems[gemSlot];
+        p.coins -= UnsocketCost;
+        s.gems.RemoveAt(gemSlot);
+        p.Add(new ItemStack { id = id, count = 1 });   // Add đã Commit
+        return true;
+    }
+
     static string MaterialFor(EquipSlot slot) => slot switch
     {
         EquipSlot.Weapon => "manh_gom",
@@ -95,6 +142,7 @@ public static class Forge
             {
                 s.level = Mathf.Max(0, s.level - 1);
                 result = Result.FailDrop;
+                ReturnGems(p, s, SocketsOf(s));   // tụt dưới +7 mất một ô khảm: ngọc thừa về túi
             }
         }
         p.Commit();
@@ -115,10 +163,25 @@ public static class Forge
         var def = s.Def;
         if (def == null || def.type != ItemType.Equipment) return false;
         var (id, count, coins) = SalvageOf(s);
+        ReturnGems(p, s, 0);
         p.bag[bagIndex] = new ItemStack();
         p.coins += coins;
         p.Add(ItemDatabase.Get(id), count);   // Add đã Commit
         return true;
+    }
+
+    /// <summary>Trả các viên ngọc vượt quá keep ô về túi (bán / phân giải: keep = 0). Túi đầy thì ngọc rơi xuống đất.</summary>
+    public static void ReturnGems(PlayerProfile p, ItemStack s, int keep)
+    {
+        if (s?.gems == null) return;
+        while (s.gems.Count > keep)
+        {
+            string id = s.gems[s.gems.Count - 1];
+            s.gems.RemoveAt(s.gems.Count - 1);
+            var left = p.Add(new ItemStack { id = id, count = 1 });
+            var player = ZodiacPlayerController.Current;
+            if (left > 0 && player != null) LootPickup.Spawn(new ItemStack { id = id, count = 1 }, 0, player.transform.position);
+        }
     }
 
     /// <summary>Giá bán cho tiệm (nửa giá, đồ đập cao bán đắt hơn).</summary>

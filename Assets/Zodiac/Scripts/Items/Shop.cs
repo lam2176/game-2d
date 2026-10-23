@@ -64,7 +64,9 @@ public static class Shop
         var s = p.bag[bagIndex];
         if (s.IsEmpty) return false;
         p.coins += Forge.SellPrice(s);
+        var sold = s.Clone();
         p.RemoveAt(bagIndex);   // RemoveAt đã Commit
+        Forge.ReturnGems(p, sold, 0);   // ngọc đã khảm không bán theo — trả về túi
         return true;
     }
 

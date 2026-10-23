@@ -18,6 +18,8 @@ public class ItemStack
     public List<StatModifier> affixes = new List<StatModifier>();
     [Tooltip("Số lần đập hỏng liên tiếp (cộng tỉ lệ cho lần sau).")]
     public int failStreak;
+    [Tooltip("Ngọc đã khảm (mã vật phẩm) — vũ khí / giáp, xem Forge.SocketsOf.")]
+    public List<string> gems = new List<string>();
 
     public bool IsEmpty => string.IsNullOrEmpty(id) || count <= 0;
     public ItemDefinition Def => IsEmpty ? null : ItemDatabase.Get(id);
@@ -43,12 +45,19 @@ public class ItemStack
         float scale = 1f + LevelBonus * level;
         foreach (var m in def.modifiers) yield return new StatModifier(m.stat, m.kind, m.value * scale);
         if (affixes != null) foreach (var a in affixes) yield return a;
+        if (gems != null)
+            foreach (var g in gems)
+            {
+                var gem = ItemDatabase.Get(g);
+                if (gem != null) foreach (var m in gem.modifiers) yield return m;
+            }
     }
 
     public ItemStack Clone() => new ItemStack
     {
         id = id, count = count, level = level, failStreak = failStreak,
         affixes = affixes != null ? new List<StatModifier>(affixes) : new List<StatModifier>(),
+        gems = gems != null ? new List<string>(gems) : new List<string>(),
     };
 
     public void Clear()
@@ -58,6 +67,7 @@ public class ItemStack
         level = 0;
         failStreak = 0;
         affixes = new List<StatModifier>();
+        gems = new List<string>();
     }
 
     /// <summary>Hai chồng gộp được với nhau (cùng loại đồ chồng được, không có cấp / dòng phụ riêng).</summary>
@@ -266,6 +276,7 @@ public class PlayerProfile
             {
                 arr[i] ??= new ItemStack();
                 arr[i].affixes ??= new List<StatModifier>();
+                arr[i].gems ??= new List<string>();
                 if (!arr[i].IsEmpty && arr[i].Def == null) arr[i].Clear();
             }
         for (int i = 0; i < quick.Length; i++) quick[i] ??= "";

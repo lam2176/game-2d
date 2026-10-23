@@ -109,10 +109,25 @@ public class ItemDefinition : ScriptableObject
             _ => "Nguyên liệu (không mặc được)",
         };
         sb.Append($"<size=22>{kind} · {RarityName(rarity)}</size>\n");
+        if (type == ItemType.Equipment && slot == EquipSlot.Gem)
+            sb.Append("<size=18><color=#a89880>Mặc ở ô Ngọc, hoặc khảm vào vũ khí / giáp ở Lò rèn</color></size>\n");
         float scale = 1f + (stack != null ? ItemStack.LevelBonus * stack.level : 0f);
         foreach (var m in modifiers) sb.Append($"<color=#9fe39a>{ModifierText(new StatModifier(m.stat, m.kind, m.value * scale))}</color>\n");
         if (stack != null && stack.affixes != null)
             foreach (var a in stack.affixes) sb.Append($"<color=#8fc8ff>{ModifierText(a)}  (phụ)</color>\n");
+        int sockets = stack != null ? Forge.SocketsOf(stack) : 0;
+        if (sockets > 0)
+        {
+            sb.Append($"<size=20>Ô khảm ({(stack.gems != null ? stack.gems.Count : 0)}/{sockets}):</size>");
+            for (int i = 0; i < sockets; i++)
+            {
+                var gem = stack.gems != null && i < stack.gems.Count ? ItemDatabase.Get(stack.gems[i]) : null;
+                sb.Append(gem != null ? $" <color=#{ColorUtility.ToHtmlStringRGB(RarityColor(gem.rarity))}>◆ {gem.displayName}</color>" : " <color=#7f7466>◇ trống</color>");
+            }
+            sb.Append('\n');
+        }
+        string set = ItemSets.Describe(id, PlayerProfile.Current.equipped);
+        if (!string.IsNullOrEmpty(set)) sb.Append(set);
         if (heal > 0) sb.Append($"<color=#ff9a9a>Hồi {heal} máu</color>\n");
         if (energy > 0) sb.Append($"<color=#8fd3ff>Hồi {energy} Khí</color>\n");
         if (!string.IsNullOrEmpty(description)) sb.Append($"<i>{description}</i>\n");

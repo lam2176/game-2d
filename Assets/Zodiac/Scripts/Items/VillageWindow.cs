@@ -17,6 +17,8 @@ public class VillageWindow : MonoBehaviour
 {
     public enum Mode { Forge, Shop, Gate, Tower }
     enum ShopTab { Buy, Accessory, Sell, Craft }
+    enum ForgeTab { Upgrade, Socket }
+    ForgeTab forgeTab;
 
     public static bool IsOpen { get; private set; }
     public static int ClosedFrame { get; private set; } = -1;
@@ -117,7 +119,7 @@ public class VillageWindow : MonoBehaviour
         coinsText.text = $"Đồng: {p.coins}";
         switch (mode)
         {
-            case Mode.Forge: titleText.text = "LÒ RÈN"; BuildForge(p); break;
+            case Mode.Forge: titleText.text = "LÒ RÈN"; BuildForgeTabs(); if (forgeTab == ForgeTab.Socket) BuildSocket(p); else BuildForge(p); break;
             case Mode.Shop: titleText.text = "TIỆM THUỐC BẮC"; BuildShop(p); break;
             case Mode.Tower: titleText.text = "THÁP MƯỜI HAI CANH GIỜ"; BuildTower(p); break;
             default: titleText.text = "CỔNG LÀNG — LÊN ĐƯỜNG"; BuildGate(p); break;
@@ -134,6 +136,112 @@ public class VillageWindow : MonoBehaviour
         Sound(clip != null && clip.Length > 0 ? clip : fallback, volume);
 
     // ───────── Lò rèn ─────────
+
+    void BuildForgeTabs()
+    {
+        string[] tabs = { "Đập đồ", "Khảm ngọc" };
+        for (int i = 0; i < tabs.Length; i++)
+        {
+            var tab = (ForgeTab)i;
+            var b = ZodiacUi.MakeButton(content, tabs[i], new Vector2(0.5f, 1f), new Vector2(130f + i * 260f, -110f), new Vector2(240f, 54f),
+                                        () => { if (hammering) return; forgeTab = tab; resultText = ""; Refresh(); });
+            if (tab == forgeTab) b.GetComponent<Image>().color = new Color(0.9f, 0.6f, 0.15f);
+        }
+    }
+
+    /// <summary>
+    /// Khảm ngọc: trái là vũ khí / giáp (đang mặc và trong túi); phải là ô khảm của món đang chọn — ô có ngọc thì nút Tháo,
+    /// ô trống thì danh sách ngọc trong túi để khảm vào.
+    /// </summary>
+    void BuildSocket(PlayerProfile p)
+    {
+        var tl = new Vector2(0f, 1f);
+        ZodiacUi.MakeText(content, "Vũ khí / giáp đang mặc", 24, ZodiacUi.Muted, tl, new Vector2(330f, -170f), new Vector2(560f, 30f));
+        int shownEq = 0;
+        for (int i = 0; i < p.equipped.Length; i++)
+        {
+            if (Forge.SocketsOf(p.equipped[i]) == 0) continue;
+            int index = i;
+            var slot = ZodiacUi.MakeSlot(content, tl, new Vector2(90f + shownEq * 110f, -235f), 96f, () => Select(true, index));
+            ZodiacUi.Fill(slot, p.equipped[i], selectedEquipped && selected == i);
+            shownEq++;
+        }
+        ZodiacUi.MakeText(content, "Trong túi", 24, ZodiacUi.Muted, tl, new Vector2(330f, -310f), new Vector2(560f, 30f));
+        int shown = 0;
+        for (int i = 0; i < p.bag.Length && shown < 18; i++)
+        {
+            if (Forge.SocketsOf(p.bag[i]) == 0) continue;
+            int index = i;
+            var slot = ZodiacUi.MakeSlot(content, tl, new Vector2(90f + (shown % 6) * 110f, -375f - (shown / 6) * 110f), 96f, () => Select(false, index));
+            ZodiacUi.Fill(slot, p.bag[i], !selectedEquipped && selected == i);
+            shown++;
+        }
+        if (shownEq + shown == 0)
+            ZodiacUi.MakeText(content, "<i>Chưa có vũ khí / giáp nào.</i>", 22, ZodiacUi.Muted, tl, new Vector2(330f, -380f), new Vector2(560f, 40f));
+
+        var s = selected < 0 ? null : selectedEquipped ? p.equipped[selected] : p.bag[selected];
+        int sockets = Forge.SocketsOf(s);
+        if (sockets == 0)
+        {
+            ZodiacUi.MakeText(content, "Chọn một vũ khí hoặc giáp để khảm ngọc.\n\n" +
+                                       "Đồ thường / tốt có 1 ô, đồ hiếm 2 ô, sử thi 3 ô; đập tới +7 thêm 1 ô (tối đa 3).\n" +
+                                       $"Ngọc khảm vào cộng thẳng chỉ số cho món đồ. Khảm: {Forge.SocketCost} đồng · Tháo trả lại ngọc: {Forge.UnsocketCost} đồng.",
+                              24, ZodiacUi.Ink, tl, new Vector2(1130f, -330f), new Vector2(680f, 300f), TextAnchor.UpperLeft);
+            Result();
+            return;
+        }
+        ZodiacUi.MakeText(content, s.Def.Tooltip(s), 22, ZodiacUi.Ink, tl, new Vector2(960f, -340f), new Vector2(380f, 380f), TextAnchor.UpperLeft);
+        float y = -200f;
+        for (int k = 0; k < sockets; k++)
+        {
+            int gemSlot = k;
+            var gemId = s.gems != null && k < s.gems.Count ? s.gems[k] : null;
+            var socket = ZodiacUi.MakeSlot(content, tl, new Vector2(1220f, y), 84f, null);
+            ZodiacUi.Fill(socket, gemId != null ? new ItemStack { id = gemId, count = 1 } : new ItemStack(), false);
+            if (gemId != null)
+            {
+                var gemDef = ItemDatabase.Get(gemId);
+                ZodiacUi.MakeText(content, gemDef != null ? gemDef.displayName : gemId, 22, ZodiacUi.Ink, tl, new Vector2(1380f, y + 18f), new Vector2(240f, 30f), TextAnchor.MiddleLeft);
+                var off = ZodiacUi.MakeButton(content, $"Tháo ({Forge.UnsocketCost} đồng)", tl, new Vector2(1380f, y - 18f), new Vector2(230f, 40f), () =>
+                {
+                    bool ok = Forge.Unsocket(PlayerProfile.Current, selectedEquipped, selected, gemSlot);
+                    resultText = ok ? "<color=#9fe39a>Đã tháo ngọc về túi.</color>" : "<color=#ff8a7a>Không đủ đồng hoặc túi đầy.</color>";
+                    if (ok && ZodiacResources.Get != null) Sound(ZodiacResources.Get.anvil, ZodiacResources.Get.block, 0.4f);
+                    Refresh();
+                });
+                off.interactable = p.coins >= Forge.UnsocketCost && p.FreeSlots > 0;
+            }
+            else
+                ZodiacUi.MakeText(content, "<color=#a89880>Ô trống — chọn ngọc bên dưới</color>", 20, ZodiacUi.Muted, tl, new Vector2(1400f, y), new Vector2(280f, 40f), TextAnchor.MiddleLeft);
+            y -= 100f;
+        }
+        // Ngọc trong túi để khảm vào ô trống đầu tiên
+        bool hasFree = s.gems == null || s.gems.Count < sockets;
+        ZodiacUi.MakeText(content, hasFree ? $"Ngọc trong túi — bấm để khảm ({Forge.SocketCost} đồng)" : "Đã khảm đầy", 22, ZodiacUi.Gold, tl,
+                          new Vector2(1320f, y + 10f), new Vector2(480f, 30f));
+        int gems = 0;
+        for (int i = 0; i < p.bag.Length && gems < 8 && hasFree; i++)
+        {
+            var g = p.bag[i];
+            var gd = g.Def;
+            if (gd == null || gd.type != ItemType.Equipment || gd.slot != EquipSlot.Gem) continue;
+            int gemIndex = i;
+            var gemSlotUi = ZodiacUi.MakeSlot(content, tl, new Vector2(1130f + (gems % 4) * 95f, y - 45f - (gems / 4) * 95f), 84f, () =>
+            {
+                bool ok = Forge.Socket(PlayerProfile.Current, selectedEquipped, selected, gemIndex);
+                resultText = ok ? "<color=#ffd84d>Khảm thành công!</color>" : "<color=#ff8a7a>Không đủ đồng.</color>";
+                var res = ZodiacResources.Get;
+                if (ok && res != null) { Sound(res.anvil, res.block, 0.6f); Sound(res.forgeSuccess, res.win, 0.5f); }
+                Refresh();
+            });
+            ZodiacUi.Fill(gemSlotUi, g, false);
+            gems++;
+        }
+        if (hasFree && gems == 0)
+            ZodiacUi.MakeText(content, "<i>Túi chưa có ngọc. Mua ở quầy Phụ kiện (Tiệm thuốc) hoặc nhặt từ quái.</i>", 20, ZodiacUi.Muted, tl,
+                              new Vector2(1320f, y - 50f), new Vector2(480f, 50f));
+        Result();
+    }
 
     void BuildForge(PlayerProfile p)
     {
