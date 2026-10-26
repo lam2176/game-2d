@@ -24,15 +24,7 @@ public partial class InventoryWindow
     }
 
     /// <summary>Đổi trang: Hành trang (false) / Tu luyện (true).</summary>
-    public void ShowPage(bool training)
-    {
-        bagPage.SetActive(!training);
-        trainPage.SetActive(training);
-        journalPage.SetActive(false);
-        selected = -1;
-        Refresh();
-        SelectFirst();
-    }
+    public void ShowPage(bool training) => ShowTab(training ? Page.Training : Page.Bag);
 
     // ───────── Nhãn cấp + thanh XP (luôn hiện) ─────────
 

@@ -139,6 +139,8 @@ public class PlayerProfile
     public List<string> endingsSeen = new List<string>();
     [Tooltip("Số quái đã hạ theo loại — trang Sổ ghi chép.")]
     public List<KillCount> kills = new List<KillCount>();
+    [Tooltip("Id nhiệm vụ đã nhận thưởng — trang Nhiệm vụ (ZodiacQuests).")]
+    public List<string> questsClaimed = new List<string>();
     [Tooltip("Tháp Mười Hai Canh Giờ: số tầng cao nhất đã qua và con giáp lập kỷ lục.")]
     public int towerBest;
     public string towerBestCharacter = "";
@@ -271,6 +273,7 @@ public class PlayerProfile
         storySeen ??= new List<string>();
         endingsSeen ??= new List<string>();
         kills ??= new List<KillCount>();
+        questsClaimed ??= new List<string>();
         foreach (var arr in new[] { bag, equipped })
             for (int i = 0; i < arr.Length; i++)
             {

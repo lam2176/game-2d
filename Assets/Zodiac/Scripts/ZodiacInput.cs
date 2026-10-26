@@ -38,10 +38,10 @@ public static class ZodiacInput
         new Entry("Next", "Dùng nhanh 2", "<Keyboard>/2"),
     };
 
-    // Phím giữ cho việc khác (menu, hành trang, chơi lại, di chuyển lên/xuống) — không cho gán.
+    // Phím giữ cho việc khác (menu, hành trang, nhiệm vụ, chơi lại, di chuyển lên/xuống) — không cho gán.
     static readonly string[] ReservedKeys =
     {
-        "<Keyboard>/escape", "<Keyboard>/tab", "<Keyboard>/i", "<Keyboard>/f5", "<Keyboard>/anyKey",
+        "<Keyboard>/escape", "<Keyboard>/tab", "<Keyboard>/i", "<Keyboard>/j", "<Keyboard>/f5", "<Keyboard>/anyKey",
         "<Keyboard>/upArrow", "<Keyboard>/downArrow", "<Keyboard>/leftArrow", "<Keyboard>/rightArrow",
     };
     static readonly string[] ReservedPad =

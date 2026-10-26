@@ -21,17 +21,7 @@ public partial class InventoryWindow
     static readonly Color Unknown = new Color(0.05f, 0.04f, 0.03f, 0.9f);
 
     /// <summary>Mở trang Sổ ghi chép.</summary>
-    public void ShowJournal()
-    {
-        bagPage.SetActive(false);
-        trainPage.SetActive(false);
-        journalPage.SetActive(true);
-        selected = -1;
-        var res = ZodiacResources.Get;
-        if (res != null) ZodiacAudio.Play(res.page, 0.6f, 0.08f);
-        Refresh();
-        SelectFirst();
-    }
+    public void ShowJournal() => ShowTab(Page.Journal);
 
     void BuildJournal(Transform page)
     {

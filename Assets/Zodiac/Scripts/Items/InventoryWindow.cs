@@ -10,7 +10,9 @@ using UnityEngine.UI;
 ///   • Giữa: túi đồ 6 × 5 ô (viền màu theo độ hiếm, số lượng ở góc, số 1/2 nếu đã gán phím dùng nhanh).
 ///   • Phải: thông tin món đang chọn + nút Trang bị / Tháo · Dùng · Gán phím 1 · Gán phím 2 · Vứt; nút Xếp gọn túi.
 /// Bấm chuột vào ô để chọn. Trang <b>Tu luyện</b>: cấp, XP, cộng điểm 4 thuộc tính, luyện Huyết / Khí Đan
-/// (InventoryWindow.Progression.cs). Luôn hiện thanh dùng nhanh 2 ô, cấp + thanh XP và tiền ở góc dưới trái.
+/// (InventoryWindow.Progression.cs); trang <b>Nhiệm vụ</b> (phím J, InventoryWindow.Quests.cs); trang <b>Sổ ghi chép</b>.
+/// Các trang đổi bằng thanh tab bên trái khung; lúc chơi có thanh bên thu gọn ở mép trái màn hình để mở nhanh từng trang
+/// (InventoryWindow.Sidebar.cs). Luôn hiện thanh dùng nhanh 2 ô, cấp + thanh XP và tiền ở góc dưới trái.
 /// Toàn bộ giao diện dựng bằng code khi vào màn (không phụ thuộc scene).
 /// </summary>
 public partial class InventoryWindow : MonoBehaviour
@@ -35,7 +37,7 @@ public partial class InventoryWindow : MonoBehaviour
     {
         if (instance == null || IsOpen) return;
         instance.Open();
-        if (IsOpen) instance.ShowPage(true);
+        if (IsOpen) instance.ShowTab(Page.Training);
     }
     /// <summary>Frame vừa đóng cửa sổ (Esc đóng hành trang thì không mở luôn menu tạm dừng cùng frame).</summary>
     public static int ClosedFrame { get; private set; } = -1;
@@ -87,15 +89,15 @@ public partial class InventoryWindow : MonoBehaviour
         if (bagHint != null)
             bagHint.text = ZodiacInput.UsingGamepad
                 ? $"{ZodiacInput.PadButton("select")}: hành trang · {ZodiacInput.PadButton("start")}: tạm dừng"
-                : "I / Tab: hành trang · Esc: tạm dừng";
+                : "I / Tab: hành trang · J: nhiệm vụ · Esc: tạm dừng";
     }
 
     /// <summary>Chọn sẵn ô đầu của trang đang mở để đi bằng tay cầm.</summary>
     void SelectFirst()
     {
         if (EventSystem.current == null) return;
-        var page = journalPage != null && journalPage.activeSelf ? journalPage : trainPage != null && trainPage.activeSelf ? trainPage : bagPage;
-        var first = page != null ? page.GetComponentInChildren<Selectable>() : null;
+        var root = PageObject(page);
+        var first = root != null ? root.GetComponentInChildren<Selectable>() : null;
         if (first != null) EventSystem.current.SetSelectedGameObject(first.gameObject);
     }
 
@@ -106,8 +108,11 @@ public partial class InventoryWindow : MonoBehaviour
         if (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame) toggle = true;
         bool escape = (kb != null && kb.escapeKey.wasPressedThisFrame) ||
                       (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame);   // B tay cầm cũng đóng
-        if (IsOpen && (toggle || escape)) Close();
-        else if (!IsOpen && toggle && !PauseMenu.IsOpen && !VillageWindow.IsOpen && !StoryUi.IsOpen) Open();
+        bool quests = kb != null && kb.jKey.wasPressedThisFrame;
+        if (IsOpen && quests && page != Page.Quests) ShowTab(Page.Quests);
+        else if (IsOpen && (toggle || escape || quests)) Close();
+        else if (!IsOpen && (toggle || quests) && !PauseMenu.IsOpen && !VillageWindow.IsOpen && !StoryUi.IsOpen) OpenAt(quests ? Page.Quests : page);
+        UpdateHudSidebar();
     }
 
     void Open()
@@ -156,8 +161,10 @@ public partial class InventoryWindow : MonoBehaviour
         }
         if (coinsText != null) coinsText.text = $"Đồng: {profile.coins}";
         RefreshLevelHud(profile);
+        RefreshBadges(profile);
         if (!IsOpen) return;
         RefreshTraining(profile);
+        RefreshQuests(profile);
         RefreshJournal(profile);
 
         var player = ZodiacPlayerController.Current;
@@ -312,9 +319,6 @@ public partial class InventoryWindow : MonoBehaviour
         Place(panel.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1560f, 860f));
         panel.gameObject.AddComponent<Outline>().effectColor = Gold;
         var panelRoot = panel.transform;
-        MakeButton(panelRoot, "Hành trang", new Vector2(0.5f, 1f), new Vector2(-320f, -45f), new Vector2(280f, 60f), () => ShowPage(false));
-        MakeButton(panelRoot, "Tu luyện", new Vector2(0.5f, 1f), new Vector2(0f, -45f), new Vector2(280f, 60f), () => ShowPage(true));
-        MakeButton(panelRoot, "Sổ ghi chép", new Vector2(0.5f, 1f), new Vector2(320f, -45f), new Vector2(280f, 60f), ShowJournal);
         bagPage = new GameObject("BagPage", typeof(RectTransform));
         bagPage.transform.SetParent(panelRoot, false);
         Stretch((RectTransform)bagPage.transform);
@@ -328,6 +332,13 @@ public partial class InventoryWindow : MonoBehaviour
         Stretch((RectTransform)journalPage.transform);
         BuildJournal(journalPage.transform);
         journalPage.SetActive(false);
+        questPage = new GameObject("QuestPage", typeof(RectTransform));
+        questPage.transform.SetParent(panelRoot, false);
+        Stretch((RectTransform)questPage.transform);
+        BuildQuests(questPage.transform);
+        questPage.SetActive(false);
+        BuildTabs(panelRoot);
+        BuildHudSidebar(root);
         var p = bagPage.transform;
 
         // Trái: chân dung, trang bị, chỉ số
@@ -370,7 +381,7 @@ public partial class InventoryWindow : MonoBehaviour
         quick2Button = MakeButton(p, "Gán phím 2", new Vector2(0f, 1f), new Vector2(right + 220f, -580f), new Vector2(135f, 54f), () => AssignQuick(1));
         dropButton = MakeButton(p, "Vứt", new Vector2(0f, 1f), new Vector2(right + 150f, -645f), new Vector2(280f, 54f), DropSelected);
 
-        MakeText(p, "Hint", "Bấm chuột vào ô để chọn · I / Tab / Esc: đóng", 22, new Color(0.8f, 0.72f, 0.6f),
+        MakeText(p, "Hint", "Bấm chuột vào ô để chọn · J: nhiệm vụ · I / Tab / Esc: đóng", 22, new Color(0.8f, 0.72f, 0.6f),
                  new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(1200f, 34f), TextAnchor.MiddleCenter);
     }
 
