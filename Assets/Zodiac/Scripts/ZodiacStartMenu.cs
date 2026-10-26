@@ -34,7 +34,10 @@ public class ZodiacStartMenu : MonoBehaviour
     public Text skillText;
 
     int shown = -1;
-    GameObject levelPanel, confirmPanel;
+    GameObject levelPanel, confirmPanel, slotPanel;
+    Text confirmText, slotButtonText;
+    Transform slotList;
+    System.Action pendingConfirm;
     Font font;
 
     void Start()
@@ -53,7 +56,8 @@ public class ZodiacStartMenu : MonoBehaviour
     void Update()
     {
         if (SettingsWindow.IsOpen) return;
-        if ((levelPanel != null && levelPanel.activeSelf) || (confirmPanel != null && confirmPanel.activeSelf))
+        if ((levelPanel != null && levelPanel.activeSelf) || (confirmPanel != null && confirmPanel.activeSelf) ||
+            (slotPanel != null && slotPanel.activeSelf))
         {
             var kb = UnityEngine.InputSystem.Keyboard.current;
             if (kb != null && kb.escapeKey.wasPressedThisFrame) CloseOverlays();
@@ -133,6 +137,7 @@ public class ZodiacStartMenu : MonoBehaviour
     {
         if (levelPanel != null) levelPanel.SetActive(false);
         if (confirmPanel != null) confirmPanel.SetActive(false);
+        if (slotPanel != null) slotPanel.SetActive(false);
         if (EventSystem.current != null && shown >= 0 && shown < slots.Length) EventSystem.current.SetSelectedGameObject(slots[shown].gameObject);
     }
 
@@ -154,8 +159,10 @@ public class ZodiacStartMenu : MonoBehaviour
         canvasGo.AddComponent<GraphicRaycaster>();
 
         // Nút Chơi mới (góc phải trên)
-        var newGame = MakeButton(canvasGo.transform, "Chơi mới", new Vector2(1f, 1f), new Vector2(-150f, -60f), new Vector2(240f, 64f), AskNewGame);
-        newGame.name = "NewGameButton";
+        var slotButton = MakeButton(canvasGo.transform, "", new Vector2(1f, 1f), new Vector2(-150f, -60f), new Vector2(240f, 64f), OpenSlots);
+        slotButton.name = "SaveSlotButton";
+        slotButtonText = slotButton.GetComponentInChildren<Text>();
+        RefreshSlotButton();
         MakeButton(canvasGo.transform, "Cài đặt", new Vector2(1f, 1f), new Vector2(-410f, -60f), new Vector2(240f, 64f), OpenSettings).name = "SettingsButton";
 
         levelPanel = Overlay(canvasGo.transform, "LevelPanel", "CHỌN MÀN", 1320f, 760f);
@@ -166,13 +173,32 @@ public class ZodiacStartMenu : MonoBehaviour
         MakeButton(levelPanel.transform.Find("Box"), "Quay lại", new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(260f, 64f), CloseOverlays);
         levelPanel.SetActive(false);
 
-        confirmPanel = Overlay(canvasGo.transform, "ConfirmPanel", "CHƠI MỚI?", 760f, 420f);
+        slotPanel = Overlay(canvasGo.transform, "SlotPanel", "Ô LƯU", 1400f, 720f);
+        var slotBox = slotPanel.transform.Find("Box");
+        var sl = new GameObject("Slots", typeof(RectTransform));
+        sl.transform.SetParent(slotBox, false);
+        Place((RectTransform)sl.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(1320f, 480f));
+        slotList = sl.transform;
+        MakeButton(slotBox, "Quay lại", new Vector2(0.5f, 0f), new Vector2(0f, 55f), new Vector2(260f, 64f), CloseOverlays);
+        slotPanel.SetActive(false);
+
+        confirmPanel = Overlay(canvasGo.transform, "ConfirmPanel", "CHẮC CHƯA?", 760f, 420f);
         var box = confirmPanel.transform.Find("Box");
-        var msg = MakeLabel(box, "Xoá toàn bộ đồ, tiền, cấp và màn đã mở của mọi con giáp?", 28, new Color(0.25f, 0.15f, 0.1f),
-                            new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), new Vector2(680f, 100f));
-        msg.horizontalOverflow = HorizontalWrapMode.Wrap;
-        MakeButton(box, "Xoá và chơi mới", new Vector2(0.5f, 0f), new Vector2(-170f, 70f), new Vector2(300f, 64f), ConfirmNewGame);
-        MakeButton(box, "Thôi", new Vector2(0.5f, 0f), new Vector2(170f, 70f), new Vector2(300f, 64f), CloseOverlays);
+        confirmText = MakeLabel(box, "", 28, new Color(0.25f, 0.15f, 0.1f), new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), new Vector2(680f, 100f));
+        confirmText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        MakeButton(box, "Đồng ý", new Vector2(0.5f, 0f), new Vector2(-170f, 70f), new Vector2(300f, 64f), () =>
+        {
+            var act = pendingConfirm;
+            pendingConfirm = null;
+            confirmPanel.SetActive(false);
+            act?.Invoke();
+        });
+        MakeButton(box, "Thôi", new Vector2(0.5f, 0f), new Vector2(170f, 70f), new Vector2(300f, 64f), () =>
+        {
+            pendingConfirm = null;
+            confirmPanel.SetActive(false);
+            OpenSlots();
+        });
         confirmPanel.SetActive(false);
     }
 
@@ -206,17 +232,98 @@ public class ZodiacStartMenu : MonoBehaviour
         });
     }
 
-    void AskNewGame()
+    // ───────── Ô lưu ─────────
+
+    void RefreshSlotButton()
     {
-        if (levelPanel != null) levelPanel.SetActive(false);
-        confirmPanel.SetActive(true);
+        if (slotButtonText != null) slotButtonText.text = $"Ô lưu {PlayerProfile.Slot}";
     }
 
-    void ConfirmNewGame()
+    void OpenSlots()
     {
-        PlayerProfile.ResetProfile();
+        if (levelPanel != null) levelPanel.SetActive(false);
+        confirmPanel.SetActive(false);
+        slotPanel.SetActive(true);
+        RebuildSlots();
+    }
+
+    /// <summary>Ba thẻ ô lưu: tóm tắt tiến trình, nút Dùng / Bắt đầu mới và Xoá.</summary>
+    void RebuildSlots()
+    {
+        foreach (Transform child in slotList)
+        {
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
+        GameObject first = null;
+        for (int i = 1; i <= PlayerProfile.SlotCount; i++)
+        {
+            int slot = i;
+            bool active = slot == PlayerProfile.Slot;
+            var p = PlayerProfile.Peek(slot);
+            float x = (i - 2) * 440f;
+            var card = new GameObject("Slot " + slot, typeof(RectTransform)).AddComponent<Image>();
+            card.transform.SetParent(slotList, false);
+            card.color = active ? new Color(1f, 0.88f, 0.6f) : new Color(0.93f, 0.86f, 0.72f);
+            card.raycastTarget = false;
+            Place(card.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 0f), new Vector2(410f, 470f));
+            var title = MakeLabel(card.transform, $"Ô {slot}" + (active ? "  (đang dùng)" : ""), 34, new Color(0.6f, 0.1f, 0.08f),
+                                  new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(380f, 50f));
+            title.fontStyle = FontStyle.Bold;
+            var info = MakeLabel(card.transform, p != null ? Summary(p) : "Trống\n\nBắt đầu một hành trình mới", 22, new Color(0.25f, 0.15f, 0.1f),
+                                 new Vector2(0.5f, 1f), new Vector2(0f, -175f), new Vector2(370f, 220f));
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
+            var use = MakeButton(card.transform, p != null ? (active ? "Tiếp tục" : "Dùng ô này") : "Bắt đầu mới", new Vector2(0.5f, 0f),
+                                 new Vector2(0f, 120f), new Vector2(320f, 60f), () => UseSlot(slot));
+            if (first == null || active) first = use.gameObject;
+            if (p != null)
+                MakeButton(card.transform, "Xoá", new Vector2(0.5f, 0f), new Vector2(0f, 45f), new Vector2(200f, 50f), () => AskDelete(slot));
+        }
+        if (EventSystem.current != null && first != null) EventSystem.current.SetSelectedGameObject(first);
+    }
+
+    string Summary(PlayerProfile p)
+    {
+        int best = 0;
+        string bestName = "";
+        if (p.characters != null)
+            foreach (var c in p.characters)
+                if (c.level > best)
+                {
+                    best = c.level;
+                    var def = roster != null && roster.characters != null ? System.Array.Find(roster.characters, r => r != null && r.name == c.character) : null;
+                    bestName = def != null ? def.displayName : c.character;
+                }
+        int levels = levelScenes != null && levelScenes.Length > 0 ? levelScenes.Length : 8;
+        int endings = p.endingsSeen != null ? p.endingsSeen.Count : 0;
+        return $"Màn đã mở: {Mathf.Min(p.unlockedLevels, levels)}/{levels}\n" +
+               $"Đồng: {p.coins}\n" +
+               (best > 0 ? $"Cấp cao nhất: {best} ({bestName})\n" : "") +
+               $"Phá đảo: {endings}/12" + (p.towerBest > 0 ? $" · Tháp: {p.towerBest} tầng" : "") + "\n" +
+               $"Thời gian chơi: {p.PlayTimeText}\n" +
+               (string.IsNullOrEmpty(p.lastSaved) ? "" : $"<size=18>Lưu lúc {p.lastSaved}</size>");
+    }
+
+    void UseSlot(int slot)
+    {
+        bool fresh = !PlayerProfile.SlotExists(slot);
+        PlayerProfile.SelectSlot(slot);
+        if (fresh) PlayerProfile.ResetProfile();   // ô trống: tạo hồ sơ mới ngay (quà khởi đầu) và lưu
+        RefreshSlotButton();
         CloseOverlays();
         if (shown >= 0) Show(shown);
+    }
+
+    void AskDelete(int slot)
+    {
+        slotPanel.SetActive(false);
+        confirmText.text = $"Xoá hẳn ô lưu {slot}? Toàn bộ đồ, tiền, cấp và màn đã mở trong ô này sẽ mất.";
+        pendingConfirm = () =>
+        {
+            PlayerProfile.DeleteSlot(slot);
+            OpenSlots();
+        };
+        confirmPanel.SetActive(true);
     }
 
     GameObject Overlay(Transform parent, string name, string title, float width, float height)

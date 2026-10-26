@@ -168,6 +168,8 @@ public class ZodiacGameManager : MonoBehaviour
     void Update()
     {
         if (Keyboard.current != null && Keyboard.current.f5Key.wasPressedThisFrame) Restart();
+        // Đếm thời gian chơi (lưu cùng lần lưu kế tiếp); menu tạm dừng / hành trang (timeScale 0) không tính
+        if (Current == State.Playing && Time.timeScale > 0f) PlayerProfile.Current.playSeconds += Time.unscaledDeltaTime;
     }
 
     void OnCollected(Collectible item)
