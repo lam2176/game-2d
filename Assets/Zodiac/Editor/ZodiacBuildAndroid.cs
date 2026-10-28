@@ -69,6 +69,8 @@ public static class ZodiacBuildAndroid
         PlayerSettings.allowedAutorotateToLandscapeRight = true;
         PlayerSettings.allowedAutorotateToPortrait = false;
         PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
+        // Máy chủ tài khoản (Server/ZodiacServer) chạy http trong mạng nhà
+        PlayerSettings.insecureHttpOption = InsecureHttpOption.AlwaysAllowed;
         EditorUserBuildSettings.buildAppBundle = false;
 
         Directory.CreateDirectory(Path.GetDirectoryName(OutputPath));

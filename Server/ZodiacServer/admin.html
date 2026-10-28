@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản trị 12 Con Giáp</title>
+<style>
+  :root { --bg:#1c140f; --panel:#2a1f17; --line:#4a3726; --ink:#f3e7d3; --muted:#b9a68c; --gold:#f0c35a; --red:#c8382c; --green:#5fbf6a; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui, "Segoe UI", sans-serif; }
+  header { display:flex; gap:12px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  h1 { margin:0; font-size:20px; color:var(--gold); flex:1; }
+  main { padding:16px 20px; max-width:1400px; margin:auto; }
+  input, textarea, select, button { font:inherit; color:var(--ink); background:#120c08; border:1px solid var(--line); border-radius:6px; padding:7px 10px; }
+  button { background:var(--red); border-color:var(--red); cursor:pointer; color:#fff; }
+  button.ghost { background:transparent; border-color:var(--line); color:var(--ink); }
+  button:disabled { opacity:.5; cursor:default; }
+  .stats { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .chip { background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px 12px; color:var(--muted); }
+  .chip b { color:var(--ink); }
+  .wrap { overflow-x:auto; border:1px solid var(--line); border-radius:8px; }
+  table { border-collapse:collapse; width:100%; min-width:900px; }
+  th, td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { background:var(--panel); color:var(--muted); font-weight:600; position:sticky; top:0; }
+  tr.row:hover { background:#241a12; cursor:pointer; }
+  .banned { color:var(--red); font-weight:600; }
+  .muted { color:var(--muted); }
+  #login { max-width:360px; margin:12vh auto; background:var(--panel); padding:24px; border-radius:10px; border:1px solid var(--line); display:grid; gap:12px; }
+  #detail { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-start; justify-content:center; padding:4vh 12px; overflow:auto; }
+  #detail .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px; width:min(900px, 100%); display:grid; gap:14px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:8px 16px; }
+  .grid div span { display:block; color:var(--muted); font-size:13px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  textarea { width:100%; min-height:300px; font:13px/1.4 ui-monospace, Consolas, monospace; }
+  .msg { color:var(--gold); min-height:1.4em; }
+</style>
+</head>
+<body>
+<div id="login">
+  <h1>Quản trị 12 Con Giáp</h1>
+  <input id="key" type="password" placeholder="Mật khẩu quản trị (data/admin.txt)" autofocus>
+  <button id="enter">Vào</button>
+  <div class="msg" id="loginMsg"></div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <h1>Quản trị 12 Con Giáp</h1>
+    <input id="q" placeholder="Tìm tên đăng nhập…">
+    <button class="ghost" id="reload">Tải lại</button>
+    <button class="ghost" id="logout">Thoát</button>
+  </header>
+  <main>
+    <div class="stats" id="stats"></div>
+    <div class="wrap">
+      <table>
+        <thead><tr><th>#</th><th>Tài khoản</th><th>Con giáp</th><th>Cấp</th><th>Đồng</th><th>Màn mở</th><th>Giờ chơi</th><th>Đăng nhập cuối</th><th>Lưu cuối</th><th>Trạng thái</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div id="detail"><div class="card" id="card"></div></div>
+
+<script>
+const NAMES = { Rat_Ty:"Chuột (Tý)", Ox_Suu:"Trâu (Sửu)", Tiger_Dan:"Hổ (Dần)", Cat_Mao:"Mèo (Mão)", Dragon_Thin:"Rồng (Thìn)", Snake_Ty:"Rắn (Tỵ)",
+                Horse_Ngo:"Ngựa (Ngọ)", Goat_Mui:"Dê (Mùi)", Monkey_Than:"Khỉ (Thân)", Rooster_Dau:"Gà (Dậu)", Dog_Tuat:"Chó (Tuất)", Pig_Hoi:"Lợn (Hợi)" };
+let key = sessionStorage.getItem("zodiacAdmin") || "";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const when = s => s ? new Date(s).toLocaleString("vi-VN") : "—";
+const hours = s => { const m = Math.floor((s || 0) / 60); return m >= 60 ? `${Math.floor(m / 60)} giờ ${m % 60} phút` : `${m} phút`; };
+
+async function api(path, options = {}) {
+  const res = await fetch("/admin/api" + path, { ...options, headers: { "Content-Type": "application/json", "X-Admin-Key": key } });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401) { showLogin(body.message || "Sai mật khẩu"); throw new Error("401"); }
+  if (!res.ok) throw new Error(body.message || res.statusText);
+  return body;
+}
+
+function showLogin(msg) { $("app").hidden = true; $("login").style.display = "grid"; $("loginMsg").textContent = msg || ""; }
+
+async function load() {
+  const data = await api("/accounts?q=" + encodeURIComponent($("q").value));
+  $("login").style.display = "none"; $("app").hidden = false;
+  $("stats").innerHTML = `<span class="chip">Tài khoản <b>${data.accounts.length}</b></span>` +
+    data.stats.map(s => `<span class="chip">${esc(NAMES[s.character] || "Chưa chọn")} <b>${s.count}</b></span>`).join("");
+  $("rows").innerHTML = data.accounts.map(a => `
+    <tr class="row" data-id="${a.id}">
+      <td class="muted">${a.id}</td><td><b>${esc(a.username)}</b></td><td>${esc(NAMES[a.character] || "—")}</td>
+      <td>${a.level}</td><td>${a.coins}</td><td>${a.unlocked_levels}/8</td><td>${hours(a.play_seconds)}</td>
+      <td>${when(a.last_login_at)}</td><td>${when(a.saved_at)}</td>
+      <td>${a.banned ? `<span class="banned">Bị khoá</span>` : "Bình thường"}</td>
+    </tr>`).join("") || `<tr><td colspan="10" class="muted">Chưa có tài khoản nào</td></tr>`;
+}
+
+async function open(id) {
+  const a = await api("/accounts/" + id);
+  let pretty = "";
+  try { pretty = a.profile ? JSON.stringify(JSON.parse(a.profile), null, 2) : ""; } catch { pretty = a.profile; }
+  $("card").innerHTML = `
+    <div class="actions"><h1 style="flex:1">${esc(a.username)} <span class="muted">#${a.id}</span></h1><button class="ghost" id="close">Đóng</button></div>
+    <div class="grid">
+      <div><span>Con giáp</span>${esc(NAMES[a.character] || "Chưa chọn")}</div>
+      <div><span>Cấp</span>${a.level}</div><div><span>Đồng</span>${a.coins}</div>
+      <div><span>Màn đã mở</span>${a.unlocked_levels}/8</div><div><span>Thời gian chơi</span>${hours(a.play_seconds)}</div>
+      <div><span>Tạo lúc</span>${when(a.created_at)}</div><div><span>Đăng nhập cuối</span>${when(a.last_login_at)}</div>
+      <div><span>Lưu cuối</span>${when(a.saved_at)}</div><div><span>Phiên đang mở</span>${a.sessions}</div>
+      <div><span>Trạng thái</span>${a.banned ? `<span class="banned">Bị khoá</span> ${esc(a.ban_reason)}` : "Bình thường"}</div>
+    </div>
+    <div class="actions">
+      ${a.banned ? `<button id="unban">Mở khoá</button>` : `<input id="reason" placeholder="Lý do khoá"><button id="ban">Khoá tài khoản</button>`}
+    </div>
+    <div class="actions"><input id="pw" type="text" placeholder="Mật khẩu mới (≥ 6 ký tự)"><button id="setpw">Đặt lại mật khẩu</button></div>
+    <div class="actions">
+      <select id="char"><option value="">— Chưa chọn —</option>${Object.entries(NAMES).map(([k, v]) => `<option value="${k}" ${k === a.character ? "selected" : ""}>${v}</option>`).join("")}</select>
+      <button id="setchar">Đổi con giáp</button>
+    </div>
+    <div><span class="muted">Hồ sơ (JSON) — sửa xong bấm Lưu: người chơi bị đăng xuất để lần vào sau tải bản này về.</span>
+      <textarea id="profile" spellcheck="false">${esc(pretty)}</textarea></div>
+    <div class="actions">
+      <button id="saveProfile">Lưu hồ sơ</button>
+      <button class="ghost" id="download">Tải JSON</button>
+      <span style="flex:1"></span>
+      <button class="ghost" id="del" style="border-color:var(--red);color:#ff8a7e">Xoá tài khoản</button>
+    </div>
+    <div class="msg" id="msg"></div>`;
+  $("detail").style.display = "flex";
+  const act = async (fn, ok) => { try { await fn(); $("msg").textContent = ok; await load(); } catch (e) { if (e.message !== "401") $("msg").textContent = e.message; } };
+  const post = (p, body) => api(`/accounts/${id}${p}`, { method: "POST", body: JSON.stringify(body) });
+  $("close").onclick = () => $("detail").style.display = "none";
+  if ($("ban")) $("ban").onclick = () => act(() => post("/ban", { banned: true, reason: $("reason").value }), "Đã khoá").then(() => open(id));
+  if ($("unban")) $("unban").onclick = () => act(() => post("/ban", { banned: false }), "Đã mở khoá").then(() => open(id));
+  $("setpw").onclick = () => act(() => post("/password", { password: $("pw").value }), "Đã đặt lại mật khẩu");
+  $("setchar").onclick = () => confirm("Đổi con giáp của tài khoản này?") && act(() => post("/character", { character: $("char").value }), "Đã đổi con giáp");
+  $("saveProfile").onclick = () => confirm("Ghi đè hồ sơ của người chơi?") && act(() => post("/profile", { profile: $("profile").value }), "Đã lưu hồ sơ");
+  $("download").onclick = () => {
+    const url = URL.createObjectURL(new Blob([$("profile").value], { type: "application/json" }));
+    Object.assign(document.createElement("a"), { href: url, download: `${a.username}.json` }).click();
+    URL.revokeObjectURL(url);
+  };
+  $("del").onclick = () => confirm(`Xoá hẳn tài khoản ${a.username}? Không hoàn tác được.`) &&
+    act(() => api("/accounts/" + id, { method: "DELETE" }), "Đã xoá").then(() => $("detail").style.display = "none");
+}
+
+$("enter").onclick = () => { key = $("key").value; sessionStorage.setItem("zodiacAdmin", key); load().catch(() => {}); };
+$("key").onkeydown = e => { if (e.key === "Enter") $("enter").click(); };
+$("reload").onclick = () => load().catch(() => {});
+$("logout").onclick = () => { key = ""; sessionStorage.removeItem("zodiacAdmin"); showLogin(""); };
+$("q").oninput = () => load().catch(() => {});
+$("rows").onclick = e => { const tr = e.target.closest("tr[data-id]"); if (tr) open(tr.dataset.id).catch(() => {}); };
+$("detail").onclick = e => { if (e.target === $("detail")) $("detail").style.display = "none"; };
+if (key) load().catch(() => {}); else showLogin("");
+</script>
+</body>
+</html>

@@ -169,9 +169,46 @@ public class PlayerProfile
     static string PathFor(int slot) =>
         Path.Combine(Application.persistentDataPath, slot <= 1 ? "zodiac_profile.json" : $"zodiac_profile_{slot}.json");
 
-    static string FilePath => PathFor(Slot);
+    /// <summary>Tài khoản online đang dùng (<see cref="ZodiacCloud"/>) — null thì dùng ô lưu trên máy.</summary>
+    static string account;
+
+    static string FilePath => account != null
+        ? Path.Combine(Application.persistentDataPath, $"zodiac_acc_{account}.json")
+        : PathFor(Slot);
 
     public static bool HasSave => File.Exists(FilePath);
+
+    /// <summary>
+    /// Chuyển sang hồ sơ của một tài khoản: lấy bản trên máy chủ (serverJson) ghi đè bản trên máy, trừ khi
+    /// keepLocal (bản trên máy chưa kịp đẩy lên). Tài khoản mới chưa có hồ sơ thì bắt đầu từ đầu.
+    /// </summary>
+    public static void UseAccount(string username, string serverJson, bool keepLocal)
+    {
+        account = username;
+        current = null;
+        try
+        {
+            if (!keepLocal || !File.Exists(FilePath))
+            {
+                if (!string.IsNullOrEmpty(serverJson)) File.WriteAllText(FilePath, serverJson);
+                else if (File.Exists(FilePath)) File.Delete(FilePath);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Không ghi được hồ sơ tài khoản: " + e.Message);
+        }
+        if (!File.Exists(FilePath)) Current.Save();   // hồ sơ mới (quà khởi đầu)
+        Changed?.Invoke();
+    }
+
+    /// <summary>Đăng xuất: trở về ô lưu trên máy.</summary>
+    public static void LeaveAccount()
+    {
+        account = null;
+        current = null;
+        Changed?.Invoke();
+    }
     public static bool SlotExists(int slot) => File.Exists(PathFor(slot));
 
     /// <summary>Đổi sang ô lưu khác: hồ sơ đang mở được nạp lại từ ô đó (ô trống thì là hồ sơ mới).</summary>
@@ -334,6 +371,7 @@ public class PlayerProfile
         {
             lastSaved = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
             File.WriteAllText(FilePath, JsonUtility.ToJson(this, true));
+            if (account != null) ZodiacCloud.MarkDirty();
         }
         catch (Exception e)
         {

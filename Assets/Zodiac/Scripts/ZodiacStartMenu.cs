@@ -8,6 +8,8 @@ using UnityEngine.UI;
 /// (chỉ số, cấp của con đó, nội tại, chiêu thức), nút Bắt đầu (mở bảng chọn màn — màn chưa mở bị khoá),
 /// nút Chơi mới (xoá hồ sơ, có hỏi lại) và nút Thoát. Bảng chọn màn / hỏi lại dựng bằng code lúc chạy.
 /// Ô đang được chọn (EventSystem) chính là nhân vật sẽ chơi — lưu vào <see cref="ZodiacSelection"/>.
+/// Có máy chủ (<see cref="ZodiacCloud.Configured"/>) thì phải đăng nhập trước; tài khoản mới chọn một con giáp
+/// (một lần, không đổi được), sau đó lưới chỉ còn con giáp của tài khoản. Nút Ô lưu thành nút Đăng xuất.
 /// </summary>
 public class ZodiacStartMenu : MonoBehaviour
 {
@@ -35,7 +37,8 @@ public class ZodiacStartMenu : MonoBehaviour
 
     int shown = -1;
     GameObject levelPanel, confirmPanel, slotPanel;
-    Text confirmText, slotButtonText;
+    Text confirmText, slotButtonText, accountText;
+    LoginPanel login;
     Transform slotList;
     System.Action pendingConfirm;
     Font font;
@@ -51,11 +54,23 @@ public class ZodiacStartMenu : MonoBehaviour
         if (slots != null && index < slots.Length && EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(slots[index].gameObject);
         Show(index);
+        if (ZodiacCloud.Configured)
+        {
+            ZodiacCloud.SessionLost -= OnSessionLost;
+            ZodiacCloud.SessionLost += OnSessionLost;
+            if (ZodiacCloud.LoggedIn)
+            {
+                login.gameObject.SetActive(false);
+                OnLoggedIn();
+            }
+        }
     }
+
+    void OnDestroy() => ZodiacCloud.SessionLost -= OnSessionLost;
 
     void Update()
     {
-        if (SettingsWindow.IsOpen) return;
+        if (SettingsWindow.IsOpen || LoginPanel.IsOpen) return;
         if ((levelPanel != null && levelPanel.activeSelf) || (confirmPanel != null && confirmPanel.activeSelf) ||
             (slotPanel != null && slotPanel.activeSelf))
         {
@@ -119,6 +134,16 @@ public class ZodiacStartMenu : MonoBehaviour
     /// <summary>Nút Bắt đầu: mở bảng chọn màn (chưa có danh sách màn thì vào thẳng màn 1).</summary>
     public void Play()
     {
+        if (ZodiacCloud.Configured && !ZodiacCloud.LoggedIn)
+        {
+            login.Open("");
+            return;
+        }
+        if (ZodiacCloud.Configured && !ZodiacCloud.HasCharacter)
+        {
+            AskChooseCharacter();
+            return;
+        }
         if (!string.IsNullOrEmpty(villageScene))
         {
             ScreenFader.LoadScene(villageScene);
@@ -163,6 +188,10 @@ public class ZodiacStartMenu : MonoBehaviour
         slotButton.name = "SaveSlotButton";
         slotButtonText = slotButton.GetComponentInChildren<Text>();
         RefreshSlotButton();
+        // Góc trái trên (tiêu đề nằm giữa)
+        accountText = MakeLabel(canvasGo.transform, "", 26, new Color(0.5f, 0.12f, 0.08f), new Vector2(0f, 1f), new Vector2(370f, -65f), new Vector2(680f, 90f));
+        accountText.alignment = TextAnchor.MiddleLeft;
+        accountText.horizontalOverflow = HorizontalWrapMode.Wrap;
         MakeButton(canvasGo.transform, "Cài đặt", new Vector2(1f, 1f), new Vector2(-410f, -60f), new Vector2(240f, 64f), OpenSettings).name = "SettingsButton";
 
         levelPanel = Overlay(canvasGo.transform, "LevelPanel", "CHỌN MÀN", 1320f, 760f);
@@ -197,9 +226,12 @@ public class ZodiacStartMenu : MonoBehaviour
         {
             pendingConfirm = null;
             confirmPanel.SetActive(false);
-            OpenSlots();
+            if (ZodiacCloud.Configured) CloseOverlays();
+            else OpenSlots();
         });
         confirmPanel.SetActive(false);
+
+        if (ZodiacCloud.Configured) login = LoginPanel.Build(canvasGo.transform, OnLoggedIn);
     }
 
     void RebuildLevelButtons()
@@ -236,11 +268,19 @@ public class ZodiacStartMenu : MonoBehaviour
 
     void RefreshSlotButton()
     {
-        if (slotButtonText != null) slotButtonText.text = $"Ô lưu {PlayerProfile.Slot}";
+        if (slotButtonText == null) return;
+        if (!ZodiacCloud.Configured) slotButtonText.text = $"Ô lưu {PlayerProfile.Slot}";
+        else slotButtonText.text = ZodiacCloud.LoggedIn ? "Đăng xuất" : "Đăng nhập";
     }
 
     void OpenSlots()
     {
+        if (ZodiacCloud.Configured)
+        {
+            if (ZodiacCloud.LoggedIn) AskLogout();
+            else login.Open("");
+            return;
+        }
         if (levelPanel != null) levelPanel.SetActive(false);
         confirmPanel.SetActive(false);
         slotPanel.SetActive(true);
@@ -324,6 +364,103 @@ public class ZodiacStartMenu : MonoBehaviour
             OpenSlots();
         };
         confirmPanel.SetActive(true);
+    }
+
+    // ───────── Tài khoản online ─────────
+
+    int AccountIndex => roster != null && ZodiacCloud.HasCharacter
+        ? System.Array.FindIndex(roster.characters, c => c != null && c.name == ZodiacCloud.Current.character)
+        : -1;
+
+    /// <summary>Đăng nhập xong (hoặc quay về menu khi đang đăng nhập): khoá lưới theo con giáp của tài khoản.</summary>
+    void OnLoggedIn()
+    {
+        RefreshSlotButton();
+        int mine = AccountIndex;
+        for (int i = 0; slots != null && i < slots.Length; i++)
+        {
+            if (slots[i] == null) continue;
+            bool open = mine < 0 || i == mine;
+            slots[i].interactable = open;
+            var group = slots[i].GetComponent<CanvasGroup>();
+            if (group == null) group = slots[i].gameObject.AddComponent<CanvasGroup>();
+            group.alpha = open ? 1f : 0.35f;
+        }
+        int index = mine >= 0 ? mine : Mathf.Clamp(shown, 0, roster.Count - 1);
+        if (EventSystem.current != null && slots != null && index < slots.Length) EventSystem.current.SetSelectedGameObject(slots[index].gameObject);
+        Show(index);
+        RefreshAccountText();
+    }
+
+    void RefreshAccountText()
+    {
+        if (accountText == null) return;
+        if (!ZodiacCloud.LoggedIn)
+        {
+            accountText.text = "";
+            return;
+        }
+        var acc = ZodiacCloud.Current;
+        accountText.text = ZodiacCloud.HasCharacter
+            ? $"Tài khoản <b>{acc.username}</b>"
+            : $"Tài khoản <b>{acc.username}</b> · chọn một con giáp rồi bấm Bắt đầu (chỉ chọn một lần)";
+    }
+
+    void AskChooseCharacter()
+    {
+        var c = roster.Get(shown);
+        if (c == null) return;
+        confirmText.text = $"Chọn {c.displayName} làm nhân vật của tài khoản? Chơi từ đầu và không đổi được nữa.";
+        pendingConfirm = () =>
+        {
+            accountText.text = "Đang lưu lựa chọn…";
+            ZodiacCloud.ChooseCharacter(c.name, error =>
+            {
+                if (error != null)
+                {
+                    accountText.text = error;
+                    return;
+                }
+                ZodiacSelection.Index = shown;
+                PlayerProfile.Current.Progress(c.name);
+                PlayerProfile.Current.Save();   // hồ sơ đầu tiên lên máy chủ
+                OnLoggedIn();
+                Play();
+            });
+        };
+        confirmPanel.SetActive(true);
+    }
+
+    void AskLogout()
+    {
+        confirmText.text = $"Đăng xuất tài khoản {ZodiacCloud.Current.username}? Tiến trình đã được lưu trên máy chủ.";
+        pendingConfirm = () =>
+        {
+            ZodiacCloud.Logout();
+            ResetGrid();
+            login.Open("");
+        };
+        confirmPanel.SetActive(true);
+    }
+
+    void OnSessionLost(string message)
+    {
+        ResetGrid();
+        login.Open(message);
+    }
+
+    void ResetGrid()
+    {
+        for (int i = 0; slots != null && i < slots.Length; i++)
+        {
+            if (slots[i] == null) continue;
+            slots[i].interactable = true;
+            var group = slots[i].GetComponent<CanvasGroup>();
+            if (group != null) group.alpha = 1f;
+        }
+        RefreshSlotButton();
+        RefreshAccountText();
+        if (shown >= 0) Show(shown);
     }
 
     GameObject Overlay(Transform parent, string name, string title, float width, float height)
