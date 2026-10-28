@@ -297,17 +297,24 @@ public partial class InventoryWindow : MonoBehaviour
         canvasGo.AddComponent<GraphicRaycaster>();
         var root = canvasGo.transform;
 
-        // Thanh dùng nhanh (luôn hiện) + tiền
+        // Thanh dùng nhanh (luôn hiện) + tiền + cấp — góc dưới trái; điện thoại: dời lên dưới chân dung (góc dưới là cần ảo)
+        var hudLeft = new GameObject("HudLeft", typeof(RectTransform)).GetComponent<RectTransform>();
+        hudLeft.SetParent(root, false);
+        hudLeft.anchorMin = hudLeft.anchorMax = ZodiacInput.Touch ? new Vector2(0f, 1f) : Vector2.zero;
+        hudLeft.anchoredPosition = ZodiacInput.Touch ? new Vector2(0f, -470f) : Vector2.zero;
+        hudLeft.sizeDelta = Vector2.zero;
         for (int i = 0; i < PlayerProfile.QuickSlots; i++)
         {
-            var s = MakeSlot(root, new Vector2(0f, 0f), new Vector2(70f + i * 92f, 190f), 80f);
+            var s = MakeSlot(hudLeft, new Vector2(0f, 0f), new Vector2(70f + i * 92f, 190f), 80f);
             s.key.horizontalOverflow = HorizontalWrapMode.Overflow;
             s.frame.color = Gold;
+            if (ZodiacInput.Touch) TouchControls.Tappable(s.frame.gameObject, ZodiacInput.PadPath(i == 0 ? "Previous" : "Next"));
             quickSlots.Add(s);
         }
-        coinsText = MakeText(root, "Coins", "", 30, Gold, new Vector2(0f, 0f), new Vector2(30f, 130f), new Vector2(300f, 40f), TextAnchor.MiddleLeft);
-        bagHint = MakeText(root, "BagHint", "", 20, Ink, new Vector2(0f, 0f), new Vector2(30f, 100f), new Vector2(400f, 30f), TextAnchor.MiddleLeft);
-        BuildLevelHud(root);
+        coinsText = MakeText(hudLeft, "Coins", "", 30, Gold, new Vector2(0f, 0f), new Vector2(30f, 130f), new Vector2(300f, 40f), TextAnchor.MiddleLeft);
+        bagHint = MakeText(hudLeft, "BagHint", "", 20, Ink, new Vector2(0f, 0f), new Vector2(30f, 100f), new Vector2(400f, 30f), TextAnchor.MiddleLeft);
+        bagHint.gameObject.SetActive(!ZodiacInput.Touch);   // điện thoại đã có nút Túi / tạm dừng
+        BuildLevelHud(hudLeft);
 
         window = new GameObject("Window", typeof(RectTransform));
         window.transform.SetParent(root, false);

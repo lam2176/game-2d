@@ -55,6 +55,10 @@ public static class ZodiacInput
     public static event Action Changed;
 
     public static bool UsingGamepad { get; private set; }
+    /// <summary>Đang chạy trên điện thoại — có điều khiển cảm ứng (<see cref="TouchControls"/>).</summary>
+    public static bool Touch { get; private set; }
+    /// <summary>Lần bấm gần nhất đến từ nút cảm ứng trên màn hình (tay cầm ảo) — gợi ý hiện tên nút cảm ứng.</summary>
+    public static bool UsingTouch { get; private set; }
     public static bool Rebinding => operation != null;
     /// <summary>Khung hình vừa xong đổi phím — để phím Esc / B vừa bấm không đóng thêm cửa sổ.</summary>
     public static int RebindEndFrame { get; private set; } = -10;
@@ -67,7 +71,8 @@ public static class ZodiacInput
     {
         loaded = false;
         operation = null;
-        UsingGamepad = false;
+        Touch = Application.isMobilePlatform;
+        UsingGamepad = UsingTouch = Touch;
         InputSystem.onActionChange -= OnActionChange;
         InputSystem.onActionChange += OnActionChange;
         EnsureLoaded();
@@ -89,8 +94,10 @@ public static class ZodiacInput
         var device = (obj as InputAction)?.activeControl?.device;
         bool pad = device is Gamepad;
         if (!pad && !(device is Keyboard) && !(device is Mouse)) return;
-        if (pad == UsingGamepad) return;
+        bool touch = pad && !device.native;   // tay cầm ảo do OnScreenControl tạo
+        if (pad == UsingGamepad && touch == UsingTouch) return;
         UsingGamepad = pad;
+        UsingTouch = touch;
         Changed?.Invoke();
     }
 
@@ -118,8 +125,20 @@ public static class ZodiacInput
         return -1;
     }
 
-    /// <summary>Tên phím chính của hành động theo thiết bị đang dùng (vd. "Q", "Space", "X").</summary>
-    public static string Key(string action) => Key(action, UsingGamepad);
+    /// <summary>Tên phím chính của hành động theo thiết bị đang dùng (vd. "Q", "Space", "X"; cảm ứng: tên nút trên màn hình).</summary>
+    public static string Key(string action)
+    {
+        if (UsingTouch && TouchNames.TryGetValue(action, out var n)) return n;
+        return Key(action, UsingGamepad);
+    }
+
+    /// <summary>Đường dẫn nút tay cầm đang gán cho hành động (đã tính phím đổi), vd. "&lt;Gamepad&gt;/buttonWest". Null nếu không có.</summary>
+    public static string PadPath(string action)
+    {
+        var a = Find(action);
+        int i = PrimaryIndex(a, true);
+        return i < 0 ? null : a.bindings[i].effectivePath;
+    }
 
     public static string Key(string action, bool gamepad)
     {
@@ -129,7 +148,16 @@ public static class ZodiacInput
     }
 
     /// <summary>Tên dễ đọc của một nút tay cầm theo loại tay cầm đang cắm (Xbox / PlayStation), vd. "start" → "Start" / "Options".</summary>
-    public static string PadButton(string control) => PathName("<Gamepad>/" + control);
+    public static string PadButton(string control) =>
+        UsingTouch && TouchNames.TryGetValue(control, out var n) ? n : PathName("<Gamepad>/" + control);
+
+    // Tên nút trên màn hình cảm ứng: theo hành động (Key) và theo nút tay cầm dùng cho menu (PadButton).
+    static readonly Dictionary<string, string> TouchNames = new Dictionary<string, string>
+    {
+        { "Attack", "Đánh" }, { "Dodge", "Lăn" }, { "Skill", "Chiêu" }, { "Ultimate", "Tuyệt kỹ" }, { "Jump", "Nhảy" },
+        { "Sprint", "Chạy" }, { "Interact", "Túm" }, { "Previous", "1" }, { "Next", "2" },
+        { "start", "II" }, { "select", "Túi" }, { "buttonSouth", "Chạm" }, { "buttonEast", "Đóng" },
+    };
 
     static readonly Dictionary<string, string> XboxNames = new Dictionary<string, string>
     {
@@ -168,9 +196,27 @@ public static class ZodiacInput
     public static string Format(string text)
     {
         if (string.IsNullOrEmpty(text) || text.IndexOf('{') < 0) return text;
+        if (UsingTouch) text = FormatTouch(text);
         foreach (var e in Rebindable) text = text.Replace("{" + e.action + "}", Key(e.action));
-        text = text.Replace("{Move}", UsingGamepad ? "Cần trái ← →" : "← →");
-        text = text.Replace("{Lane}", UsingGamepad ? "Cần trái ↑ ↓" : "↑ ↓");
+        text = text.Replace("{Move}", UsingTouch ? "Cần ← →" : UsingGamepad ? "Cần trái ← →" : "← →");
+        text = text.Replace("{Lane}", UsingTouch ? "Cần ↑ ↓" : UsingGamepad ? "Cần trái ↑ ↓" : "↑ ↓");
+        return text;
+    }
+
+    /// <summary>
+    /// Chữ gợi ý cho nút cảm ứng: "{Jump} nhảy" → "nút Nhảy" (khỏi lặp chữ), "{Attack}" → "nút Đánh";
+    /// chạy nhanh không có nút riêng — đẩy cần hết cỡ.
+    /// </summary>
+    static string FormatTouch(string text)
+    {
+        text = text.Replace("giữ {Sprint}", "đẩy cần hết cỡ").Replace("{Sprint} chạy", "đẩy cần hết cỡ để chạy")
+                   .Replace("{Sprint}", "đẩy cần hết cỡ");
+        foreach (var e in Rebindable)
+        {
+            if (!TouchNames.TryGetValue(e.action, out var name)) continue;
+            string token = "{" + e.action + "}";
+            text = text.Replace(token + " " + name.ToLowerInvariant(), "nút " + name).Replace(token, "nút " + name);
+        }
         return text;
     }
 

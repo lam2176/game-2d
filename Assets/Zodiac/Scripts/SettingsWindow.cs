@@ -76,8 +76,16 @@ public class SettingsWindow : MonoBehaviour
     void Refresh()
     {
         if (fullscreenText == null) return;
-        fullscreenText.text = $"Toàn màn hình: {(Screen.fullScreen ? "Bật" : "Tắt")}";
-        resolutionText.text = $"Độ phân giải: {ZodiacSettings.ResolutionLabel}";
+        if (ZodiacInput.Touch)
+        {
+            fullscreenText.text = $"Cỡ nút cảm ứng: {TouchControls.ScaleLabel}";
+            resolutionText.text = $"Độ rõ nút cảm ứng: {TouchControls.AlphaLabel}";
+        }
+        else
+        {
+            fullscreenText.text = $"Toàn màn hình: {(Screen.fullScreen ? "Bật" : "Tắt")}";
+            resolutionText.text = $"Độ phân giải: {ZodiacSettings.ResolutionLabel}";
+        }
         qualityText.text = $"Đồ hoạ: {ZodiacSettings.QualityLabel}";
         frameText.text = $"Khung hình: {ZodiacSettings.FrameCapLabel}";
         fpsText.text = $"Hiện FPS: {(ZodiacSettings.ShowFps ? "Bật" : "Tắt")}";
@@ -90,9 +98,25 @@ public class SettingsWindow : MonoBehaviour
         }
         moveText.text = ZodiacInput.UsingGamepad ? "Di chuyển: cần trái (lên / xuống = đổi làn)"
                                                  : "Di chuyển: ← → (A D) · ↑ ↓ đổi làn";
-        if (!ZodiacInput.Rebinding)
+        if (!HasRealKeyboard && !HasRealGamepad)
+            statusText.text = "Điện thoại: dùng nút cảm ứng · cắm bàn phím / tay cầm để đổi phím";
+        else if (!ZodiacInput.Rebinding)
             statusText.text = ZodiacInput.UsingGamepad ? $"Chọn ô rồi bấm {ZodiacInput.PadButton("buttonSouth")} để đổi · {ZodiacInput.PadButton("buttonEast")}: đóng"
                                                        : "Bấm vào ô để đổi phím · Esc: đóng";
+    }
+
+    /// <summary>Có bàn phím để đổi phím (Android luôn tạo một bàn phím cho nút Back — trên điện thoại không tính).</summary>
+    static bool HasRealKeyboard => !ZodiacInput.Touch && Keyboard.current != null;
+
+    /// <summary>Tay cầm thật đang cắm (nút cảm ứng cũng tạo một tay cầm ảo — không tính).</summary>
+    static bool HasRealGamepad
+    {
+        get
+        {
+            foreach (var pad in Gamepad.all)
+                if (pad.native) return true;
+            return false;
+        }
     }
 
     // Toàn màn hình / độ phân giải đổi ở cuối khung hình — đợi một chút rồi mới cập nhật chữ.
@@ -137,14 +161,27 @@ public class SettingsWindow : MonoBehaviour
         firstSelected = music.gameObject;
 
         var size = new Vector2(540f, 58f);
+        // Điện thoại: không đổi toàn màn hình / độ phân giải (đổi là méo hình, chạm lệch) — thay bằng cỡ và độ rõ nút cảm ứng.
         fullscreenText = Option(panel, new Vector2(left, 100f), size, () =>
         {
+            if (ZodiacInput.Touch)
+            {
+                TouchControls.CycleScale();
+                Refresh();
+                return;
+            }
             Screen.fullScreen = !Screen.fullScreen;
             fullscreenText.text = $"Toàn màn hình: {(!Screen.fullScreen ? "Bật" : "Tắt")}";
             RefreshLater();
         });
         resolutionText = Option(panel, new Vector2(left, 25f), size, () =>
         {
+            if (ZodiacInput.Touch)
+            {
+                TouchControls.CycleAlpha();
+                Refresh();
+                return;
+            }
             ZodiacSettings.CycleResolution();
             RefreshLater();
         });
@@ -169,6 +206,9 @@ public class SettingsWindow : MonoBehaviour
             ZodiacUi.MakeText(panel, ZodiacInput.Rebindable[i].label, 24, ZodiacUi.Ink, mid, new Vector2(right - 250f, y), new Vector2(260f, 40f), TextAnchor.MiddleLeft);
             keyboardTexts[i] = Option(panel, new Vector2(keyX, y), keySize, () => StartRebind(row, false));
             padTexts[i] = Option(panel, new Vector2(padX, y), keySize, () => StartRebind(row, true));
+            // Điện thoại chưa cắm bàn phím / tay cầm thật: ẩn ô đổi phím (bấm vào sẽ chờ phím không có).
+            if (!HasRealKeyboard) keyboardTexts[i].transform.parent.gameObject.SetActive(false);
+            if (ZodiacInput.Touch && !HasRealGamepad) padTexts[i].transform.parent.gameObject.SetActive(false);
         }
         moveText = ZodiacUi.MakeText(panel, "", 22, ZodiacUi.Muted, mid, new Vector2(right, -290f), new Vector2(760f, 32f));
         statusText = ZodiacUi.MakeText(panel, "", 24, ZodiacUi.Gold, mid, new Vector2(right, -335f), new Vector2(760f, 36f));

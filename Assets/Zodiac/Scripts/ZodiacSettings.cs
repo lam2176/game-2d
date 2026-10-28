@@ -79,7 +79,8 @@ public static class ZodiacSettings
     {
         int cap = FrameCaps[FrameCapIndex];
         QualitySettings.vSyncCount = cap == 0 ? 1 : 0;
-        Application.targetFrameRate = cap == 0 ? -1 : cap;
+        // Điện thoại bỏ qua VSync và mặc định chỉ 30 khung — "theo màn hình" thành 60.
+        Application.targetFrameRate = cap == 0 ? (Application.isMobilePlatform ? 60 : -1) : cap;
     }
 
     // ───────── Độ phân giải ─────────
