@@ -19,6 +19,7 @@ public class PauseMenu : MonoBehaviour
     Text footer;
     GameObject firstButton, settingsButton;
     bool disabledPlayer;
+    float storySeenTime = -10f;
 
     void Awake()
     {
@@ -34,6 +35,9 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
+        // Nút tạm dừng cảm ứng cũng là nút bỏ qua thoại — lần bấm đó (đến trễ một khung) không mở thêm menu.
+        if (StoryUi.IsOpen) storySeenTime = Time.unscaledTime;
+        if (Time.unscaledTime - storySeenTime < 0.3f) return;
         var kb = Keyboard.current;
         var pad = Gamepad.current;
         bool pressed = (kb != null && kb.escapeKey.wasPressedThisFrame) || (pad != null && pad.startButton.wasPressedThisFrame) ||
@@ -43,6 +47,14 @@ public class PauseMenu : MonoBehaviour
             SettingsWindow.IsOpen || SettingsWindow.ClosedFrame == Time.frameCount) return;
         if (IsOpen) Close();
         else Open();
+    }
+
+    /// <summary>Điện thoại: rời game (về màn hình chính, có cuộc gọi…) thì tự tạm dừng.</summary>
+    void OnApplicationPause(bool paused)
+    {
+        if (!paused || IsOpen || !ZodiacInput.Touch || StoryUi.IsOpen || InventoryWindow.IsOpen || VillageWindow.IsOpen ||
+            SettingsWindow.IsOpen || Time.timeScale == 0f) return;
+        Open();
     }
 
     void Open()

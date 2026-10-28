@@ -154,7 +154,7 @@ public static class ZodiacInput
     // Tên nút trên màn hình cảm ứng: theo hành động (Key) và theo nút tay cầm dùng cho menu (PadButton).
     static readonly Dictionary<string, string> TouchNames = new Dictionary<string, string>
     {
-        { "Attack", "Đánh" }, { "Dodge", "Né" }, { "Skill", "Chiêu" }, { "Ultimate", "Tuyệt kỹ" }, { "Jump", "Nhảy" },
+        { "Attack", "Đánh" }, { "Dodge", "Lăn" }, { "Skill", "Chiêu" }, { "Ultimate", "Tuyệt kỹ" }, { "Jump", "Nhảy" },
         { "Sprint", "Chạy" }, { "Interact", "Túm" }, { "Previous", "1" }, { "Next", "2" },
         { "start", "II" }, { "select", "Túi" }, { "buttonSouth", "Chạm" }, { "buttonEast", "Đóng" },
     };
@@ -196,9 +196,27 @@ public static class ZodiacInput
     public static string Format(string text)
     {
         if (string.IsNullOrEmpty(text) || text.IndexOf('{') < 0) return text;
+        if (UsingTouch) text = FormatTouch(text);
         foreach (var e in Rebindable) text = text.Replace("{" + e.action + "}", Key(e.action));
         text = text.Replace("{Move}", UsingTouch ? "Cần ← →" : UsingGamepad ? "Cần trái ← →" : "← →");
         text = text.Replace("{Lane}", UsingTouch ? "Cần ↑ ↓" : UsingGamepad ? "Cần trái ↑ ↓" : "↑ ↓");
+        return text;
+    }
+
+    /// <summary>
+    /// Chữ gợi ý cho nút cảm ứng: "{Jump} nhảy" → "nút Nhảy" (khỏi lặp chữ), "{Attack}" → "nút Đánh";
+    /// chạy nhanh không có nút riêng — đẩy cần hết cỡ.
+    /// </summary>
+    static string FormatTouch(string text)
+    {
+        text = text.Replace("giữ {Sprint}", "đẩy cần hết cỡ").Replace("{Sprint} chạy", "đẩy cần hết cỡ để chạy")
+                   .Replace("{Sprint}", "đẩy cần hết cỡ");
+        foreach (var e in Rebindable)
+        {
+            if (!TouchNames.TryGetValue(e.action, out var name)) continue;
+            string token = "{" + e.action + "}";
+            text = text.Replace(token + " " + name.ToLowerInvariant(), "nút " + name).Replace(token, "nút " + name);
+        }
         return text;
     }
 
