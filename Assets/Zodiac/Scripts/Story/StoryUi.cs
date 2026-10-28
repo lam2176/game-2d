@@ -194,6 +194,7 @@ public class StoryUi : MonoBehaviour
         bool next = (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) ||
                     (attack != null && attack.WasPressedThisFrame()) || (interact != null && interact.WasPressedThisFrame()) ||
                     (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) ||
+                    (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame) ||
                     (pad != null && pad.buttonSouth.wasPressedThisFrame);
         if (next) Advance();
     }
