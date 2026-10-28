@@ -23,6 +23,8 @@ public class ZodiacCloud : MonoBehaviour
     const string ServerKey = "zodiac.server";
 
     const float UploadInterval = 8f;
+    /// <summary>Báo "đang online" cho trang quản trị.</summary>
+    const float PingInterval = 60f;
     const string TokenKey = "zodiac.session";
 
     [Serializable]
@@ -64,7 +66,7 @@ public class ZodiacCloud : MonoBehaviour
 
     static ZodiacCloud runner;
     static int dirtyStamp, sentStamp;
-    float nextUpload;
+    float nextUpload, nextPing;
     bool uploading;
 
     static string DirtyKey => "zodiac.cloudDirty." + Current.username;
@@ -173,6 +175,11 @@ public class ZodiacCloud : MonoBehaviour
 
     void Update()
     {
+        if (LoggedIn && Time.unscaledTime >= nextPing)
+        {
+            nextPing = Time.unscaledTime + PingInterval;
+            Call("ping", Body(("p_token", Current.token)), null);
+        }
         if (Time.unscaledTime < nextUpload) return;
         nextUpload = Time.unscaledTime + UploadInterval;
         Upload(null);

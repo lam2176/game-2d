@@ -5,38 +5,123 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quản trị 12 Con Giáp</title>
 <style>
-  :root { --bg:#1c140f; --panel:#2a1f17; --line:#4a3726; --ink:#f3e7d3; --muted:#b9a68c; --gold:#f0c35a; --red:#c8382c; --green:#5fbf6a; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui, "Segoe UI", sans-serif; }
-  header { display:flex; gap:12px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-  h1 { margin:0; font-size:20px; color:var(--gold); flex:1; }
-  main { padding:16px 20px; max-width:1400px; margin:auto; }
-  input, textarea, select, button { font:inherit; color:var(--ink); background:#120c08; border:1px solid var(--line); border-radius:6px; padding:7px 10px; }
-  button { background:var(--red); border-color:var(--red); cursor:pointer; color:#fff; }
+  :root {
+    --bg:#17100c; --panel:#221813; --panel2:#2b1f18; --line:#41301f; --ink:#f4e9d8; --muted:#b8a58c; --faint:#7d6b58;
+    --gold:#f0c35a; --red:#c8382c; --red2:#e0574a; --green:#5fbf6a; --blue:#6aa8e8; --bar:#e0a53c;
+    --r-common:#c9c0b4; --r-good:#6ccf72; --r-rare:#5aa9ff; --r-epic:#c27cff; --r-legendary:#ff9a3c;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui, "Segoe UI", sans-serif; }
+  button, input, select, textarea { font:inherit; color:var(--ink); background:#120c08; border:1px solid var(--line); border-radius:7px; padding:7px 10px; }
+  button { cursor:pointer; background:var(--red); border-color:var(--red); color:#fff; }
+  button:hover { background:var(--red2); }
   button.ghost { background:transparent; border-color:var(--line); color:var(--ink); }
-  button:disabled { opacity:.5; cursor:default; }
-  .stats { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
-  .chip { background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px 12px; color:var(--muted); }
-  .chip b { color:var(--ink); }
-  .wrap { overflow-x:auto; border:1px solid var(--line); border-radius:8px; }
-  table { border-collapse:collapse; width:100%; min-width:900px; }
-  th, td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
-  th { background:var(--panel); color:var(--muted); font-weight:600; position:sticky; top:0; }
-  tr.row:hover { background:#241a12; cursor:pointer; }
-  .banned { color:var(--red); font-weight:600; }
-  .muted { color:var(--muted); }
-  #login { max-width:360px; margin:12vh auto; background:var(--panel); padding:24px; border-radius:10px; border:1px solid var(--line); display:grid; gap:12px; }
-  #detail { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-start; justify-content:center; padding:4vh 12px; overflow:auto; }
-  #detail .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px; width:min(900px, 100%); display:grid; gap:14px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:8px 16px; }
-  .grid div span { display:block; color:var(--muted); font-size:13px; }
-  .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  textarea { width:100%; min-height:300px; font:13px/1.4 ui-monospace, Consolas, monospace; }
-  .msg { color:var(--gold); min-height:1.4em; }
+  button.ghost:hover { border-color:var(--muted); }
+  button.small { padding:3px 9px; font-size:13px; }
+  .muted { color:var(--muted); } .faint { color:var(--faint); }
+  .num { font-variant-numeric:tabular-nums; }
+
+  /* Khung */
+  header { position:sticky; top:0; z-index:5; display:flex; gap:16px; align-items:center; padding:12px 22px; background:rgba(23,16,12,.94); border-bottom:1px solid var(--line); backdrop-filter:blur(6px); flex-wrap:wrap; }
+  header h1 { margin:0; font-size:18px; color:var(--gold); letter-spacing:.5px; }
+  nav { display:flex; gap:4px; flex:1; }
+  nav button { background:transparent; border:0; color:var(--muted); padding:8px 14px; border-radius:8px; }
+  nav button.on { background:var(--panel2); color:var(--ink); }
+  main { padding:20px 22px 60px; max-width:1500px; margin:auto; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .card h2 { margin:0 0 12px; font-size:15px; font-weight:600; }
+  .card h2 small { color:var(--muted); font-weight:400; margin-left:6px; }
+  .grid { display:grid; gap:16px; }
+
+  /* Ô số liệu */
+  .tiles { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:16px; }
+  @media (max-width:900px) { .tiles { grid-template-columns:repeat(2, 1fr); } }
+  .tile { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .tile .label { color:var(--muted); font-size:13px; }
+  .tile .value { font-size:28px; font-weight:650; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .tile .sub { color:var(--faint); font-size:12px; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--faint); margin-right:6px; vertical-align:middle; }
+  .dot.on { background:var(--green); box-shadow:0 0 0 3px rgba(95,191,106,.18); }
+
+  /* Biểu đồ cột */
+  .hbars { display:grid; gap:2px; }
+  .hbar { display:grid; grid-template-columns:118px 1fr 92px; align-items:center; gap:10px; padding:5px 0; border-radius:6px; }
+  .hbar:hover { background:var(--panel2); }
+  .hbar .track { height:14px; }
+  .hbar .fill { height:100%; background:var(--bar); border-radius:0 4px 4px 0; min-width:2px; }
+  .hbar .val { text-align:right; font-variant-numeric:tabular-nums; }
+  .vbars { display:flex; align-items:flex-end; gap:2px; height:170px; border-bottom:1px solid var(--line); padding-top:18px; }
+  .vbar { flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; position:relative; }
+  .vbar:hover .col { filter:brightness(1.15); }
+  .vbar .col { width:72%; background:var(--bar); border-radius:4px 4px 0 0; min-height:2px; }
+  .vbar .top { font-size:12px; color:var(--muted); margin-bottom:3px; font-variant-numeric:tabular-nums; }
+  .vlabels { display:flex; gap:2px; margin-top:6px; }
+  .vlabels span { flex:1; text-align:center; color:var(--muted); font-size:12px; }
+  #tip { position:fixed; pointer-events:none; z-index:50; background:#0d0906; border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:13px; display:none; max-width:280px; box-shadow:0 6px 20px rgba(0,0,0,.4); }
+
+  /* Bảng */
+  .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .toolbar input { min-width:220px; }
+  .wrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--panel); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { padding:9px 12px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { color:var(--muted); font-weight:600; font-size:13px; background:var(--panel2); position:sticky; top:0; cursor:pointer; user-select:none; }
+  th.sorted::after { content:" ▾"; } th.sorted.asc::after { content:" ▴"; }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
+  tbody tr:last-child td { border-bottom:0; }
+  tr.row { cursor:pointer; } tr.row:hover { background:var(--panel2); }
+  .badge { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; border:1px solid var(--line); color:var(--muted); }
+  .badge.ban { color:#ff8d80; border-color:#7a2a22; background:rgba(200,56,44,.12); }
+  .badge.ok { color:#9fe0a6; border-color:#2e5a33; }
+  .list { display:grid; gap:0; }
+  .list > div { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); }
+  .list > div:last-child { border-bottom:0; }
+  .link { color:var(--gold); cursor:pointer; } .link:hover { text-decoration:underline; }
+
+  /* Chi tiết */
+  #detail { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; justify-content:flex-end; z-index:20; }
+  #detail .sheet { width:min(1100px, 100%); height:100%; overflow:auto; background:var(--bg); border-left:1px solid var(--line); padding:20px 24px 60px; }
+  .head { display:flex; gap:14px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .head h2 { margin:0; font-size:22px; }
+  .tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:16px; flex-wrap:wrap; }
+  .tabs button { background:transparent; border:0; border-bottom:2px solid transparent; border-radius:0; color:var(--muted); padding:9px 14px; }
+  .tabs button.on { color:var(--ink); border-bottom-color:var(--gold); }
+  .kv { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:10px 18px; }
+  .kv div span { display:block; color:var(--muted); font-size:12px; }
+  .kv div b { font-weight:600; font-variant-numeric:tabular-nums; }
+  .xp { height:8px; background:var(--panel2); border-radius:4px; overflow:hidden; margin-top:6px; }
+  .xp div { height:100%; background:var(--blue); }
+  .stats4 { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; }
+  .stats4 div { background:var(--panel2); border-radius:10px; padding:10px 12px; }
+  .stats4 span { display:block; color:var(--muted); font-size:12px; }
+  .stats4 b { font-size:20px; font-variant-numeric:tabular-nums; }
+  .slots { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; }
+  .slot { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--line); border-radius:9px; padding:8px 10px; min-height:66px; position:relative; }
+  .slot.empty { opacity:.45; }
+  .slot .t { font-size:12px; color:var(--muted); }
+  .slot .n { font-weight:600; }
+  .slot .x { position:absolute; top:4px; right:6px; display:none; background:transparent; border:0; color:var(--muted); padding:0 4px; }
+  .slot:hover .x { display:block; }
+  .slot ul { margin:4px 0 0; padding-left:16px; font-size:12px; color:var(--muted); }
+  .rar-Common { border-left-color:var(--r-common); } .rar-Good { border-left-color:var(--r-good); } .rar-Rare { border-left-color:var(--r-rare); }
+  .rar-Epic { border-left-color:var(--r-epic); } .rar-Legendary { border-left-color:var(--r-legendary); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chips span { background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:2px 10px; font-size:13px; }
+  .form { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .form label { color:var(--muted); font-size:13px; display:grid; gap:3px; }
+  .form input { width:120px; }
+  textarea { width:100%; min-height:420px; font:12.5px/1.45 ui-monospace, Consolas, monospace; }
+  .msg { color:var(--gold); min-height:1.4em; margin-top:8px; }
+  .danger { border-color:#7a2a22 !important; }
+  #login { max-width:380px; margin:14vh auto; display:grid; gap:12px; }
+  #login h1 { margin:0; color:var(--gold); font-size:22px; }
+  .two { display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:16px; }
+  .three { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px; }
+  @media (max-width:600px) { main { padding:14px; } .two, .three { grid-template-columns:1fr; } .hbar { grid-template-columns:90px 1fr 70px; } }
 </style>
 </head>
 <body>
-<div id="login">
+<div id="login" class="card">
   <h1>Quản trị 12 Con Giáp</h1>
   <input id="key" type="password" placeholder="Mật khẩu quản trị (data/admin.txt)" autofocus>
   <button id="enter">Vào</button>
@@ -45,114 +130,437 @@
 
 <div id="app" hidden>
   <header>
-    <h1>Quản trị 12 Con Giáp</h1>
-    <input id="q" placeholder="Tìm tên đăng nhập…">
-    <button class="ghost" id="reload">Tải lại</button>
-    <button class="ghost" id="logout">Thoát</button>
+    <h1>12 CON GIÁP · Quản trị</h1>
+    <nav><button data-view="overview" class="on">Tổng quan</button><button data-view="players">Người chơi</button></nav>
+    <span class="muted" id="stamp"></span>
+    <button class="ghost small" id="reload">Tải lại</button>
+    <button class="ghost small" id="logout">Thoát</button>
   </header>
   <main>
-    <div class="stats" id="stats"></div>
-    <div class="wrap">
-      <table>
-        <thead><tr><th>#</th><th>Tài khoản</th><th>Con giáp</th><th>Cấp</th><th>Đồng</th><th>Màn mở</th><th>Giờ chơi</th><th>Đăng nhập cuối</th><th>Lưu cuối</th><th>Trạng thái</th></tr></thead>
+    <section id="overview"></section>
+    <section id="players" hidden>
+      <div class="toolbar">
+        <input id="q" placeholder="Tìm tên đăng nhập…">
+        <select id="fChar"><option value="">Mọi con giáp</option></select>
+        <select id="fState">
+          <option value="">Mọi trạng thái</option><option value="online">Đang online</option>
+          <option value="banned">Bị khoá</option><option value="nochar">Chưa chọn con giáp</option>
+        </select>
+        <span class="muted" id="count"></span>
+      </div>
+      <div class="wrap"><table>
+        <thead><tr id="cols"></tr></thead>
         <tbody id="rows"></tbody>
-      </table>
-    </div>
+      </table></div>
+    </section>
   </main>
 </div>
 
-<div id="detail"><div class="card" id="card"></div></div>
+<div id="detail"><div class="sheet" id="sheet"></div></div>
+<div id="tip"></div>
 
 <script>
-const NAMES = { Rat_Ty:"Chuột (Tý)", Ox_Suu:"Trâu (Sửu)", Tiger_Dan:"Hổ (Dần)", Cat_Mao:"Mèo (Mão)", Dragon_Thin:"Rồng (Thìn)", Snake_Ty:"Rắn (Tỵ)",
-                Horse_Ngo:"Ngựa (Ngọ)", Goat_Mui:"Dê (Mùi)", Monkey_Than:"Khỉ (Thân)", Rooster_Dau:"Gà (Dậu)", Dog_Tuat:"Chó (Tuất)", Pig_Hoi:"Lợn (Hợi)" };
+// ───────── Dữ liệu tĩnh ─────────
+const ORDER = ["Rat_Ty","Ox_Suu","Tiger_Dan","Cat_Mao","Dragon_Thin","Snake_Ty","Horse_Ngo","Goat_Mui","Monkey_Than","Rooster_Dau","Dog_Tuat","Pig_Hoi"];
+const NAMES = { Rat_Ty:"Tý · Chuột", Ox_Suu:"Sửu · Trâu", Tiger_Dan:"Dần · Hổ", Cat_Mao:"Mão · Mèo", Dragon_Thin:"Thìn · Rồng", Snake_Ty:"Tỵ · Rắn",
+                Horse_Ngo:"Ngọ · Ngựa", Goat_Mui:"Mùi · Dê", Monkey_Than:"Thân · Khỉ", Rooster_Dau:"Dậu · Gà", Dog_Tuat:"Tuất · Chó", Pig_Hoi:"Hợi · Heo" };
+const DIFF = ["Thường", "Khó", "Ác Mộng"];
+const STAT = ["Máu tối đa", "Khí tối đa", "Hồi Khí", "Tấn công", "Phòng thủ", "Chí mạng", "ST chí mạng"];
+const SLOT_NAMES = ["Vũ khí", "Giáp", "Bùa", "Ngọc", "Ngọc"];
+const RARITY = { Common:"Thường", Good:"Tốt", Rare:"Hiếm", Epic:"Sử thi", Legendary:"Huyền thoại" };
+const KIND = { register:"Đăng ký", login:"Đăng nhập", resume:"Vào lại (phiên cũ)", logout:"Đăng xuất", wrong_password:"Sai mật khẩu" };
+const MAX_LEVEL = 30, STAGES = 8;
+
 let key = sessionStorage.getItem("zodiacAdmin") || "";
+let catalog = { items:{}, beasts:{}, quests:{} };
+let accounts = [], onlineSince = "", sort = { col:"last_seen_at", asc:false };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-const when = s => s ? new Date(s).toLocaleString("vi-VN") : "—";
+const fmt = n => Number(n || 0).toLocaleString("vi-VN");
+const when = s => s ? new Date(s).toLocaleString("vi-VN", { dateStyle:"short", timeStyle:"short" }) : "—";
+const ago = s => {
+  if (!s) return "—";
+  const m = Math.round((Date.now() - new Date(s)) / 60000);
+  return m < 1 ? "vừa xong" : m < 60 ? `${m} phút trước` : m < 1440 ? `${Math.floor(m / 60)} giờ trước` : `${Math.floor(m / 1440)} ngày trước`;
+};
 const hours = s => { const m = Math.floor((s || 0) / 60); return m >= 60 ? `${Math.floor(m / 60)} giờ ${m % 60} phút` : `${m} phút`; };
+const online = a => a.last_seen_at && a.last_seen_at > onlineSince;
+const charName = c => NAMES[c] || "Chưa chọn";
+const itemName = id => catalog.items[id]?.name || id;
+const xpToNext = lv => lv >= MAX_LEVEL ? 0 : 40 + (lv - 1) * 30;
 
 async function api(path, options = {}) {
-  const res = await fetch("/admin/api" + path, { ...options, headers: { "Content-Type": "application/json", "X-Admin-Key": key } });
+  const res = await fetch("/admin/api" + path, { ...options, headers: { "Content-Type":"application/json", "X-Admin-Key":key } });
   const body = await res.json().catch(() => ({}));
   if (res.status === 401) { showLogin(body.message || "Sai mật khẩu"); throw new Error("401"); }
   if (!res.ok) throw new Error(body.message || res.statusText);
   return body;
 }
-
 function showLogin(msg) { $("app").hidden = true; $("login").style.display = "grid"; $("loginMsg").textContent = msg || ""; }
 
-async function load() {
-  const data = await api("/accounts?q=" + encodeURIComponent($("q").value));
-  $("login").style.display = "none"; $("app").hidden = false;
-  $("stats").innerHTML = `<span class="chip">Tài khoản <b>${data.accounts.length}</b></span>` +
-    data.stats.map(s => `<span class="chip">${esc(NAMES[s.character] || "Chưa chọn")} <b>${s.count}</b></span>`).join("");
-  $("rows").innerHTML = data.accounts.map(a => `
-    <tr class="row" data-id="${a.id}">
-      <td class="muted">${a.id}</td><td><b>${esc(a.username)}</b></td><td>${esc(NAMES[a.character] || "—")}</td>
-      <td>${a.level}</td><td>${a.coins}</td><td>${a.unlocked_levels}/8</td><td>${hours(a.play_seconds)}</td>
-      <td>${when(a.last_login_at)}</td><td>${when(a.saved_at)}</td>
-      <td>${a.banned ? `<span class="banned">Bị khoá</span>` : "Bình thường"}</td>
-    </tr>`).join("") || `<tr><td colspan="10" class="muted">Chưa có tài khoản nào</td></tr>`;
-}
+// ───────── Gợi ý khi rê chuột (data-tip) ─────────
+document.addEventListener("mousemove", e => {
+  const el = e.target.closest("[data-tip]"), tip = $("tip");
+  if (!el) { tip.style.display = "none"; return; }
+  tip.innerHTML = el.dataset.tip;
+  tip.style.display = "block";
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + "px";
+  tip.style.top = (e.clientY + 14) + "px";
+});
 
-async function open(id) {
-  const a = await api("/accounts/" + id);
-  let pretty = "";
-  try { pretty = a.profile ? JSON.stringify(JSON.parse(a.profile), null, 2) : ""; } catch { pretty = a.profile; }
-  $("card").innerHTML = `
-    <div class="actions"><h1 style="flex:1">${esc(a.username)} <span class="muted">#${a.id}</span></h1><button class="ghost" id="close">Đóng</button></div>
-    <div class="grid">
-      <div><span>Con giáp</span>${esc(NAMES[a.character] || "Chưa chọn")}</div>
-      <div><span>Cấp</span>${a.level}</div><div><span>Đồng</span>${a.coins}</div>
-      <div><span>Màn đã mở</span>${a.unlocked_levels}/8</div><div><span>Thời gian chơi</span>${hours(a.play_seconds)}</div>
-      <div><span>Tạo lúc</span>${when(a.created_at)}</div><div><span>Đăng nhập cuối</span>${when(a.last_login_at)}</div>
-      <div><span>Lưu cuối</span>${when(a.saved_at)}</div><div><span>Phiên đang mở</span>${a.sessions}</div>
-      <div><span>Trạng thái</span>${a.banned ? `<span class="banned">Bị khoá</span> ${esc(a.ban_reason)}` : "Bình thường"}</div>
-    </div>
-    <div class="actions">
-      ${a.banned ? `<button id="unban">Mở khoá</button>` : `<input id="reason" placeholder="Lý do khoá"><button id="ban">Khoá tài khoản</button>`}
-    </div>
-    <div class="actions"><input id="pw" type="text" placeholder="Mật khẩu mới (≥ 6 ký tự)"><button id="setpw">Đặt lại mật khẩu</button></div>
-    <div class="actions">
-      <select id="char"><option value="">— Chưa chọn —</option>${Object.entries(NAMES).map(([k, v]) => `<option value="${k}" ${k === a.character ? "selected" : ""}>${v}</option>`).join("")}</select>
-      <button id="setchar">Đổi con giáp</button>
-    </div>
-    <div><span class="muted">Hồ sơ (JSON) — sửa xong bấm Lưu: người chơi bị đăng xuất để lần vào sau tải bản này về.</span>
-      <textarea id="profile" spellcheck="false">${esc(pretty)}</textarea></div>
-    <div class="actions">
-      <button id="saveProfile">Lưu hồ sơ</button>
-      <button class="ghost" id="download">Tải JSON</button>
-      <span style="flex:1"></span>
-      <button class="ghost" id="del" style="border-color:var(--red);color:#ff8a7e">Xoá tài khoản</button>
-    </div>
-    <div class="msg" id="msg"></div>`;
-  $("detail").style.display = "flex";
-  const act = async (fn, ok) => { try { await fn(); $("msg").textContent = ok; await load(); } catch (e) { if (e.message !== "401") $("msg").textContent = e.message; } };
-  const post = (p, body) => api(`/accounts/${id}${p}`, { method: "POST", body: JSON.stringify(body) });
-  $("close").onclick = () => $("detail").style.display = "none";
-  if ($("ban")) $("ban").onclick = () => act(() => post("/ban", { banned: true, reason: $("reason").value }), "Đã khoá").then(() => open(id));
-  if ($("unban")) $("unban").onclick = () => act(() => post("/ban", { banned: false }), "Đã mở khoá").then(() => open(id));
-  $("setpw").onclick = () => act(() => post("/password", { password: $("pw").value }), "Đã đặt lại mật khẩu");
-  $("setchar").onclick = () => confirm("Đổi con giáp của tài khoản này?") && act(() => post("/character", { character: $("char").value }), "Đã đổi con giáp");
-  $("saveProfile").onclick = () => confirm("Ghi đè hồ sơ của người chơi?") && act(() => post("/profile", { profile: $("profile").value }), "Đã lưu hồ sơ");
-  $("download").onclick = () => {
-    const url = URL.createObjectURL(new Blob([$("profile").value], { type: "application/json" }));
-    Object.assign(document.createElement("a"), { href: url, download: `${a.username}.json` }).click();
-    URL.revokeObjectURL(url);
+// ───────── Tổng quan ─────────
+async function loadOverview() {
+  const o = await api("/overview");
+  const t = o.totals;
+  const tile = (label, value, sub, dot) => `<div class="tile"><div class="label">${dot ? `<span class="dot ${dot}"></span>` : ""}${label}</div>
+      <div class="value">${value}</div><div class="sub">${sub || "&nbsp;"}</div></div>`;
+  const byChar = Object.fromEntries(o.characters.map(c => [c.character, c]));
+  const maxChar = Math.max(1, ...o.characters.map(c => c.count));
+  const hbars = ORDER.map(k => {
+    const c = byChar[k] || { count:0, avg_level:0, max_level:0, play_seconds:0 };
+    return `<div class="hbar" data-tip="<b>${esc(NAMES[k])}</b><br>${c.count} người · cấp TB ${c.avg_level || 0} · cao nhất ${c.max_level || 0}<br>Tổng ${hours(c.play_seconds)}">
+      <span>${esc(NAMES[k])}</span><div class="track"><div class="fill" style="width:${c.count / maxChar * 100}%"></div></div>
+      <span class="val">${c.count} <span class="faint">· cấp ${c.avg_level || 0}</span></span></div>`;
+  }).join("");
+  const vbars = (rows, label, tipText) => {
+    const max = Math.max(1, ...rows.map(r => r.v));
+    return `<div class="vbars">${rows.map(r => `<div class="vbar" data-tip="${tipText(r)}"><span class="top">${r.v || ""}</span>
+        <div class="col" style="height:${r.v / max * 100}%"></div></div>`).join("")}</div>
+      <div class="vlabels">${rows.map(r => `<span>${label(r)}</span>`).join("")}</div>`;
   };
-  $("del").onclick = () => confirm(`Xoá hẳn tài khoản ${a.username}? Không hoàn tác được.`) &&
-    act(() => api("/accounts/" + id, { method: "DELETE" }), "Đã xoá").then(() => $("detail").style.display = "none");
+  const levelRows = Array.from({ length:6 }, (_, i) => ({ k:i * 5 + 1, v:o.levels.find(l => l.from_level === i * 5 + 1)?.count || 0 }));
+  const stageRows = Array.from({ length:STAGES }, (_, i) => ({ k:i + 1, v:o.stages.find(s => s.stage === i + 1)?.count || 0 }));
+  const days = Array.from({ length:14 }, (_, i) => { const d = new Date(Date.now() - (13 - i) * 864e5).toISOString().slice(0, 10); return { k:d, v:o.daily.find(x => x.day === d)?.players || 0 }; });
+
+  $("overview").innerHTML = `
+    <div class="tiles">
+      ${tile("Tài khoản", fmt(t.accounts), `${t.no_character} chưa chọn con giáp`)}
+      ${tile("Đang online", fmt(t.online), "hoạt động trong 2 phút", t.online ? "on" : "")}
+      ${tile("Hoạt động 24 giờ", fmt(t.active_day), `${fmt(t.active_week)} trong 7 ngày`)}
+      ${tile("Mới hôm nay", fmt(t.new_day), "đăng ký trong 24 giờ")}
+      ${tile("Cấp trung bình", t.avg_level, `cao nhất cấp ${t.max_level}`)}
+      ${tile("Tổng giờ chơi", fmt(Math.round(t.play_seconds / 3600)), hours(t.play_seconds))}
+      ${tile("Tổng đồng", fmt(t.coins), "trong túi mọi người chơi")}
+      ${tile("Bị khoá", fmt(t.banned), `${fmt(t.saves)} lần lưu tiến trình`)}
+    </div>
+    <div class="two">
+      <div class="card"><h2>Người chơi theo con giáp<small>số tài khoản · cấp trung bình</small></h2><div class="hbars">${hbars}</div></div>
+      <div class="grid">
+        <div class="card"><h2>Người chơi mỗi ngày<small>14 ngày gần nhất, theo lần đăng nhập</small></h2>
+          ${vbars(days, r => r.k.slice(8) + "/" + r.k.slice(5, 7), r => `${r.k.split("-").reverse().join("/")}: <b>${r.v}</b> người`)}</div>
+        <div class="three" style="grid-template-columns:1fr 1fr">
+          <div class="card"><h2>Phân bố cấp</h2>${vbars(levelRows, r => `${r.k}–${r.k + 4}`, r => `Cấp ${r.k}–${r.k + 4}: <b>${r.v}</b> người`)}</div>
+          <div class="card"><h2>Màn đã mở</h2>${vbars(stageRows, r => r.k, r => `Mở tới màn ${r.k}: <b>${r.v}</b> người`)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="three" style="margin-top:16px">
+      <div class="card"><h2>Cấp cao nhất</h2><div class="list">${o.top.map((a, i) => `<div><span><span class="faint">${i + 1}.</span>
+        <span class="link" data-open="${a.id}">${esc(a.username)}</span> <span class="muted">${esc(charName(a.character))}</span></span>
+        <span class="num">cấp ${a.level}</span></div>`).join("") || `<div class="muted">Chưa có</div>`}</div></div>
+      <div class="card"><h2>Hoạt động gần đây</h2><div class="list">${o.recent.map(e => `<div><span>
+        <span class="link" data-open="${e.id}">${esc(e.username)}</span> <span class="muted">${esc(KIND[e.kind] || e.kind)}</span></span>
+        <span class="faint" data-tip="${esc(when(e.at))} · IP ${esc(e.ip || "?")}">${ago(e.at)}</span></div>`).join("") || `<div class="muted">Chưa có</div>`}</div></div>
+      <div class="card"><h2>Mới đăng ký</h2><div class="list">${o.newest.map(a => `<div><span>
+        <span class="link" data-open="${a.id}">${esc(a.username)}</span> <span class="muted">${esc(charName(a.character))}</span></span>
+        <span class="faint">${ago(a.created_at)}</span></div>`).join("") || `<div class="muted">Chưa có</div>`}</div></div>
+    </div>`;
 }
 
-$("enter").onclick = () => { key = $("key").value; sessionStorage.setItem("zodiacAdmin", key); load().catch(() => {}); };
-$("key").onkeydown = e => { if (e.key === "Enter") $("enter").click(); };
-$("reload").onclick = () => load().catch(() => {});
-$("logout").onclick = () => { key = ""; sessionStorage.removeItem("zodiacAdmin"); showLogin(""); };
-$("q").oninput = () => load().catch(() => {});
-$("rows").onclick = e => { const tr = e.target.closest("tr[data-id]"); if (tr) open(tr.dataset.id).catch(() => {}); };
+// ───────── Danh sách người chơi ─────────
+const COLS = [
+  ["", "online", a => `<span class="dot ${online(a) ? "on" : ""}" data-tip="${online(a) ? "Đang online" : "Offline"}"></span>`],
+  ["#", "id", a => `<span class="faint">${a.id}</span>`, "r"],
+  ["Tài khoản", "username", a => `<b>${esc(a.username)}</b>`],
+  ["Con giáp", "character", a => esc(charName(a.character))],
+  ["Cấp", "level", a => a.level, "r"],
+  ["XP", "xp", a => a.xp == null ? "—" : `${fmt(a.xp)}<span class="faint">/${fmt(xpToNext(a.level))}</span>`, "r"],
+  ["Đồng", "coins", a => fmt(a.coins), "r"],
+  ["Màn", "unlocked_levels", a => `${a.unlocked_levels}/${STAGES}`, "r"],
+  ["Độ khó", "difficulty", a => DIFF[a.difficulty] || "—"],
+  ["Quái hạ", "kills", a => fmt(a.kills), "r"],
+  ["Tháp", "tower_best", a => a.tower_best ? `${a.tower_best} tầng` : "—", "r"],
+  ["Phá đảo", "endings", a => `${a.endings}/12`, "r"],
+  ["Giờ chơi", "play_seconds", a => hours(a.play_seconds), "r"],
+  ["Hoạt động", "last_seen_at", a => `<span data-tip="${esc(when(a.last_seen_at))}">${ago(a.last_seen_at)}</span>`],
+  ["Tạo lúc", "created_at", a => when(a.created_at)],
+  ["Trạng thái", "banned", a => a.banned ? `<span class="badge ban" data-tip="${esc(a.ban_reason || "Không ghi lý do")}">Bị khoá</span>` : `<span class="badge ok">Bình thường</span>`],
+];
+
+async function loadPlayers() {
+  const data = await api("/accounts?q=" + encodeURIComponent($("q").value));
+  accounts = data.accounts; onlineSince = data.onlineSince;
+  renderPlayers();
+}
+
+function renderPlayers() {
+  const fc = $("fChar").value, fs = $("fState").value;
+  let list = accounts.filter(a => (!fc || a.character === fc) &&
+    (!fs || (fs === "online" && online(a)) || (fs === "banned" && a.banned) || (fs === "nochar" && !a.character)));
+  const keyOf = sort.col === "online" ? (a => online(a) ? 1 : 0) : (a => a[sort.col] ?? "");
+  list.sort((x, y) => { const a = keyOf(x), b = keyOf(y); return (a > b ? 1 : a < b ? -1 : 0) * (sort.asc ? 1 : -1); });
+  $("cols").innerHTML = COLS.map(([label, col, , cls]) => `<th data-col="${col}" class="${cls || ""} ${sort.col === col ? "sorted" + (sort.asc ? " asc" : "") : ""}">${label}</th>`).join("");
+  $("rows").innerHTML = list.map(a => `<tr class="row" data-open="${a.id}">${COLS.map(([, , cell, cls]) => `<td class="${cls || ""}">${cell(a)}</td>`).join("")}</tr>`).join("")
+    || `<tr><td colspan="${COLS.length}" class="muted">Không có tài khoản nào khớp</td></tr>`;
+  $("count").textContent = `${list.length} / ${accounts.length} tài khoản`;
+}
+
+// ───────── Chi tiết một tài khoản ─────────
+let current = null, profile = null, tab = "info";
+
+async function openAccount(id) {
+  current = await api("/accounts/" + id);
+  onlineSince = current.online_since;
+  try { profile = current.profile ? JSON.parse(current.profile) : null; } catch { profile = null; }
+  $("detail").style.display = "flex";
+  renderDetail();
+}
+
+function renderDetail() {
+  const a = current;
+  const tabs = [["info", "Tổng quan"], ["bag", "Túi đồ & trang bị"], ["records", "Thành tích"], ["history", `Lịch sử (${a.events.length})`], ["manage", "Quản lý"], ["json", "JSON"]];
+  $("sheet").innerHTML = `
+    <div class="head">
+      <h2>${esc(a.username)}</h2><span class="faint">#${a.id}</span>
+      <span class="badge">${esc(charName(a.character))}</span>
+      ${online(a) ? `<span class="badge ok"><span class="dot on"></span>Đang online</span>` : `<span class="badge">Offline · ${ago(a.last_seen_at)}</span>`}
+      ${a.banned ? `<span class="badge ban">Bị khoá</span>` : ""}
+      <span style="flex:1"></span><button class="ghost" id="close">Đóng</button>
+    </div>
+    <div class="tabs">${tabs.map(([k, l]) => `<button data-tab="${k}" class="${tab === k ? "on" : ""}">${l}</button>`).join("")}</div>
+    <div id="pane">${PANES[tab]()}</div>
+    <div class="msg" id="msg"></div>`;
+  $("close").onclick = () => $("detail").style.display = "none";
+  BIND[tab]?.();
+}
+
+const PANES = {
+  info() {
+    const a = current, p = profile;
+    const prog = p?.characters?.find(c => c.character === a.character);
+    return `
+      <div class="grid">
+        <div class="card"><div class="kv">
+          <div><span>Con giáp</span><b>${esc(charName(a.character))}</b></div>
+          <div><span>Cấp</span><b>${a.level}</b></div>
+          <div><span>Đồng</span><b>${fmt(a.coins)}</b></div>
+          <div><span>Màn đã mở</span><b>${a.unlocked_levels}/${STAGES}</b></div>
+          <div><span>Độ khó</span><b>${DIFF[p?.difficulty] || "—"}${p?.nightmareUnlocked ? " · đã mở Ác Mộng" : ""}</b></div>
+          <div><span>Thời gian chơi</span><b>${hours(a.play_seconds)}</b></div>
+          <div><span>Tạo tài khoản</span><b>${when(a.created_at)}</b></div>
+          <div><span>Đăng nhập cuối</span><b>${when(a.last_login_at)}</b></div>
+          <div><span>Hoạt động cuối</span><b>${when(a.last_seen_at)}</b></div>
+          <div><span>Lưu cuối</span><b>${when(a.saved_at)}</b></div>
+          <div><span>Số lần lưu</span><b>${fmt(a.save_count)}</b></div>
+          <div><span>Phiên đang mở</span><b>${a.sessions}</b></div>
+          <div><span>Sai mật khẩu liên tiếp</span><b>${a.failed_logins}${a.locked_until && a.locked_until > new Date().toISOString() ? " · đang khoá tạm" : ""}</b></div>
+          <div><span>Dung lượng hồ sơ</span><b>${a.profile ? fmt(a.profile.length) + " byte" : "—"}</b></div>
+        </div></div>
+        ${prog ? `<div class="card"><h2>Tu luyện — ${esc(charName(a.character))}</h2>
+          <div class="kv"><div><span>Cấp ${prog.level}/${MAX_LEVEL}</span><b>${fmt(prog.xp)} / ${fmt(xpToNext(prog.level))} XP</b>
+            <div class="xp"><div style="width:${xpToNext(prog.level) ? Math.min(100, prog.xp / xpToNext(prog.level) * 100) : 100}%"></div></div></div>
+            <div><span>Điểm chưa cộng</span><b>${prog.points}</b></div></div>
+          <div class="stats4" style="margin-top:12px">
+            <div><span>Sinh lực</span><b>${prog.vitality}</b></div><div><span>Nội khí</span><b>${prog.spirit}</b></div>
+            <div><span>Sức mạnh</span><b>${prog.strength}</b></div><div><span>Thân pháp</span><b>${prog.agility}</b></div>
+            <div><span>Huyết Đan</span><b>${prog.bloodPills}</b></div><div><span>Khí Đan</span><b>${prog.energyPills}</b></div>
+          </div></div>` : ""}
+        ${p ? `<div class="card"><h2>Sửa nhanh<small>lưu xong người chơi bị đăng xuất để tải bản mới</small></h2>
+          <div class="form">
+            <label>Đồng<input id="eCoins" type="number" min="0" value="${p.coins}"></label>
+            <label>Màn đã mở<input id="eStage" type="number" min="1" max="${STAGES}" value="${p.unlockedLevels}"></label>
+            <label>Độ khó<select id="eDiff">${DIFF.map((d, i) => `<option value="${i}" ${p.difficulty === i ? "selected" : ""}>${d}</option>`).join("")}</select></label>
+            ${prog ? `<label>Cấp<input id="eLevel" type="number" min="1" max="${MAX_LEVEL}" value="${prog.level}"></label>
+            <label>XP<input id="eXp" type="number" min="0" value="${prog.xp}"></label>
+            <label>Điểm tu luyện<input id="ePoints" type="number" min="0" value="${prog.points}"></label>` : ""}
+            <button id="quickSave" style="align-self:end">Lưu</button>
+          </div></div>` : `<div class="card muted">Chưa có hồ sơ (người chơi chưa vào game lần nào).</div>`}
+      </div>`;
+  },
+
+  bag() {
+    const p = profile;
+    if (!p) return `<div class="card muted">Chưa có hồ sơ.</div>`;
+    const cell = (s, label, where, i) => {
+      if (!s || !s.id || s.count <= 0) return `<div class="slot empty"><div class="t">${label}</div><div class="faint">Trống</div></div>`;
+      const def = catalog.items[s.id] || {};
+      const affixes = (s.affixes || []).map(m => `<li>${STAT[m.stat] || "?"} ${m.kind === 1 ? "+" + Math.round(m.value * 100) + "%" :
+        (m.stat === 5 || m.stat === 6 ? "+" + Math.round(m.value * 100) + "%" : "+" + Math.round(m.value * 10) / 10)}</li>`).join("");
+      const gems = (s.gems || []).map(g => `<li>Ngọc: ${esc(itemName(g))}</li>`).join("");
+      return `<div class="slot rar-${def.rarity || "Common"}" data-tip="${esc(RARITY[def.rarity] || "")}${def.price ? " · giá " + def.price + " đồng" : ""}<br><span class='faint'>${esc(s.id)}</span>">
+        <button class="x" data-del="${where}:${i}" title="Xoá">✕</button>
+        <div class="t">${label}</div>
+        <div class="n">${esc(itemName(s.id))}${s.level ? ` <span style="color:var(--gold)">+${s.level}</span>` : ""}${s.count > 1 ? ` <span class="muted">×${s.count}</span>` : ""}</div>
+        ${affixes || gems ? `<ul>${affixes}${gems}</ul>` : ""}</div>`;
+    };
+    const used = p.bag.filter(s => s.id && s.count > 0).length;
+    const options = Object.entries(catalog.items).map(([id, d]) => `<option value="${esc(id)}">${esc(d.name)} (${esc(RARITY[d.rarity] || d.rarity)})</option>`).join("");
+    return `
+      <div class="grid">
+        <div class="card"><h2>Đang mặc</h2><div class="slots">${p.equipped.map((s, i) => cell(s, SLOT_NAMES[i], "equipped", i)).join("")}</div>
+          <div class="muted" style="margin-top:10px">Dùng nhanh: ${p.quick.map((q, i) => `phím ${i + 1} → ${q ? esc(itemName(q)) : "trống"}`).join(" · ")}</div></div>
+        <div class="card"><h2>Túi đồ<small>${used}/${p.bag.length} ô</small></h2><div class="slots">${p.bag.map((s, i) => cell(s, "Ô " + (i + 1), "bag", i)).join("")}</div></div>
+        <div class="card"><h2>Tặng đồ<small>cho vào ô trống đầu tiên của túi</small></h2>
+          <div class="form">
+            <label>Vật phẩm<select id="gItem">${options || `<option value="">(không đọc được danh sách đồ)</option>`}</select></label>
+            <label>Số lượng<input id="gCount" type="number" min="1" value="1"></label>
+            <label>Cấp đập<input id="gLevel" type="number" min="0" max="10" value="0"></label>
+            <button id="give" style="align-self:end">Tặng</button>
+          </div></div>
+      </div>`;
+  },
+
+  records() {
+    const p = profile;
+    if (!p) return `<div class="card muted">Chưa có hồ sơ.</div>`;
+    const kills = [...(p.kills || [])].sort((a, b) => b.count - a.count);
+    const total = kills.reduce((n, k) => n + k.count, 0);
+    const maxKill = Math.max(1, ...kills.map(k => k.count));
+    return `
+      <div class="two">
+        <div class="card"><h2>Quái đã hạ<small>${fmt(total)} con</small></h2><div class="hbars">${kills.map(k => `<div class="hbar">
+          <span>${esc(catalog.beasts[k.id] || k.id.replace(/^(Enemy|Boss)_/, ""))}</span>
+          <div class="track"><div class="fill" style="width:${k.count / maxKill * 100}%"></div></div><span class="val">${fmt(k.count)}</span></div>`).join("")
+          || `<div class="muted">Chưa hạ con nào</div>`}</div></div>
+        <div class="grid">
+          <div class="card"><h2>Tháp Mười Hai Canh Giờ</h2>${p.towerBest ? `<b>${p.towerBest} tầng</b> <span class="muted">— lập bằng ${esc(charName(p.towerBestCharacter))}</span>` : `<span class="muted">Chưa leo tháp</span>`}</div>
+          <div class="card"><h2>Kết thúc đã xem<small>${(p.endingsSeen || []).length}/12</small></h2>
+            <div class="chips">${(p.endingsSeen || []).map(e => `<span>${esc(charName(e))}</span>`).join("") || `<span class="muted" style="border:0;background:none">Chưa phá đảo</span>`}</div></div>
+          <div class="card"><h2>Nhiệm vụ đã nhận thưởng<small>${(p.questsClaimed || []).length}</small></h2>
+            <div class="chips">${(p.questsClaimed || []).map(q => `<span>${esc(catalog.quests[q] || q)}</span>`).join("") || `<span class="muted" style="border:0;background:none">Chưa có</span>`}</div></div>
+          <div class="card"><h2>Đoạn truyện đã xem<small>${(p.storySeen || []).length}</small></h2>
+            <div class="chips">${(p.storySeen || []).map(s => `<span>${esc(s)}</span>`).join("") || `<span class="muted" style="border:0;background:none">Chưa có</span>`}</div></div>
+        </div>
+      </div>`;
+  },
+
+  history() {
+    return `<div class="wrap"><table><thead><tr><th>Thời gian</th><th>Sự kiện</th><th>IP</th><th>Thiết bị</th></tr></thead><tbody>
+      ${current.events.map(e => `<tr><td>${when(e.at)} <span class="faint">· ${ago(e.at)}</span></td>
+        <td>${e.kind === "wrong_password" ? `<span class="badge ban">${KIND[e.kind]}</span>` : esc(KIND[e.kind] || e.kind)}</td>
+        <td class="num">${esc(e.ip || "—")}</td><td class="faint" style="max-width:360px;overflow:hidden;text-overflow:ellipsis">${esc(e.agent || "—")}</td></tr>`).join("")
+        || `<tr><td colspan="4" class="muted">Chưa có</td></tr>`}</tbody></table></div>`;
+  },
+
+  manage() {
+    const a = current;
+    return `<div class="grid">
+      <div class="card"><h2>${a.banned ? "Tài khoản đang bị khoá" : "Khoá tài khoản"}</h2>
+        ${a.banned ? `<p class="muted">Lý do: ${esc(a.ban_reason || "—")}</p><button id="unban">Mở khoá</button>`
+          : `<div class="form"><input id="reason" placeholder="Lý do (người chơi sẽ thấy)" style="width:320px"><button id="ban">Khoá và đá ra</button></div>`}</div>
+      <div class="card"><h2>Đặt lại mật khẩu</h2><div class="form"><input id="pw" placeholder="Mật khẩu mới (≥ 6 ký tự)" style="width:260px"><button id="setpw">Đặt lại</button></div></div>
+      <div class="card"><h2>Đổi con giáp</h2><div class="form">
+        <select id="char"><option value="">— Chưa chọn (cho chọn lại) —</option>${ORDER.map(k => `<option value="${k}" ${k === a.character ? "selected" : ""}>${NAMES[k]}</option>`).join("")}</select>
+        <button id="setchar">Đổi</button></div></div>
+      <div class="card danger"><h2>Xoá tài khoản</h2><p class="muted">Xoá hẳn tài khoản, hồ sơ và lịch sử. Không hoàn tác được.</p><button id="del">Xoá ${esc(a.username)}</button></div>
+    </div>`;
+  },
+
+  json() {
+    let pretty = current.profile || "";
+    try { pretty = pretty ? JSON.stringify(JSON.parse(pretty), null, 2) : ""; } catch {}
+    return `<textarea id="raw" spellcheck="false">${esc(pretty)}</textarea>
+      <div class="form" style="margin-top:10px"><button id="saveRaw">Lưu hồ sơ</button><button class="ghost" id="download">Tải JSON</button>
+      <span class="muted">Lưu xong người chơi bị đăng xuất để lần vào sau tải bản này.</span></div>`;
+  },
+};
+
+// Hành động: xong thì tải lại tài khoản và danh sách
+async function act(fn, ok) {
+  try { await fn(); await openAccount(current.id); $("msg").textContent = ok; refreshLists(); }
+  catch (e) { if (e.message !== "401") $("msg").textContent = e.message; }
+}
+const post = (path, body) => api(`/accounts/${current.id}${path}`, { method:"POST", body:JSON.stringify(body) });
+const saveProfile = (p, ok) => act(() => post("/profile", { profile:JSON.stringify(p) }), ok);
+
+const BIND = {
+  info() {
+    $("quickSave")?.addEventListener("click", () => {
+      const p = structuredClone(profile);
+      p.coins = Math.max(0, +$("eCoins").value | 0);
+      p.unlockedLevels = Math.min(STAGES, Math.max(1, +$("eStage").value | 0));
+      p.difficulty = +$("eDiff").value;
+      const prog = p.characters?.find(c => c.character === current.character);
+      if (prog && $("eLevel")) {
+        prog.level = Math.min(MAX_LEVEL, Math.max(1, +$("eLevel").value | 0));
+        prog.xp = Math.max(0, +$("eXp").value | 0);
+        prog.points = Math.max(0, +$("ePoints").value | 0);
+      }
+      if (confirm(`Lưu thay đổi cho ${current.username}?`)) saveProfile(p, "Đã lưu");
+    });
+  },
+  bag() {
+    $("pane").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+      const [where, i] = b.dataset.del.split(":");
+      const p = structuredClone(profile), s = p[where][+i];
+      if (!confirm(`Xoá ${itemName(s.id)} khỏi ${where === "bag" ? "túi" : "ô trang bị"}?`)) return;
+      p[where][+i] = { id:"", count:0, level:0, affixes:[], failStreak:0, gems:[] };
+      saveProfile(p, "Đã xoá đồ");
+    });
+    $("give")?.addEventListener("click", () => {
+      const id = $("gItem").value; if (!id) return;
+      const p = structuredClone(profile), slot = p.bag.findIndex(s => !s.id || s.count <= 0);
+      if (slot < 0) { $("msg").textContent = "Túi đầy"; return; }
+      p.bag[slot] = { id, count:Math.max(1, +$("gCount").value | 0), level:Math.min(10, Math.max(0, +$("gLevel").value | 0)), affixes:[], failStreak:0, gems:[] };
+      saveProfile(p, `Đã tặng ${itemName(id)}`);
+    });
+  },
+  manage() {
+    $("ban")?.addEventListener("click", () => act(() => post("/ban", { banned:true, reason:$("reason").value }), "Đã khoá"));
+    $("unban")?.addEventListener("click", () => act(() => post("/ban", { banned:false }), "Đã mở khoá"));
+    $("setpw").onclick = () => act(() => post("/password", { password:$("pw").value }), "Đã đặt lại mật khẩu");
+    $("setchar").onclick = () => confirm("Đổi con giáp của tài khoản này?") && act(() => post("/character", { character:$("char").value }), "Đã đổi con giáp");
+    $("del").onclick = async () => {
+      if (!confirm(`Xoá hẳn tài khoản ${current.username}? Không hoàn tác được.`)) return;
+      try { await api("/accounts/" + current.id, { method:"DELETE" }); $("detail").style.display = "none"; refreshLists(); }
+      catch (e) { if (e.message !== "401") $("msg").textContent = e.message; }
+    };
+  },
+  json() {
+    $("saveRaw").onclick = () => confirm("Ghi đè hồ sơ của người chơi?") && act(() => post("/profile", { profile:$("raw").value }), "Đã lưu hồ sơ");
+    $("download").onclick = () => {
+      const url = URL.createObjectURL(new Blob([$("raw").value], { type:"application/json" }));
+      Object.assign(document.createElement("a"), { href:url, download:`${current.username}.json` }).click();
+      URL.revokeObjectURL(url);
+    };
+  },
+};
+
+// ───────── Điều hướng ─────────
+let view = "overview";
+function refreshLists() {
+  $("stamp").textContent = "Cập nhật " + new Date().toLocaleTimeString("vi-VN");
+  return Promise.all([loadOverview(), loadPlayers()]).catch(e => { if (e.message !== "401") console.error(e); });
+}
+async function start() {
+  catalog = await api("/catalog");
+  $("login").style.display = "none"; $("app").hidden = false;
+  $("fChar").innerHTML += ORDER.map(k => `<option value="${k}">${NAMES[k]}</option>`).join("");
+  await refreshLists();
+}
+
+document.querySelector("nav").onclick = e => {
+  const b = e.target.closest("button[data-view]"); if (!b) return;
+  view = b.dataset.view;
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
+  $("overview").hidden = view !== "overview"; $("players").hidden = view !== "players";
+};
+document.body.addEventListener("click", e => {
+  const o = e.target.closest("[data-open]"); if (o && !e.target.closest("[data-del]")) { openAccount(o.dataset.open).catch(() => {}); return; }
+  const t = e.target.closest("[data-tab]"); if (t) { tab = t.dataset.tab; renderDetail(); return; }
+  const th = e.target.closest("th[data-col]");
+  if (th) { sort = { col:th.dataset.col, asc:sort.col === th.dataset.col ? !sort.asc : false }; renderPlayers(); }
+});
 $("detail").onclick = e => { if (e.target === $("detail")) $("detail").style.display = "none"; };
-if (key) load().catch(() => {}); else showLogin("");
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("detail").style.display = "none"; });
+$("enter").onclick = () => { key = $("key").value; sessionStorage.setItem("zodiacAdmin", key); start().catch(() => {}); };
+$("key").onkeydown = e => { if (e.key === "Enter") $("enter").click(); };
+$("reload").onclick = () => refreshLists();
+$("logout").onclick = () => { key = ""; sessionStorage.removeItem("zodiacAdmin"); showLogin(""); };
+let qTimer; $("q").oninput = () => { clearTimeout(qTimer); qTimer = setTimeout(() => loadPlayers().catch(() => {}), 250); };
+$("fChar").onchange = $("fState").onchange = renderPlayers;
+setInterval(() => { if (!$("app").hidden && $("detail").style.display !== "flex") refreshLists(); }, 30000);
+if (key) start().catch(() => {}); else showLogin("");
 </script>
 </body>
 </html>

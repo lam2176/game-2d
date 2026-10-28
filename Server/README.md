@@ -29,10 +29,20 @@ Cắm cáp USB thì không cần tường lửa: `adb reverse tcp:5080 tcp:5080`
 
 ## Trang quản trị
 
-- Danh sách tài khoản: con giáp, cấp, đồng, màn đã mở, giờ chơi, lần đăng nhập / lưu cuối; tìm theo tên; đếm số người theo từng con giáp.
-- Bấm vào một dòng: khoá / mở khoá (kèm lý do — người chơi bị đá ra ngay), đặt lại mật khẩu, đổi con giáp,
-  xem / sửa / tải hồ sơ JSON, xoá tài khoản. Sửa hồ sơ, đổi mật khẩu hay đổi con giáp sẽ đăng xuất người chơi
-  để lần vào sau game tải bản mới.
+- **Tổng quan:** số tài khoản, đang online (game báo mỗi phút), hoạt động 24 giờ / 7 ngày, mới đăng ký, cấp trung bình,
+  tổng giờ chơi, tổng đồng, bị khoá; biểu đồ người chơi theo con giáp, người chơi mỗi ngày (14 ngày), phân bố cấp,
+  màn đã mở; bảng cấp cao nhất, hoạt động gần đây, mới đăng ký. Tự tải lại mỗi 30 giây.
+- **Người chơi:** bảng sắp xếp theo mọi cột (cấp, XP, đồng, màn, độ khó, quái hạ, tháp, phá đảo, giờ chơi, hoạt động…),
+  lọc theo con giáp / trạng thái (online, bị khoá, chưa chọn con giáp), tìm theo tên.
+- **Chi tiết một tài khoản** (bấm vào dòng):
+  - Tổng quan: thông tin tài khoản, tu luyện (cấp, thanh XP, điểm, Sinh lực / Nội khí / Sức mạnh / Thân pháp, Đan), sửa nhanh đồng, màn, độ khó, cấp, XP, điểm.
+  - Túi đồ & trang bị: 5 ô đang mặc + 30 ô túi (tên, cấp đập, dòng phụ, ngọc, màu theo độ hiếm), xoá đồ, tặng đồ.
+  - Thành tích: quái đã hạ theo loại, tháp, kết thúc đã xem, nhiệm vụ, đoạn truyện.
+  - Lịch sử: đăng ký / đăng nhập / vào lại / đăng xuất / sai mật khẩu, kèm thời gian, IP, thiết bị.
+  - Quản lý: khoá / mở khoá (kèm lý do — người chơi bị đá ra ngay), đặt lại mật khẩu, đổi con giáp, xoá tài khoản.
+  - JSON: xem / sửa / tải hồ sơ thô.
+- Mọi thay đổi hồ sơ đều đăng xuất người chơi để lần vào sau game tải bản mới (không bị bản trên máy ghi đè).
+- Tên vật phẩm, quái, nhiệm vụ được đọc từ mã nguồn game (`Assets/Zodiac/...`) lúc máy chủ khởi động.
 
 ## API cho game (`POST /api/<hàm>`, JSON)
 
@@ -43,6 +53,7 @@ Cắm cáp USB thì không cần tường lửa: `adb reverse tcp:5080 tcp:5080`
 | `choose_character` | `p_token`, `p_character` | tài khoản — chỉ được một lần |
 | `save_progress` | `p_token`, `p_profile` (object), `p_level`, `p_coins`, `p_unlocked_levels`, `p_play_seconds` | `{}` |
 | `logout` | `p_token` | `{}` |
+| `ping` | `p_token` | `{}` — báo đang online (game gọi mỗi phút) |
 
 Lỗi: HTTP 400 `{"message": "<mã>"}` — `bad_username`, `bad_password`, `username_taken`, `wrong_login`, `locked`
 (sai 5 lần → khoá 5 phút), `banned:<lý do>`, `session_expired`, `character_locked`, `no_character`.
