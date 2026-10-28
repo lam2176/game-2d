@@ -93,6 +93,21 @@ public class PlayerMeleeAttack : MonoBehaviour
     public Kind LastKind { get; private set; }
     /// <summary>Ra đòn: (bước combo, loại đòn).</summary>
     public event Action<int, Kind> Swung;
+    /// <summary>
+    /// Nhận lượt bấm Đánh trước khi chém (<see cref="PlayerTarget"/>: mục tiêu ở xa thì bắn chưởng). Trả về true = đã xử lý.
+    /// </summary>
+    public Func<bool> InterceptPress;
+
+    /// <summary>Đang ra đòn được (hết hồi, không bận chiêu / lăn / túm / cầm vũ khí).</summary>
+    public bool CanSwing => Time.time >= nextAttackTime && (skill == null || !skill.IsBusy) &&
+                            (dodge == null || !dodge.IsDodging) && (grab == null || !grab.IsHolding) && !HoldingWeapon &&
+                            controller.ControlEnabled && !controller.IsKnockedDown;
+
+    /// <summary>Độ lệch làn tối đa mà đòn chém vẫn trúng (nửa bề dày hitbox theo Z).</summary>
+    public float LaneReach => hitbox != null ? hitbox.size.z * 0.5f * Mathf.Abs(hitbox.transform.lossyScale.z) : 0.5f;
+    /// <summary>Tầm chém về phía trước (mép xa của hitbox).</summary>
+    public float Reach => hitbox != null ? (Mathf.Abs(hitbox.transform.localPosition.x) + Mathf.Abs(hitbox.center.x) + hitbox.size.x * 0.5f) *
+                                           Mathf.Abs(hitbox.transform.lossyScale.x) : 1.5f;
 
     void Awake()
     {
@@ -128,8 +143,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             return;
         }
 
-        if (attackAction.WasPressedThisFrame() && Time.time >= nextAttackTime && (skill == null || !skill.IsBusy) &&
-            (dodge == null || !dodge.IsDodging) && (grab == null || !grab.IsHolding) && !HoldingWeapon) StartSwing();
+        if (attackAction.WasPressedThisFrame() && (InterceptPress == null || !InterceptPress()) && CanSwing) StartSwing();
 
         if (phase == Phase.Startup && Time.time >= phaseEndTime)
         {

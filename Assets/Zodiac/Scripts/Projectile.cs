@@ -36,6 +36,10 @@ public class Projectile : MonoBehaviour
     [Tooltip("Chỉ số người bắn (đạn người chơi): mỗi lần trúng tung chí mạng riêng. Null = sát thương cố định.")]
     public CharacterStats attacker;
     public float spin;
+    [Tooltip("Đuổi theo mục tiêu này (chưởng của người chơi). Null = bay thẳng.")]
+    public Collider homing;
+    [Tooltip("Tốc độ bẻ hướng khi đuổi (radian/giây).")]
+    public float homingTurn = 10f;
 
     readonly HashSet<Health> hits = new HashSet<Health>();
     readonly Collider[] overlaps = new Collider[16];
@@ -74,6 +78,13 @@ public class Projectile : MonoBehaviour
             Vector3 toOwner = owner.position + Vector3.up - pos;
             if (toOwner.magnitude < 0.6f) { Destroy(gameObject); return; }
             velocity = toOwner.normalized * velocity.magnitude;
+        }
+
+        if (homing != null && homing.enabled && !returning)
+        {
+            Vector3 desired = homing.bounds.center - pos;
+            if (desired.sqrMagnitude > 0.0001f)
+                velocity = Vector3.RotateTowards(velocity, desired.normalized * velocity.magnitude, homingTurn * dt, 0f);
         }
 
         Vector3 step = velocity * dt;

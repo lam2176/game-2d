@@ -142,7 +142,28 @@ public abstract class EnemyBase : MonoBehaviour
         if (player != null) playerHealth = player.GetComponent<Health>();
     }
 
-    void OnDisable() => attackers.Remove(this);
+    /// <summary>Quái đang có mặt (để chọn mục tiêu — <see cref="PlayerTarget"/>).</summary>
+    public static readonly List<EnemyBase> Active = new List<EnemyBase>();
+
+    /// <summary>Tên hiện trên bảng mục tiêu: theo sổ ghi chép, không có thì tên object.</summary>
+    public string DisplayName
+    {
+        get
+        {
+            string id = ZodiacJournal.IdOf(gameObject);
+            foreach (var b in ZodiacJournal.Beasts)
+                if (b.id == id) return b.name;
+            return id;
+        }
+    }
+
+    void OnEnable() => Active.Add(this);
+
+    void OnDisable()
+    {
+        attackers.Remove(this);
+        Active.Remove(this);
+    }
 
     void FixedUpdate()
     {
@@ -397,6 +418,7 @@ public abstract class EnemyBase : MonoBehaviour
     {
         punch = 1f;
         ComboCounter.Register();
+        PotentialGain.FromDamage(hit.amount, rewardScale);
         float k = hit.knockback * knockbackTaken;
         Vector3 away = transform.position - hit.source;
         away.y = 0f;
@@ -552,9 +574,12 @@ public abstract class EnemyBase : MonoBehaviour
         if (player == null || player.Character == null) PlayerProfile.Current.Save();
         else
         {
-            // XP theo máu gốc (trước khi độ khó / tinh anh nhân lên) rồi nhân thưởng
+            // Tiềm năng kiểu Ngọc Rồng: nhận dần theo sát thương gây ra (PotentialGain); hạ quái chỉ cộng phần thưởng thêm
+            // (xpReward đặt tay, boss) so với lượng đã nhận theo máu.
+            int hpXp = Progression.XpFor(Mathf.RoundToInt(health.maxHealth / Mathf.Max(0.01f, hpScaleApplied)), false);
             int baseXp = xpReward > 0 ? xpReward : Progression.XpFor(Mathf.RoundToInt(health.maxHealth / Mathf.Max(0.01f, hpScaleApplied)), this is BossBase);
-            PlayerProfile.Current.AddXp(player.Character.name, Mathf.RoundToInt(baseXp * rewardScale));
+            PotentialGain.Bonus(Mathf.RoundToInt(Mathf.Max(0, baseXp - hpXp) * rewardScale));
+            PotentialGain.Flush();
         }
         ZodiacParticles.Debris(body.bounds.center, DebrisColor, 14, body.bounds.extents.x);
         ZodiacParticles.Sparks(body.bounds.center, Color.white, 10);

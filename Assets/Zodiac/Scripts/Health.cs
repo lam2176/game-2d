@@ -54,6 +54,9 @@ public class Health : MonoBehaviour
     public event Action Changed;
     /// <summary>Trúng đòn (đã trừ máu; hit.amount là lượng máu thực mất sau giáp) — dùng để đẩy lùi, choáng, nháy màu.</summary>
     public event Action<Hit> Damaged;
+    /// <summary>Bất kỳ Health nào trúng đòn / được hồi máu — cho số sát thương bay lên (<see cref="DamageNumbers"/>).</summary>
+    public static event Action<Health, Hit> AnyDamaged;
+    public static event Action<Health, int> AnyHealed;
     public event Action Died;
     /// <summary>Nội tại giữ mạng vừa kích hoạt.</summary>
     public event Action LastStand;
@@ -127,6 +130,7 @@ public class Health : MonoBehaviour
         invulnerableUntil = Time.time + (lastStand ? Mathf.Max(invulnerableTime, 1.5f) : invulnerableTime);
         Changed?.Invoke();
         Damaged?.Invoke(hit);
+        AnyDamaged?.Invoke(this, hit);
         if (lastStand) LastStand?.Invoke();
         if (IsDead) Died?.Invoke();
         return true;
@@ -138,7 +142,11 @@ public class Health : MonoBehaviour
         if (IsDead || amount <= 0) return 0;
         int before = Current;
         Current = Mathf.Min(maxHealth, Current + amount);
-        if (Current != before) Changed?.Invoke();
+        if (Current != before)
+        {
+            Changed?.Invoke();
+            AnyHealed?.Invoke(this, Current - before);
+        }
         return Current - before;
     }
 
