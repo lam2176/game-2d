@@ -49,6 +49,17 @@ public class ZodiacPlayerController : MonoBehaviour
     [Tooltip("Giữ Space khi rơi thì tốc độ rơi tối đa bằng giá trị này. 0 = không lượn.")]
     [Min(0f)] public float glideFallSpeed = 0f;
 
+    [Header("Bay (kiểu Ngọc Rồng)")]
+    [Tooltip("Đang trên không, hết lượt nhảy mà bấm Nhảy nữa thì bay. Khí tốn khi cất cánh.")]
+    [Min(0)] public int flyStartCost = 8;
+    [Tooltip("Khí tốn mỗi giây khi bay — hết Khí thì rơi.")]
+    [Min(0f)] public float flyEnergyPerSecond = 7f;
+    [Tooltip("Giữ Nhảy khi bay: tốc độ bay lên; thả ra: tốc độ hạ dần (unit/s).")]
+    [Min(0f)] public float flyRiseSpeed = 4.5f;
+    [Min(0f)] public float flySinkSpeed = 1.3f;
+    [Tooltip("Bay cao tối đa so với mặt đất bên dưới.")]
+    [Min(0.5f)] public float maxFlyHeight = 2.6f;
+
     [Header("Trọng lực")]
     [Tooltip("Nhân với trọng lực Trái Đất (9.81).")]
     [Min(0f)] public float gravityScale = 3f;
@@ -94,6 +105,8 @@ public class ZodiacPlayerController : MonoBehaviour
     bool overridden;
     float overrideGravity;
     float knockdownUntil;
+    PlayerEnergy energy;
+    float flyEnergyDebt, nextFlyTrail;
 
     /// <summary>Vừa bật nhảy (true = nhảy trên không).</summary>
     public event Action<bool> Jumped;
@@ -104,6 +117,10 @@ public class ZodiacPlayerController : MonoBehaviour
     public bool IsGrounded { get; private set; }
     public bool IsRunning { get; private set; }
     public bool IsGliding { get; private set; }
+    /// <summary>Đang bay bằng Khí.</summary>
+    public bool IsFlying { get; private set; }
+    /// <summary>Vừa cất cánh / vừa thôi bay.</summary>
+    public event Action<bool> FlyingChanged;
     /// <summary>Đang nằm đất sau khi bị quật ngã.</summary>
     public bool IsKnockedDown => Time.time < knockdownUntil;
     /// <summary>Đang tàng hình — quái không phát hiện.</summary>
@@ -297,6 +314,7 @@ public class ZodiacPlayerController : MonoBehaviour
 
         IsGrounded = v.y <= 0.1f && CheckGround();
         if (IsGrounded && !wasGrounded && controlEnabled) Landed?.Invoke(Mathf.Max(0f, fallSpeed));
+        if (IsGrounded && IsFlying) SetFlying(false);
         if (IsGrounded)
         {
             coyoteCounter = coyoteTime;
@@ -318,6 +336,7 @@ public class ZodiacPlayerController : MonoBehaviour
             return;
         }
 
+        if ((stunCounter > 0f || IsKnockedDown) && IsFlying) SetFlying(false);   // trúng đòn là rơi
         if (stunCounter > 0f || IsKnockedDown)
         {
             // Bị đẩy lùi / nằm đất: vận tốc ngang tắt dần trên đất, chỉ áp trọng lực.
@@ -344,6 +363,13 @@ public class ZodiacPlayerController : MonoBehaviour
         v.x = current.x;
         v.z = current.y;
 
+        if (IsFlying)
+        {
+            Fly(ref v, dt);
+            rb.linearVelocity = v;
+            return;
+        }
+
         if (jumpBufferCounter > 0f && coyoteCounter > 0f && !jumping)
         {
             v.y = JumpVelocity;
@@ -356,6 +382,11 @@ public class ZodiacPlayerController : MonoBehaviour
             airJumpsLeft--;
             StartJump();
             Jumped?.Invoke(true);
+        }
+        else if (jumpBufferCounter > 0f && coyoteCounter <= 0f && TryStartFlying())
+        {
+            jumpBufferCounter = 0f;
+            v.y = Mathf.Max(v.y, 0f);
         }
         else
         {
@@ -380,6 +411,67 @@ public class ZodiacPlayerController : MonoBehaviour
         }
         v.y = Mathf.Max(v.y, -fallLimit);
         rb.linearVelocity = v;
+    }
+
+    // ───────── Bay ─────────
+
+    bool TryStartFlying()
+    {
+        if (energy == null) energy = GetComponent<PlayerEnergy>();
+        if (energy == null || !energy.TrySpend(flyStartCost)) return false;
+        SetFlying(true);
+        return true;
+    }
+
+    void SetFlying(bool value)
+    {
+        if (IsFlying == value) return;
+        IsFlying = value;
+        flyEnergyDebt = 0f;
+        jumping = false;
+        if (value)
+        {
+            Color c = character != null ? character.themeColor : Color.white;
+            ZodiacFx.Ring(transform.position + Vector3.up * 0.3f, 1.6f, c, 0.3f);
+            var res = ZodiacResources.Get;
+            if (res != null) ZodiacAudio.Play(res.jump, 0.7f, 0.05f, transform.position);
+        }
+        FlyingChanged?.Invoke(value);
+    }
+
+    /// <summary>Bay: không trọng lực, giữ Nhảy bay lên (tới maxFlyHeight), thả ra hạ dần; tốn Khí theo giây.</summary>
+    void Fly(ref Vector3 v, float dt)
+    {
+        flyEnergyDebt += flyEnergyPerSecond * dt;
+        int whole = Mathf.FloorToInt(flyEnergyDebt);
+        if (whole > 0)
+        {
+            flyEnergyDebt -= whole;
+            if (energy == null || !energy.TrySpend(whole))
+            {
+                SetFlying(false);   // hết Khí — rơi
+                return;
+            }
+        }
+        float height = HeightAboveGround();
+        float vy = jumpHeld ? flyRiseSpeed : -flySinkSpeed;
+        if (jumpHeld && height >= maxFlyHeight) vy = Mathf.Min(0f, (maxFlyHeight - height) * 4f);
+        v.y = Mathf.MoveTowards(v.y, vy, 25f * dt);
+
+        IsGliding = true;   // dáng lượn của CharacterAnimator
+        if (Time.time >= nextFlyTrail)
+        {
+            nextFlyTrail = Time.time + 0.08f;
+            Color c = character != null ? character.themeColor : Color.white;
+            ZodiacParticles.Sparks(transform.position + Vector3.up * 0.2f, c, 2);
+        }
+    }
+
+    float HeightAboveGround()
+    {
+        var origin = transform.position + Vector3.up * 0.1f;
+        return Physics.Raycast(origin, Vector3.down, out var hit, 30f, groundLayer, QueryTriggerInteraction.Ignore)
+            ? hit.distance - 0.1f : maxFlyHeight;
     }
 
     void ApplyGravity(ref Vector3 v, float scale, float dt)

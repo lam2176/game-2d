@@ -36,10 +36,12 @@ public class TutorialGuide : MonoBehaviour
     {
         new Step { text = "{Move} đi  ·  {Lane} đổi làn — đi thử vài bước" },
         new Step { text = "{Jump} nhảy  ·  giữ {Sprint} để chạy nhanh" },
-        new Step { text = "{Attack} đánh — bấm liền 3 lần thành chuỗi, đòn cuối quật ngã" },
+        new Step { text = "{Attack} đánh — tự đánh mục tiêu đang chọn (vòng vàng): gần thì chém, xa thì bắn chưởng" },
         new Step { text = "{Dodge} lăn né — lăn đúng lúc quái ra đòn: NÉ HOÀN HẢO, rồi {Attack} phản đòn chí mạng" },
         new Step { text = "{Skill} tung chiêu riêng — tốn Khí, đánh trúng quái để nạp Khí" },
         new Step { text = "Đầy Khí: {Ultimate} tuyệt kỹ  ·  quái choáng: {Interact} túm rồi ném", autoAfter = 7f },
+        new Step { text = "Thái Dương Hạ San (Z): choáng quái quanh mình  ·  Tái Tạo (X): hồi máu  ·  Đậu Thần (V): hồi đầy, 3 hạt mỗi màn", autoAfter = 8f },
+        new Step { text = "Đang nhảy bấm {Jump} lần nữa để BAY (tốn Khí)  ·  giữ {Jump} bay lên, thả ra hạ dần", autoAfter = 7f },
         new Step { text = "Dọn sạch quái để sang khu kế  ·  {Previous} / {Next} uống bình  ·  I / Tab: hành trang", autoAfter = 7f },
     };
 

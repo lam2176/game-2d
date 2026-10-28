@@ -118,14 +118,23 @@ public class TouchControls : MonoBehaviour
         right.anchorMin = right.anchorMax = right.pivot = new Vector2(1f, 0f);
         right.sizeDelta = Vector2.zero;
 
+        // Vòng cung quanh nút Đánh: Nhảy · Chiêu · Lăn · Tuyệt kỹ, vòng ngoài: Thái Dương · Tái Tạo · Túm · Đậu Thần
         Adopt(hud.attackSlot, "Attack", new Vector2(-215f, 200f), 225f);
         Adopt(hud.dodgeSlot, "Dodge", new Vector2(-175f, 445f), 128f);
-        Adopt(hud.skillSlot, "Skill", new Vector2(-455f, 280f), 150f);
-        Adopt(hud.ultimateSlot, "Ultimate", new Vector2(-385f, 470f), 165f);
-        IconButton(right, "Jump", TouchArt.Jump, new Vector2(-440f, 100f), 132f);
-        IconButton(right, "Interact", TouchArt.Hand, new Vector2(-640f, 120f), 112f);
-        // Đổi mục tiêu (PlayerTarget nghe R3 tay cầm)
-        IconButton(right, null, TouchArt.Target, new Vector2(-645f, 300f), 100f, "<Gamepad>/rightStickPress");
+        Adopt(hud.skillSlot, "Skill", new Vector2(-455f, 290f), 150f);
+        Adopt(hud.ultimateSlot, "Ultimate", new Vector2(-370f, 480f), 160f);
+        IconButton(right, "Jump", TouchArt.Jump, new Vector2(-440f, 95f), 130f);
+        IconButton(right, "Interact", TouchArt.Hand, new Vector2(-650f, 90f), 108f);
+        var extra = ExtraSkills.Ensure();
+        if (extra != null)
+        {
+            var places = new[] { new Vector2(-590f, 460f), new Vector2(-655f, 260f), new Vector2(-840f, 110f) };
+            var sizes = new[] { 120f, 112f, 104f };
+            for (int i = 0; i < extra.Entries.Length && i < places.Length; i++)
+                Adopt(extra.Entries[i].slot, extra.Entries[i].gamepad, places[i], sizes[i], usePath: true);
+        }
+        // Đổi mục tiêu (PlayerTarget nghe R3 tay cầm) — góc trên phải cạnh Túi
+        IconButton(gameplay.transform, null, TouchArt.Target, new Vector2(-322f, -72f), 100f, "<Gamepad>/rightStickPress", new Vector2(1f, 1f));
 
         // Túi · tạm dừng — góc trên phải.
         var top = new Vector2(1f, 1f);
@@ -215,9 +224,9 @@ public class TouchControls : MonoBehaviour
     }
 
     /// <summary>Dời một ô chiêu của SkillHud vào cụm nút: bọc trong khung có bóng, vành vàng và quầng bấm.</summary>
-    void Adopt(SkillHud.Slot slot, string action, Vector2 pos, float size)
+    void Adopt(SkillHud.Slot slot, string action, Vector2 pos, float size, bool usePath = false)
     {
-        string path = ZodiacInput.PadPath(action);
+        string path = usePath ? action : ZodiacInput.PadPath(action);
         if (slot == null || slot.root == null || path == null) return;
         var holder = Holder(right, action, pos, size, out var glow);
         float slotSize = slot.root.sizeDelta.x;

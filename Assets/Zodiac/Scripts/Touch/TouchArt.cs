@@ -8,7 +8,7 @@ using UnityEngine;
 public static class TouchArt
 {
     const int Size = 128;
-    static Sprite disc, ring, glow, jump, hand, pause, bag, target;
+    static Sprite disc, ring, glow, jump, hand, pause, bag, target, sun, regen, bean;
 
     /// <summary>Đĩa tròn sáng giữa, tối dần ra mép (nhân màu bằng Image.color).</summary>
     public static Sprite Disc => disc != null ? disc : disc = Make(p =>
@@ -66,6 +66,38 @@ public static class TouchArt
         a = Mathf.Max(a, Capsule(p, new Vector2(0.32f, 0f), new Vector2(0.78f, 0f), 0.06f));
         a = Mathf.Max(a, Capsule(p, new Vector2(-0.32f, 0f), new Vector2(-0.78f, 0f), 0.06f));
         return new Color(1f, 1f, 1f, a);
+    });
+
+    /// <summary>Mặt trời toả tia (Thái Dương Hạ San).</summary>
+    public static Sprite Sun => sun != null ? sun : sun = Make(p =>
+    {
+        float d = p.magnitude;
+        float a = Fill(0.32f - d);
+        float angle = Mathf.Atan2(p.y, p.x);
+        float ray = Mathf.Pow(Mathf.Abs(Mathf.Cos(angle * 4f)), 6f);   // 8 tia
+        a = Mathf.Max(a, Fill(0.4f + 0.5f * ray - d) * Fill(d - 0.38f));
+        return new Color(1f, 1f, 1f, a);
+    });
+
+    /// <summary>Dấu cộng trong vòng xoáy (Tái Tạo Năng Lượng).</summary>
+    public static Sprite Regen => regen != null ? regen : regen = Make(p =>
+    {
+        float d = p.magnitude;
+        float a = Mathf.Max(Capsule(p, new Vector2(0f, -0.32f), new Vector2(0f, 0.32f), 0.11f),
+                            Capsule(p, new Vector2(-0.32f, 0f), new Vector2(0.32f, 0f), 0.11f));
+        float angle = Mathf.Atan2(p.y, p.x);
+        bool arc = Mathf.Repeat(angle, Mathf.PI) < Mathf.PI * 0.7f;   // hai cung hở
+        if (arc) a = Mathf.Max(a, Fill(0.06f - Mathf.Abs(d - 0.7f)));
+        return new Color(1f, 1f, 1f, a);
+    });
+
+    /// <summary>Hạt đậu (Đậu Thần).</summary>
+    public static Sprite Bean => bean != null ? bean : bean = Make(p =>
+    {
+        var q = new Vector2(p.x * 0.8f + p.y * 0.35f, p.y * 1.15f - p.x * 0.3f);   // nghiêng, thuôn
+        float a = Fill(0.55f - q.magnitude);
+        float shine = Fill(0.12f - Vector2.Distance(p, new Vector2(-0.18f, 0.22f)));
+        return new Color(1f, 1f, 1f, Mathf.Max(a, shine));
     });
 
     /// <summary>Hai vạch đứng.</summary>
