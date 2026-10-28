@@ -8,7 +8,7 @@ using UnityEngine;
 public static class TouchArt
 {
     const int Size = 128;
-    static Sprite disc, ring, glow, jump, hand, pause, bag;
+    static Sprite disc, ring, glow, jump, hand, pause, bag, target;
 
     /// <summary>Đĩa tròn sáng giữa, tối dần ra mép (nhân màu bằng Image.color).</summary>
     public static Sprite Disc => disc != null ? disc : disc = Make(p =>
@@ -52,6 +52,19 @@ public static class TouchArt
         a = Mathf.Max(a, Capsule(p, new Vector2(0.24f, -0.1f), new Vector2(0.24f, 0.55f), 0.09f));
         a = Mathf.Max(a, Capsule(p, new Vector2(0.44f, -0.15f), new Vector2(0.44f, 0.36f), 0.08f));
         a = Mathf.Max(a, Capsule(p, new Vector2(-0.3f, -0.35f), new Vector2(-0.62f, 0.02f), 0.09f));
+        return new Color(1f, 1f, 1f, a);
+    });
+
+    /// <summary>Tâm ngắm: vòng tròn, bốn vạch và chấm giữa (đổi mục tiêu).</summary>
+    public static Sprite Target => target != null ? target : target = Make(p =>
+    {
+        float d = p.magnitude;
+        float a = Fill(0.08f - Mathf.Abs(d - 0.5f));
+        a = Mathf.Max(a, Fill(0.13f - d));
+        a = Mathf.Max(a, Capsule(p, new Vector2(0f, 0.32f), new Vector2(0f, 0.78f), 0.06f));
+        a = Mathf.Max(a, Capsule(p, new Vector2(0f, -0.32f), new Vector2(0f, -0.78f), 0.06f));
+        a = Mathf.Max(a, Capsule(p, new Vector2(0.32f, 0f), new Vector2(0.78f, 0f), 0.06f));
+        a = Mathf.Max(a, Capsule(p, new Vector2(-0.32f, 0f), new Vector2(-0.78f, 0f), 0.06f));
         return new Color(1f, 1f, 1f, a);
     });
 

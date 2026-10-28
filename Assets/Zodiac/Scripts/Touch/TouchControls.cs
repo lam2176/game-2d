@@ -124,6 +124,8 @@ public class TouchControls : MonoBehaviour
         Adopt(hud.ultimateSlot, "Ultimate", new Vector2(-385f, 470f), 165f);
         IconButton(right, "Jump", TouchArt.Jump, new Vector2(-440f, 100f), 132f);
         IconButton(right, "Interact", TouchArt.Hand, new Vector2(-640f, 120f), 112f);
+        // Đổi mục tiêu (PlayerTarget nghe R3 tay cầm)
+        IconButton(right, null, TouchArt.Target, new Vector2(-645f, 300f), 100f, "<Gamepad>/rightStickPress");
 
         // Túi · tạm dừng — góc trên phải.
         var top = new Vector2(1f, 1f);
