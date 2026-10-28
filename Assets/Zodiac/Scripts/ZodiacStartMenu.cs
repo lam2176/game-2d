@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// (chỉ số, cấp của con đó, nội tại, chiêu thức), nút Bắt đầu (mở bảng chọn màn — màn chưa mở bị khoá),
 /// nút Chơi mới (xoá hồ sơ, có hỏi lại) và nút Thoát. Bảng chọn màn / hỏi lại dựng bằng code lúc chạy.
 /// Ô đang được chọn (EventSystem) chính là nhân vật sẽ chơi — lưu vào <see cref="ZodiacSelection"/>.
-/// Có máy chủ (<see cref="ZodiacCloud.Configured"/>) thì phải đăng nhập trước; tài khoản mới chọn một con giáp
+/// Có máy chủ (<see cref="ZodiacCloud.Configured"/>) thì phải đăng nhập trước ở scene <see cref="LoginScreen"/>; tài khoản mới chọn một con giáp
 /// (một lần, không đổi được), sau đó lưới chỉ còn con giáp của tài khoản. Nút Ô lưu thành nút Đăng xuất.
 /// </summary>
 public class ZodiacStartMenu : MonoBehaviour
@@ -38,13 +38,17 @@ public class ZodiacStartMenu : MonoBehaviour
     int shown = -1;
     GameObject levelPanel, confirmPanel, slotPanel;
     Text confirmText, slotButtonText, accountText;
-    LoginPanel login;
     Transform slotList;
     System.Action pendingConfirm;
     Font font;
 
     void Start()
     {
+        if (ZodiacCloud.Configured && !ZodiacCloud.LoggedIn)
+        {
+            SceneManager.LoadScene(LoginScreen.SceneName);   // chưa đăng nhập (mở thẳng scene này / vừa đăng xuất)
+            return;
+        }
         font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         BuildOverlay();
         var res = ZodiacResources.Get;
@@ -58,11 +62,7 @@ public class ZodiacStartMenu : MonoBehaviour
         {
             ZodiacCloud.SessionLost -= OnSessionLost;
             ZodiacCloud.SessionLost += OnSessionLost;
-            if (ZodiacCloud.LoggedIn)
-            {
-                login.gameObject.SetActive(false);
-                OnLoggedIn();
-            }
+            OnLoggedIn();
         }
     }
 
@@ -70,7 +70,7 @@ public class ZodiacStartMenu : MonoBehaviour
 
     void Update()
     {
-        if (SettingsWindow.IsOpen || LoginPanel.IsOpen) return;
+        if (SettingsWindow.IsOpen) return;
         if ((levelPanel != null && levelPanel.activeSelf) || (confirmPanel != null && confirmPanel.activeSelf) ||
             (slotPanel != null && slotPanel.activeSelf))
         {
@@ -136,7 +136,7 @@ public class ZodiacStartMenu : MonoBehaviour
     {
         if (ZodiacCloud.Configured && !ZodiacCloud.LoggedIn)
         {
-            login.Open("");
+            GoLogin("");
             return;
         }
         if (ZodiacCloud.Configured && !ZodiacCloud.HasCharacter)
@@ -230,8 +230,6 @@ public class ZodiacStartMenu : MonoBehaviour
             else OpenSlots();
         });
         confirmPanel.SetActive(false);
-
-        if (ZodiacCloud.Configured) login = LoginPanel.Build(canvasGo.transform, OnLoggedIn);
     }
 
     void RebuildLevelButtons()
@@ -278,7 +276,7 @@ public class ZodiacStartMenu : MonoBehaviour
         if (ZodiacCloud.Configured)
         {
             if (ZodiacCloud.LoggedIn) AskLogout();
-            else login.Open("");
+            else GoLogin("");
             return;
         }
         if (levelPanel != null) levelPanel.SetActive(false);
@@ -437,30 +435,17 @@ public class ZodiacStartMenu : MonoBehaviour
         pendingConfirm = () =>
         {
             ZodiacCloud.Logout();
-            ResetGrid();
-            login.Open("");
+            GoLogin("");
         };
         confirmPanel.SetActive(true);
     }
 
-    void OnSessionLost(string message)
-    {
-        ResetGrid();
-        login.Open(message);
-    }
+    void OnSessionLost(string message) => GoLogin(message);
 
-    void ResetGrid()
+    static void GoLogin(string message)
     {
-        for (int i = 0; slots != null && i < slots.Length; i++)
-        {
-            if (slots[i] == null) continue;
-            slots[i].interactable = true;
-            var group = slots[i].GetComponent<CanvasGroup>();
-            if (group != null) group.alpha = 1f;
-        }
-        RefreshSlotButton();
-        RefreshAccountText();
-        if (shown >= 0) Show(shown);
+        LoginScreen.PendingMessage = message;
+        ScreenFader.LoadScene(LoginScreen.SceneName);
     }
 
     GameObject Overlay(Transform parent, string name, string title, float width, float height)

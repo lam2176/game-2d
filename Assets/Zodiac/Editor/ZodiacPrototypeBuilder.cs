@@ -103,6 +103,8 @@ public static class ZodiacPrototypeBuilder
         EditorUtility.ClearProgressBar();
         BuildStartScene(ctx.roster);
         UpdateBuildSettings();
+        ZodiacLoginSceneBuilder.Build(ctx.roster);   // màn đăng nhập đứng đầu, trước màn chọn con giáp
+        ZodiacLoginSceneBuilder.PutFirstInBuildSettings();
 
         AssetDatabase.SaveAssets();
         EditorSceneManager.OpenScene(StartScenePath);
