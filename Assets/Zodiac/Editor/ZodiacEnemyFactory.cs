@@ -291,10 +291,32 @@ public static class ZodiacEnemyFactory
         var v = Visual(root);
         Color fur = new Color(0.95f, 0.55f, 0.2f);
 
-        var tailRoot = new GameObject("Tails").transform;
+        Transform tailRoot;
+        SpriteRenderer[] tails;
+        float glowAlpha = 1f;
+        if (Art(v, "HoTinh", 2.9f, Vector2.zero, 8) != null)
+        {
+            // Ảnh vẽ: chín đuôi vẽ sẵn — quầng sáng mờ sau chùm đuôi đổi sang xanh khi sắp ra đòn
+            glowAlpha = 0.55f;
+            tailRoot = new GameObject("Tails").transform;
+            tailRoot.SetParent(v, false);
+            Vector3[] halos = { new Vector3(-0.85f, 2.0f, 1.9f), new Vector3(-0.2f, 2.4f, 1.3f), new Vector3(-1.2f, 1.1f, 1.4f) };
+            tails = new SpriteRenderer[halos.Length];
+            for (int i = 0; i < halos.Length; i++)
+            {
+                var pivot = new GameObject($"Tail {i + 1}").transform;
+                pivot.SetParent(tailRoot, false);
+                pivot.localPosition = new Vector3(halos[i].x, halos[i].y, 0f);
+                tails[i] = Glow(pivot, Vector2.zero, halos[i].z, new Color(1f, 0.85f, 0.6f), 1);
+            }
+            ZodiacLights.AddPoint(tailRoot.gameObject, new Color(0.6f, 0.85f, 1f), 6f, 1.5f);
+        }
+        else
+        {
+        tailRoot = new GameObject("Tails").transform;
         tailRoot.SetParent(v, false);
         tailRoot.localPosition = new Vector3(-0.7f, 0.8f, -5 * LayerDepth);
-        var tails = new SpriteRenderer[9];
+        tails = new SpriteRenderer[9];
         for (int i = 0; i < tails.Length; i++)
         {
             var pivot = new GameObject($"Tail {i + 1}").transform;
@@ -318,6 +340,7 @@ public static class ZodiacEnemyFactory
         Shape(v, "EarFront", false, new Vector2(0.85f, 2.25f), new Vector2(0.35f, 0.35f), new Color(0.85f, 0.4f, 0.15f), 11, 45f);
         Unlit(Shape(v, "Eye", false, new Vector2(0.95f, 1.85f), new Vector2(0.22f, 0.08f), new Color(0.3f, 0.95f, 1f), 13, -12f));
         Shape(v, "Mark", true, new Vector2(0.6f, 2.05f), new Vector2(0.14f, 0.14f), new Color(0.8f, 0.1f, 0.15f), 12);
+        }
 
         var marker = new GameObject("LandingMarker");
         marker.transform.SetParent(root.transform, false);
@@ -332,6 +355,7 @@ public static class ZodiacEnemyFactory
         ai.loot = new[] { L("duoi_ho_tinh", 1f), L("dao_rong", 1f), L("binh_mau_lon", 1f, 2, 2), L("manh_huyet_dan", 1f, 2, 2), L("manh_khi_dan", 1f, 2, 2), L("bua_bao_ho", 1f), L("ngoc_may_man", 1f, 2, 2) };
         ai.coinDrop = new Vector2Int(15, 25);
         ai.tails = tails;
+        ai.glowAlpha = glowAlpha;
         ai.minionPrefab = minion;
         ai.landingMarker = markerSr;
         ai.knockbackTaken = 0f;
@@ -366,6 +390,18 @@ public static class ZodiacEnemyFactory
         AddBox(root, new Vector3(2.2f, 2.2f, 1.1f));
         var v = Visual(root);
         Color scale = new Color(0.18f, 0.42f, 0.4f), belly = new Color(0.75f, 0.82f, 0.6f), dark = new Color(0.1f, 0.25f, 0.24f);
+        var glow = new System.Collections.Generic.List<SpriteRenderer>();
+        float glowAlpha = 1f;
+        if (Art(v, "ThuongLuong", 3.1f, Vector2.zero, 8) != null)
+        {
+            // Ảnh vẽ: quầng sáng mờ sau các vây lưng
+            glowAlpha = 0.5f;
+            Vector3[] finGlows = { new Vector3(-1.3f, 1.8f, 0.9f), new Vector3(-0.7f, 0.9f, 0.8f), new Vector3(0f, 2.0f, 0.8f), new Vector3(0.3f, 2.6f, 0.7f) };
+            foreach (var f in finGlows)
+                glow.Add(Glow(v, new Vector2(f.x, f.y), f.z, new Color(0.4f, 0.75f, 0.7f), 1));
+        }
+        else
+        {
         Shape(v, "TailTip", true, new Vector2(-1.7f, 0.35f), new Vector2(0.6f, 0.3f), dark, 5);
         Shape(v, "Coil1", true, new Vector2(-1.05f, 0.4f), new Vector2(1.3f, 0.75f), scale, 6);
         Shape(v, "Coil1Belly", true, new Vector2(-1.0f, 0.25f), new Vector2(1f, 0.3f), belly, 7);
@@ -381,15 +417,16 @@ public static class ZodiacEnemyFactory
         Shape(v, "HornFront", false, new Vector2(1.0f, 2.85f), new Vector2(0.12f, 0.6f), new Color(0.9f, 0.85f, 0.65f), 15, 25f);
         Shape(v, "Whisker", false, new Vector2(1.95f, 2.0f), new Vector2(0.7f, 0.04f), belly, 15, -25f);
         Unlit(Shape(v, "Eye", true, new Vector2(1.25f, 2.45f), new Vector2(0.2f, 0.14f), new Color(0.8f, 1f, 0.4f), 16));
-        var glow = new System.Collections.Generic.List<SpriteRenderer>();
         Vector2[] fins = { new Vector2(-1.2f, 0.85f), new Vector2(-0.35f, 1.0f), new Vector2(0.4f, 1.6f), new Vector2(0.6f, 2.2f), new Vector2(0.75f, 2.6f) };
         for (int i = 0; i < fins.Length; i++)
             glow.Add(Unlit(Shape(v, "Fin", false, fins[i], new Vector2(0.28f, 0.28f), new Color(0.4f, 0.75f, 0.7f), 4, 45f)).GetComponent<SpriteRenderer>());
+        }
         ZodiacLights.AddPoint(v.gameObject, new Color(0.5f, 0.9f, 1f), 6f, 1.4f);
         var ai = root.AddComponent<BossSerpent>();
         BossCommon(ai, root, v, scale, "Thuồng Luồng", "giap_vay_thuong_luong", 2.6f);
         ai.minionPrefab = minion;
         ai.glowParts = glow.ToArray();
+        ai.glowAlpha = glowAlpha;
         return root;
     }
 
@@ -401,7 +438,18 @@ public static class ZodiacEnemyFactory
         AddBox(root, new Vector3(1.3f, 2.4f, 0.9f));
         var v = Visual(root);
         Color coat = new Color(0.32f, 0.24f, 0.2f), rag = new Color(0.45f, 0.36f, 0.28f), skin = new Color(0.55f, 0.52f, 0.48f);
-        var sack = new GameObject("Sack").transform;
+        Transform sack = null;   // ảnh vẽ: bao tải vẽ liền lưng
+        var eyes = new System.Collections.Generic.List<SpriteRenderer>();
+        float glowAlpha = 1f;
+        if (Art(v, "OngBaBi", 2.9f, Vector2.zero, 8) != null)
+        {
+            // Ảnh vẽ: mười hai mắt vẽ sẵn — quầng sáng mờ phủ lên mặt, đỏ rực khi sắp ra đòn
+            glowAlpha = 0.5f;
+            eyes.Add(Glow(v, new Vector2(0.45f, 2.4f), 0.5f, new Color(1f, 0.85f, 0.2f), 30));
+        }
+        else
+        {
+        sack = new GameObject("Sack").transform;
         sack.SetParent(v, false);
         Shape(sack, "SackBody", true, new Vector2(-0.6f, 1.55f), new Vector2(1.3f, 1.4f), new Color(0.65f, 0.5f, 0.3f), 4);
         Shape(sack, "SackTie", true, new Vector2(-0.35f, 2.25f), new Vector2(0.35f, 0.25f), new Color(0.5f, 0.38f, 0.22f), 5);
@@ -417,16 +465,17 @@ public static class ZodiacEnemyFactory
         Shape(v, "Hat", false, new Vector2(0.35f, 2.5f), new Vector2(1.1f, 0.14f), new Color(0.25f, 0.2f, 0.15f), 12, -6f);
         Shape(v, "HatTop", true, new Vector2(0.32f, 2.65f), new Vector2(0.55f, 0.35f), new Color(0.25f, 0.2f, 0.15f), 12);
         Shape(v, "Beard", true, new Vector2(0.55f, 1.75f), new Vector2(0.5f, 0.35f), new Color(0.7f, 0.68f, 0.62f), 12);
-        var eyes = new System.Collections.Generic.List<SpriteRenderer>();
         Vector2[] eyeSpots = { new Vector2(0.55f, 2.15f), new Vector2(0.72f, 2.05f), new Vector2(0.4f, 2.0f), new Vector2(0.62f, 2.3f),
                                new Vector2(0.28f, 2.2f), new Vector2(0.78f, 2.22f), new Vector2(-0.7f, 1.8f), new Vector2(-0.45f, 1.5f) };
         foreach (var e in eyeSpots)
             eyes.Add(Unlit(Shape(v, "Eye", true, e, new Vector2(0.11f, 0.09f), new Color(1f, 0.85f, 0.2f), 14)).GetComponent<SpriteRenderer>());
+        }
         var ai = root.AddComponent<BossBogeyman>();
         BossCommon(ai, root, v, coat, "Ông Ba Bị", "bua_mat_ba_bi", 2f);
         ai.minionPrefab = minion;
         ai.eyes = eyes.ToArray();
         ai.sack = sack;
+        ai.glowAlpha = glowAlpha;
         return root;
     }
 
@@ -438,6 +487,24 @@ public static class ZodiacEnemyFactory
         AddBox(root, new Vector3(2f, 2.9f, 1.2f));
         var v = Visual(root);
         Color hide = new Color(0.55f, 0.28f, 0.22f), darkHide = new Color(0.4f, 0.2f, 0.16f), cloth = new Color(0.35f, 0.3f, 0.2f);
+        Transform club;
+        SpriteRenderer glow;
+        var eyes = new System.Collections.Generic.List<SpriteRenderer>();
+        float glowAlpha = 1f;
+        if (ZodiacEnemyArt.Get("ChanTinh") != null && ZodiacEnemyArt.Get("ChuyDa") != null)
+        {
+            // Ảnh vẽ: thân và chùy đá tách riêng — chùy xoay quanh nắm tay phải
+            glowAlpha = 0.5f;
+            Art(v, "ChanTinh", 3.3f, Vector2.zero, 8);
+            eyes.Add(Glow(v, new Vector2(0.33f, 2.72f), 0.4f, new Color(1f, 0.85f, 0.3f), 30));
+            club = new GameObject("Club").transform;
+            club.SetParent(v, false);
+            club.localPosition = new Vector3(0.75f, 1.5f, -12 * LayerDepth);
+            Art(club, "ChuyDa", 1.9f, new Vector2(0f, 0.7f), 12);
+            glow = Glow(club, new Vector2(0f, 1.3f), 1.2f, new Color(1f, 0.5f, 0.2f, 0f), 31);
+        }
+        else
+        {
         Shape(v, "LegBack", false, new Vector2(-0.4f, 0.45f), new Vector2(0.5f, 0.9f), darkHide, 5);
         Shape(v, "LegFront", false, new Vector2(0.35f, 0.45f), new Vector2(0.55f, 0.9f), hide, 9);
         Shape(v, "ArmBack", false, new Vector2(-0.85f, 1.6f), new Vector2(0.45f, 1.2f), darkHide, 5, 15f);
@@ -450,24 +517,25 @@ public static class ZodiacEnemyFactory
         Shape(v, "HornFront", false, new Vector2(0.6f, 3.3f), new Vector2(0.16f, 0.55f), new Color(0.95f, 0.9f, 0.75f), 12, 15f);
         Shape(v, "Tusk", false, new Vector2(0.85f, 2.42f), new Vector2(0.1f, 0.3f), Color.white, 13, -20f);
         Shape(v, "Mouth", false, new Vector2(0.75f, 2.5f), new Vector2(0.4f, 0.08f), new Color(0.2f, 0.08f, 0.06f), 12);
-        var eyes = new System.Collections.Generic.List<SpriteRenderer>();
         eyes.Add(Unlit(Shape(v, "EyeFront", true, new Vector2(0.78f, 2.82f), new Vector2(0.16f, 0.12f), new Color(1f, 0.85f, 0.3f), 13)).GetComponent<SpriteRenderer>());
         eyes.Add(Unlit(Shape(v, "EyeBack", true, new Vector2(0.52f, 2.84f), new Vector2(0.15f, 0.11f), new Color(1f, 0.85f, 0.3f), 13)).GetComponent<SpriteRenderer>());
         // Chùy: xoay quanh vai trước (BossOgre giơ lên / nện xuống)
-        var club = new GameObject("Club").transform;
+        club = new GameObject("Club").transform;
         club.SetParent(v, false);
         club.localPosition = new Vector3(0.85f, 1.9f, -11 * LayerDepth);
         Shape(club, "Handle", false, new Vector2(0.15f, 0.55f), new Vector2(0.16f, 1.1f), new Color(0.4f, 0.28f, 0.18f), 11);
         Shape(club, "Head", true, new Vector2(0.2f, 1.3f), new Vector2(0.65f, 0.85f), new Color(0.6f, 0.56f, 0.5f), 12);
         Shape(club, "Knob", true, new Vector2(0.35f, 1.55f), new Vector2(0.25f, 0.25f), new Color(0.5f, 0.46f, 0.42f), 13);
-        var glow = Unlit(Shape(club, "Glow", true, new Vector2(0.2f, 1.3f), new Vector2(0.9f, 1.1f), new Color(1f, 0.5f, 0.2f, 0f), 13)).GetComponent<SpriteRenderer>();
+        glow = Unlit(Shape(club, "Glow", true, new Vector2(0.2f, 1.3f), new Vector2(0.9f, 1.1f), new Color(1f, 0.5f, 0.2f, 0f), 13)).GetComponent<SpriteRenderer>();
         Shape(v, "ArmFront", false, new Vector2(0.8f, 1.6f), new Vector2(0.5f, 1.1f), hide, 12, -20f);
         Shape(v, "Fist", true, new Vector2(1.0f, 1.95f), new Vector2(0.45f, 0.4f), hide, 13);
+        }
         var ai = root.AddComponent<BossOgre>();
         BossCommon(ai, root, v, hide, "Chằn Tinh", "chuy_chan_tinh", 2.8f);
         ai.club = club;
         ai.clubGlow = glow;
         ai.eyes = eyes.ToArray();
+        ai.glowAlpha = glowAlpha;
         return root;
     }
 
@@ -550,6 +618,7 @@ public static class ZodiacEnemyFactory
         var flash = root.AddComponent<HitFlash>();
         var renderers = new System.Collections.Generic.List<SpriteRenderer>(visual.GetComponentsInChildren<SpriteRenderer>());
         if (except != null) renderers.RemoveAll(r => r.transform.IsChildOf(except));
+        renderers.RemoveAll(r => r.name.StartsWith("Glow"));   // quầng sáng tự đổi màu, không nháy theo
         flash.renderers = renderers.ToArray();
         // Ảnh vẽ (màu trắng = giữ nguyên ảnh) nháy đỏ; hình khối tô màu thì nháy trắng
         bool art = renderers.Exists(r => r.sprite != square && r.sprite != circle);
@@ -573,6 +642,20 @@ public static class ZodiacEnemyFactory
         sr.shadowCastingMode = ShadowCastingMode.On;
         sr.receiveShadows = true;
         return go;
+    }
+
+    /// <summary>
+    /// Quầng sáng tự phát sáng phủ lên / sau ảnh vẽ (tên "Glow…", sprite tròn mờ do <see cref="BossBase"/> gán lúc chạy).
+    /// sortingOrder thấp hơn thân = nằm sau ảnh, cao hơn = phủ lên.
+    /// </summary>
+    static SpriteRenderer Glow(Transform parent, Vector2 localPosition, float size, Color color, int order)
+    {
+        var go = Unlit(Shape(parent, "Glow", true, localPosition, Vector2.one * size, color, order));
+        var sr = go.GetComponent<SpriteRenderer>();
+        sr.sprite = null;
+        sr.sortingOrder = order;
+        sr.shadowCastingMode = ShadowCastingMode.Off;
+        return sr;
     }
 
     static GameObject Unlit(GameObject go)

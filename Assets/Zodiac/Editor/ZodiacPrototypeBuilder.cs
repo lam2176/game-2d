@@ -74,6 +74,7 @@ public static class ZodiacPrototypeBuilder
         }
 
         ZodiacVisualSetup.EnsureUniversalRenderer();
+        ZodiacEnemyArt.CleanMissing();   // tách nền ảnh quái / boss mới trước khi quét ảnh vào ZodiacResources
         var ctx = new ZodiacLevelBuilder.Context
         {
             square = EnsurePlaceholderSprite(SquarePath, 4, circle: false),

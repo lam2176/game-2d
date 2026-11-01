@@ -281,6 +281,6 @@ public class BossSerpent : BossBase
         bool winding = state == State.TailWindup || state == State.Spit || state == State.Lock;
         float flicker = winding ? 0.5f + 0.5f * Mathf.Sin(Time.time * 25f) : 0f;
         foreach (var g in glowParts)
-            if (g != null) g.color = Color.Lerp(glowIdle, glowCharge, winding ? 0.5f + flicker * 0.5f : phase2 ? 0.35f : 0f);
+            if (g != null) g.color = WithGlowAlpha(Color.Lerp(glowIdle, glowCharge, winding ? 0.5f + flicker * 0.5f : phase2 ? 0.35f : 0f));
     }
 }

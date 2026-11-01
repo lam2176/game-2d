@@ -173,8 +173,8 @@ public static class ZodiacVisualSetup
         Fill(ref res.page, "Synth/page_*");
         Fill(ref res.uiClick, "Synth/ui_click");
         if (res.fireLoop == null) res.fireLoop = Clip("Synth/fire_loop");
-        if (res.enemyArt == null || res.enemyArt.Length == 0 || res.enemyArt.Any(s => s == null))
-            res.enemyArt = AssetDatabase.FindAssets("t:Sprite", new[] { ZodiacEnemyArt.Folder })
+        // Luôn quét lại: thêm ảnh quái / boss mới thì sổ ghi chép thấy ngay
+        res.enemyArt = AssetDatabase.FindAssets("t:Sprite", new[] { ZodiacEnemyArt.Folder })
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .Where(p => Path.GetDirectoryName(p).Replace('\\', '/') == ZodiacEnemyArt.Folder)   // bỏ thư mục Raw
                 .Distinct()
