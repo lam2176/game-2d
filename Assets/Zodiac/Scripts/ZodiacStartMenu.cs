@@ -75,7 +75,7 @@ public class ZodiacStartMenu : MonoBehaviour
             (slotPanel != null && slotPanel.activeSelf))
         {
             var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (kb != null && kb.escapeKey.wasPressedThisFrame) CloseOverlays();
+            if (ZodiacInput.BackPressed) CloseOverlays();
             return;
         }
         if (slots == null || EventSystem.current == null) return;

@@ -97,7 +97,7 @@ public class VillageWindow : MonoBehaviour
         if (!IsOpen || Time.frameCount == openedFrame) return;
         var kb = Keyboard.current;
         var interact = ZodiacInput.Find("Interact");
-        if ((kb != null && kb.escapeKey.wasPressedThisFrame) || (interact != null && interact.WasPressedThisFrame()) ||
+        if (ZodiacInput.BackPressed || (interact != null && interact.WasPressedThisFrame()) ||
             (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame)) Close();
     }
 

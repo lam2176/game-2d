@@ -106,7 +106,7 @@ public partial class InventoryWindow : MonoBehaviour
         var kb = Keyboard.current;
         bool toggle = kb != null && (kb.iKey.wasPressedThisFrame || kb.tabKey.wasPressedThisFrame);
         if (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame) toggle = true;
-        bool escape = (kb != null && kb.escapeKey.wasPressedThisFrame) ||
+        bool escape = ZodiacInput.BackPressed ||
                       (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame);   // B tay cầm cũng đóng
         bool quests = kb != null && kb.jKey.wasPressedThisFrame;
         if (IsOpen && quests && page != Page.Quests) ShowTab(Page.Quests);

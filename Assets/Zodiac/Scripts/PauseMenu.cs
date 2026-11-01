@@ -40,7 +40,7 @@ public class PauseMenu : MonoBehaviour
         if (Time.unscaledTime - storySeenTime < 0.3f) return;
         var kb = Keyboard.current;
         var pad = Gamepad.current;
-        bool pressed = (kb != null && kb.escapeKey.wasPressedThisFrame) || (pad != null && pad.startButton.wasPressedThisFrame) ||
+        bool pressed = ZodiacInput.BackPressed || (pad != null && pad.startButton.wasPressedThisFrame) ||
                        (IsOpen && pad != null && pad.buttonEast.wasPressedThisFrame);   // B tay cầm: tiếp tục
         if (!pressed || StoryUi.IsOpen || InventoryWindow.IsOpen || InventoryWindow.ClosedFrame == Time.frameCount ||
             VillageWindow.IsOpen || VillageWindow.ClosedFrame == Time.frameCount ||
