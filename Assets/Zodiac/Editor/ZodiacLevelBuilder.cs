@@ -783,6 +783,22 @@ public static partial class ZodiacLevelBuilder
             if (k % 4 == 0) ZodiacLights.AddPoint(l, new Color(1f, 0.4f, 0.2f), 3f, 1.2f);
         }
 
+        // Miếu thử thách: miếu nhỏ mái cong, bát hương, cờ đuôi nheo — thử thách hằng ngày
+        var shrine = Station(root, VillageStation.Kind.Shrine, HubShrineX, "Miếu thử thách", "{Interact}: Thử thách hôm nay");
+        var shrineWall = Mat("ShrineWall", ctx.textures.brick.texture, new Color(0.85f, 0.75f, 0.6f));
+        Box("ShrineBase", shrine, new Vector3(HubShrineX, 0.25f, back + 0.3f), new Vector3(2.4f, 0.5f, 1.6f), shrineWall, 1f);
+        Box("ShrineBody", shrine, new Vector3(HubShrineX, 1.2f, back + 0.4f), new Vector3(1.8f, 1.4f, 1.2f), red, 1f);
+        Box("ShrineRoof", shrine, new Vector3(HubShrineX, 2.05f, back + 0.4f), new Vector3(2.6f, 0.3f, 1.8f), Mat("ShrineRoof", ctx.textures.roof.texture, RoofColor), 1f);
+        Box("ShrineDoor", shrine, new Vector3(HubShrineX, 1.1f, back - 0.22f), new Vector3(0.8f, 1f, 0.05f), dark, 1f);
+        var incense = Primitive(PrimitiveType.Cylinder, "Incense", shrine, new Vector3(HubShrineX, 0.65f, back - 0.5f), new Vector3(0.4f, 0.15f, 0.4f), jar);
+        ZodiacLights.AddPoint(incense, new Color(1f, 0.6f, 0.3f), 3.5f, 1.4f);
+        var flag = Plain("ShrineFlag", new Color(0.95f, 0.75f, 0.15f));
+        foreach (float dx in new[] { -1.6f, 1.6f })
+        {
+            Box("FlagPole", shrine, new Vector3(HubShrineX + dx, 1.6f, back - 0.2f), new Vector3(0.08f, 3.2f, 0.08f), wood, 1f);
+            Box("Flag", shrine, new Vector3(HubShrineX + dx + 0.3f, 2.8f, back - 0.2f), new Vector3(0.6f, 0.5f, 0.03f), flag, 1f);
+        }
+
         // Cổng làng: lên đường vào các màn
         var gate = Station(root, VillageStation.Kind.Gate, HubGateX, "Cổng làng", "{Interact}: Lên đường");
         foreach (float z in new[] { def.laneMin - 1.1f, def.laneMax + 1.1f })

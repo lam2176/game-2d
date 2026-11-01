@@ -3,12 +3,12 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
-/// Một điểm trong Làng Trung Tâm (Rương nhà, Bàn thờ tổ, Tiệm thuốc, Lò rèn, Chợ phiên, Tháp canh giờ, Cổng làng): người chơi đứng gần thì hiện chữ
+/// Một điểm trong Làng Trung Tâm (Rương nhà, Bàn thờ tổ, Tiệm thuốc, Lò rèn, Chợ phiên, Tháp canh giờ, Miếu thử thách, Cổng làng): người chơi đứng gần thì hiện chữ
 /// "F: …" trên đầu (theo phím Tương tác đã đổi / nút tay cầm), bấm phím đó để mở. Bàn thờ mở thẳng trang Tu luyện của hành trang.
 /// </summary>
 public class VillageStation : MonoBehaviour
 {
-    public enum Kind { Forge, Shop, Altar, Gate, Tower, Chest, Market }
+    public enum Kind { Forge, Shop, Altar, Gate, Tower, Chest, Market, Shrine }
 
     public Kind kind;
     [Min(0.5f)] public float radius = 2.4f;
@@ -66,6 +66,7 @@ public class VillageStation : MonoBehaviour
             case Kind.Tower: VillageWindow.Open(VillageWindow.Mode.Tower); break;
             case Kind.Chest: VillageWindow.Open(VillageWindow.Mode.Chest); break;
             case Kind.Market: VillageWindow.Open(VillageWindow.Mode.Market); break;
+            case Kind.Shrine: VillageWindow.Open(VillageWindow.Mode.Daily); break;
             default: InventoryWindow.OpenTraining(); break;
         }
     }

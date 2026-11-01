@@ -10,6 +10,10 @@ using UnityEngine.UI;
 /// quái nhanh, trâu, toàn tinh anh, sương mù, lửa, độc, Khí dồi dào, hồi máu khi hạ quái, đá rơi, cấm bình thuốc,
 /// bầy đông, có trùm. Cứ 6 tầng một boss. Qua tầng: thưởng đồng (mỗi 3 tầng thêm đồ quý), hồi 25% máu,
 /// chọn Lên tầng / Rời tháp. Kỷ lục lưu trong <see cref="PlayerProfile.towerBest"/>.
+///
+/// <b>Thử thách hằng ngày</b> (<see cref="DailyMode"/>, vào từ Miếu thử thách trong làng): ba tầng 4–6 liền nhau, luật
+/// canh giờ và boss cố định theo ngày (<see cref="DailyRules"/>), không dừng giữa tầng. Phá xong lần đầu trong ngày thì
+/// nhận nguyên liệu hiếm (<see cref="DailyRewards"/>) và tăng chuỗi ngày liên tiếp.
 /// </summary>
 public class TowerRun : MonoBehaviour
 {
@@ -58,7 +62,43 @@ public class TowerRun : MonoBehaviour
 
     public static int CurrentFloor { get; private set; }
 
-    int RuleIndex => (floor - 1) % Rules.Length;
+    /// <summary>Đặt trước khi nạp scene tháp: lượt này là thử thách hằng ngày.</summary>
+    public static bool DailyMode;
+    bool daily;
+    int[] dailyRules;
+
+    /// <summary>Thưởng phá thử thách lần đầu trong ngày (cộng thêm đồng theo chuỗi ngày).</summary>
+    public static readonly (string id, int count)[] DailyRewards =
+    {
+        ("manh_huyet_dan", 1), ("manh_khi_dan", 1), ("ngoc_may_man", 2), ("bua_bao_ho", 1),
+    };
+    public const int DailyFirstFloor = 4, DailyFloors = 3;
+
+    public static string Today => System.DateTime.Now.ToString("yyyy-MM-dd");
+    static int DailySeed => int.Parse(System.DateTime.Now.ToString("yyyyMMdd"));
+
+    /// <summary>Ba luật canh giờ của hôm nay (chỉ số trong <see cref="Rules"/>), không trùng nhau.</summary>
+    public static int[] DailyRules()
+    {
+        var rnd = new System.Random(DailySeed);
+        var pool = new List<int>();
+        for (int i = 0; i < Rules.Length; i++) pool.Add(i);
+        var pick = new int[DailyFloors];
+        for (int k = 0; k < pick.Length; k++)
+        {
+            int j = rnd.Next(pool.Count);
+            pick[k] = pool[j];
+            pool.RemoveAt(j);
+        }
+        return pick;
+    }
+
+    /// <summary>Boss tầng cuối của thử thách hôm nay (chỉ số trong <see cref="bosses"/>).</summary>
+    public static int DailyBoss(int count) => count <= 0 ? 0 : DailySeed % count;
+
+    public static int DailyCoins(PlayerProfile p) => 120 + 20 * Mathf.Min(p.dailyStreak, 7);
+
+    int RuleIndex => daily ? dailyRules[Mathf.Clamp(floor - DailyFirstFloor, 0, dailyRules.Length - 1)] : (floor - 1) % Rules.Length;
     int Cycle => (floor - 1) / Rules.Length;
 
     IEnumerator Start()
@@ -68,6 +108,14 @@ public class TowerRun : MonoBehaviour
         fogEnd = RenderSettings.fogEndDistance;
         var ph = gm != null && gm.player != null ? gm.player.GetComponent<Health>() : null;
         if (ph != null) ph.Died += OnPlayerDied;
+        daily = DailyMode;
+        DailyMode = false;
+        if (daily)
+        {
+            dailyRules = DailyRules();
+            yield return Daily();
+            yield break;
+        }
         yield return new WaitForSeconds(1.5f);
         floor = 0;
         while (gm != null && gm.Current == ZodiacGameManager.State.Playing)
@@ -86,6 +134,65 @@ public class TowerRun : MonoBehaviour
         }
     }
 
+    /// <summary>Thử thách hằng ngày: ba tầng liền, không dừng giữa chừng, xong thì nhận thưởng và về làng.</summary>
+    IEnumerator Daily()
+    {
+        yield return new WaitForSeconds(1.5f);
+        for (floor = DailyFirstFloor; floor < DailyFirstFloor + DailyFloors; floor++)
+        {
+            CurrentFloor = floor;
+            yield return Floor();
+            if (gm == null || gm.Current != ZodiacGameManager.State.Playing) yield break;
+            yield return new WaitForSeconds(1.5f);   // để kịp hút đồ rơi
+        }
+        floor--;
+        yield return DailyFinish();
+        Finish();
+        gm.GoToVillage();
+    }
+
+    IEnumerator DailyFinish()
+    {
+        var p = PlayerProfile.Current;
+        bool first = p.dailyDone != Today;
+        var lines = new System.Text.StringBuilder();
+        if (first)
+        {
+            bool streak = p.dailyDone == System.DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+            p.dailyStreak = streak ? p.dailyStreak + 1 : 1;
+            p.dailyDone = Today;
+            int coins = DailyCoins(p);
+            p.AddCoins(coins);
+            lines.Append($"+{coins} đồng");
+            foreach (var (id, count) in DailyRewards)
+            {
+                var def = ItemDatabase.Get(id);
+                if (def == null) continue;
+                int left = p.Add(def, count);
+                lines.Append($"\n+{count - left} {def.displayName}" + (left > 0 ? " <color=#ff8a7a>(túi đầy)</color>" : ""));
+            }
+            p.Commit();
+        }
+        choiceMade = false;
+        var canvas = ZodiacUi.Canvas(transform, "DailyDone", 450);
+        choicePanel = canvas.gameObject;
+        var (_, panel) = ZodiacUi.Window(canvas, "PHÁ THỬ THÁCH HÔM NAY", new Vector2(900f, 560f));
+        var mid = new Vector2(0.5f, 0.5f);
+        string body = first
+            ? $"<color=#ffd27a>Chuỗi {p.dailyStreak} ngày liên tiếp</color>\n\n{lines}"
+            : "Hôm nay đã nhận thưởng rồi — mai quay lại với ba canh giờ mới nhé!";
+        ZodiacUi.MakeText(panel, body, 28, ZodiacUi.Ink, mid, new Vector2(0f, 50f), new Vector2(820f, 300f));
+        var back = ZodiacUi.MakeButton(panel, "Về làng", mid, new Vector2(0f, -190f), new Vector2(340f, 70f), () => choiceMade = true);
+        if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(back.gameObject);
+        var res = ZodiacResources.Get;
+        if (res != null) ZodiacAudio.Play(res.win, 0.8f, 0f);
+        Time.timeScale = 0f;
+        if (gm.player != null) gm.player.SetControlEnabled(false);
+        while (!choiceMade) yield return null;
+        Time.timeScale = 1f;
+        if (choicePanel != null) Destroy(choicePanel);
+    }
+
     // ───────── Một tầng ─────────
 
     IEnumerator Floor()
@@ -93,7 +200,7 @@ public class TowerRun : MonoBehaviour
         rule = Rules[RuleIndex];
         if (gm.roomBanner != null)
         {
-            gm.roomBanner.text = $"Tầng {floor}\n<size=34>Canh {rule.hour} · {rule.name} — {rule.desc}</size>";
+            gm.roomBanner.text = $"{(daily ? $"Thử thách {floor - DailyFirstFloor + 1}/{DailyFloors}" : $"Tầng {floor}")}\n<size=34>Canh {rule.hour} · {rule.name} — {rule.desc}</size>";
             if (gm.roomBanner.TryGetComponent(out TimedFade fade)) fade.Restart();
         }
         BeginRule();
@@ -195,7 +302,7 @@ public class TowerRun : MonoBehaviour
 
     void SpawnBoss()
     {
-        var prefab = bosses[(floor / 6 - 1) % bosses.Length];
+        var prefab = bosses[daily ? DailyBoss(bosses.Length) : (floor / 6 - 1) % bosses.Length];
         var at = new Vector3(Mathf.Lerp(arena.xMin, arena.xMax, 0.72f), 0.05f, (ZodiacGameManager.LaneMinZ + ZodiacGameManager.LaneMaxZ) / 2f);
         var go = Instantiate(prefab, at, Quaternion.identity);
         if (!go.TryGetComponent(out BossBase boss)) return;
@@ -330,7 +437,7 @@ public class TowerRun : MonoBehaviour
         p.AddCoins(coins);
         string extra = "";
         Vector3 at = gm.player != null ? gm.player.transform.position + Vector3.up : arena.entry;
-        if (floor % 3 == 0)
+        if (floor % 3 == 0 || daily)
         {
             var def = ItemDatabase.Get(Treasures[Random.Range(0, Treasures.Length)]);
             if (def != null)
@@ -341,8 +448,9 @@ public class TowerRun : MonoBehaviour
         }
         var ph = gm.player != null ? gm.player.GetComponent<Health>() : null;
         if (ph != null) ph.Heal(ph.maxHealth / 4);
-        bool record = p.RecordTower(floor, gm.player != null && gm.player.Character != null ? gm.player.Character.name : "");
-        PickupToast.Show($"Qua tầng {floor}! +{coins} đồng{extra}" + (record ? "  · KỶ LỤC MỚI" : ""), new Color(1f, 0.85f, 0.35f));
+        bool record = !daily && p.RecordTower(floor, gm.player != null && gm.player.Character != null ? gm.player.Character.name : "");
+        string title = daily ? $"Qua thử thách {floor - DailyFirstFloor + 1}/{DailyFloors}!" : $"Qua tầng {floor}!";
+        PickupToast.Show($"{title} +{coins} đồng{extra}" + (record ? "  · KỶ LỤC MỚI" : ""), new Color(1f, 0.85f, 0.35f));
         var res = ZodiacResources.Get;
         if (res != null) ZodiacAudio.Play(res.win, 0.6f, 0f);
     }
@@ -403,6 +511,13 @@ public class TowerRun : MonoBehaviour
     {
         int reached = Mathf.Max(0, floor - 1);
         var p = PlayerProfile.Current;
+        if (daily)
+        {
+            DailyMode = true;   // "Chơi lại" nạp lại scene tháp — vẫn là thử thách hôm nay (vào tháp thường thì làng tắt cờ này)
+            if (gm.loseDetailText != null) gm.loseDetailText.text = $"Thử thách hôm nay: qua {Mathf.Max(0, floor - DailyFirstFloor)}/{DailyFloors} — thử lại từ làng";
+            Finish();
+            return;
+        }
         p.RecordTower(reached, gm.player != null && gm.player.Character != null ? gm.player.Character.name : "");
         if (gm.loseDetailText != null) gm.loseDetailText.text = $"Tháp: qua được {reached} tầng · kỷ lục {p.towerBest}";
         Finish();

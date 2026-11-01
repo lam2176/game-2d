@@ -16,7 +16,7 @@ using UnityEngine.UI;
 /// </summary>
 public partial class VillageWindow : MonoBehaviour
 {
-    public enum Mode { Forge, Shop, Gate, Tower, Chest, Market }
+    public enum Mode { Forge, Shop, Gate, Tower, Chest, Market, Daily }
     enum ShopTab { Buy, Accessory, Sell, Craft }
     enum ForgeTab { Upgrade, Socket }
     ForgeTab forgeTab;
@@ -126,6 +126,7 @@ public partial class VillageWindow : MonoBehaviour
             case Mode.Tower: titleText.text = "THÁP MƯỜI HAI CANH GIỜ"; BuildTower(p); break;
             case Mode.Chest: titleText.text = "RƯƠNG NHÀ"; BuildChest(p); break;
             case Mode.Market: titleText.text = "CHỢ PHIÊN"; BuildMarket(p); break;
+            case Mode.Daily: titleText.text = "MIẾU THỬ THÁCH — HÔM NAY"; BuildDaily(p); break;
             default: titleText.text = "CỔNG LÀNG — LÊN ĐƯỜNG"; BuildGate(p); break;
         }
     }
@@ -577,6 +578,42 @@ public partial class VillageWindow : MonoBehaviour
         bool open = p.unlockedLevels >= TowerUnlockLevels && !string.IsNullOrEmpty(towerScene);
         var enter = ZodiacUi.MakeButton(content, open ? "Vào tháp" : "Qua màn 2 để mở tháp", new Vector2(0.5f, 0f), new Vector2(0f, 110f), new Vector2(420f, 72f), () =>
         {
+            TowerRun.DailyMode = false;
+            Close();
+            ScreenFader.LoadScene(towerScene);
+        });
+        enter.interactable = open;
+    }
+
+    /// <summary>Thử thách hằng ngày: ba canh giờ của hôm nay, boss cuối, thưởng, chuỗi ngày — vào bằng scene tháp.</summary>
+    void BuildDaily(PlayerProfile p)
+    {
+        var mid = new Vector2(0.5f, 1f);
+        ZodiacUi.MakeText(content, "Mỗi ngày một thử thách: ba tầng liền trong đấu trường, mỗi tầng một luật canh giờ, tầng cuối có boss.\n" +
+                                   "Phá lần đầu trong ngày được thưởng nguyên liệu hiếm. Chơi liên tiếp nhiều ngày thì thưởng đồng tăng dần.",
+                          24, ZodiacUi.Ink, mid, new Vector2(0f, -150f), new Vector2(1400f, 80f));
+        var rules = TowerRun.DailyRules();
+        for (int i = 0; i < rules.Length; i++)
+        {
+            var r = TowerRun.Rules[rules[i]];
+            ZodiacUi.MakeText(content, $"<color=#ffd27a>Tầng {i + 1} · Canh {r.hour}</color>  <b>{r.name}</b> — {r.desc}" + (i == rules.Length - 1 ? "  <color=#ff8a7a>+ boss</color>" : ""),
+                              26, ZodiacUi.Ink, mid, new Vector2(0f, -250f - i * 56f), new Vector2(1200f, 50f));
+        }
+        var reward = new System.Text.StringBuilder($"{TowerRun.DailyCoins(p)} đồng");
+        foreach (var (id, count) in TowerRun.DailyRewards)
+        {
+            var def = ItemDatabase.Get(id);
+            if (def != null) reward.Append($" · {def.displayName} ×{count}");
+        }
+        bool done = p.dailyDone == TowerRun.Today;
+        ZodiacUi.MakeText(content, done ? "<color=#9fe39a>Hôm nay đã nhận thưởng — vẫn đánh lại được để luyện tay.</color>" : $"Thưởng: {reward}",
+                          24, ZodiacUi.Gold, mid, new Vector2(0f, -450f), new Vector2(1400f, 40f));
+        ZodiacUi.MakeText(content, p.dailyStreak > 0 ? $"Chuỗi hiện tại: {p.dailyStreak} ngày (lần phá gần nhất {p.dailyDone})" : "Chưa có chuỗi ngày nào",
+                          22, ZodiacUi.Muted, mid, new Vector2(0f, -500f), new Vector2(1200f, 34f));
+        bool open = p.unlockedLevels >= TowerUnlockLevels && !string.IsNullOrEmpty(towerScene);
+        var enter = ZodiacUi.MakeButton(content, open ? "Vào thử thách" : "Qua màn 2 để mở", new Vector2(0.5f, 0f), new Vector2(0f, 110f), new Vector2(420f, 72f), () =>
+        {
+            TowerRun.DailyMode = true;
             Close();
             ScreenFader.LoadScene(towerScene);
         });
