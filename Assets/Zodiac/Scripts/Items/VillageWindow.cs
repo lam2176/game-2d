@@ -10,12 +10,13 @@ using UnityEngine.UI;
 ///     Ngọc may mắn; Phân giải đồ thừa ra nguyên liệu (<see cref="Forge"/>).
 ///   • <b>Tiệm thuốc</b>: Mua · Bán · Luyện đan (<see cref="Shop"/>).
 ///   • <b>Cổng làng</b>: chọn màn đã mở để lên đường.
+///   • <b>Rương nhà</b>, <b>Chợ phiên</b>: xem VillageWindow.Storage.cs.
 /// Nội dung dựng lại mỗi lần thao tác (ít phần tử, chỉ chạy khi bấm) — giữ nguyên ô đang chọn cho tay cầm.
 /// Esc / phím Tương tác (F) / B tay cầm: đóng.
 /// </summary>
-public class VillageWindow : MonoBehaviour
+public partial class VillageWindow : MonoBehaviour
 {
-    public enum Mode { Forge, Shop, Gate, Tower }
+    public enum Mode { Forge, Shop, Gate, Tower, Chest, Market }
     enum ShopTab { Buy, Accessory, Sell, Craft }
     enum ForgeTab { Upgrade, Socket }
     ForgeTab forgeTab;
@@ -56,6 +57,7 @@ public class VillageWindow : MonoBehaviour
         ZodiacUi.Stretch((RectTransform)c.transform);
         content = c.transform;
         window.SetActive(false);
+        Market.NewVisit(PlayerProfile.Current);   // mỗi lần về làng thương nhân bày phiên hàng mới
     }
 
     void OnDestroy()
@@ -122,6 +124,8 @@ public class VillageWindow : MonoBehaviour
             case Mode.Forge: titleText.text = "LÒ RÈN"; BuildForgeTabs(); if (forgeTab == ForgeTab.Socket) BuildSocket(p); else BuildForge(p); break;
             case Mode.Shop: titleText.text = "TIỆM THUỐC BẮC"; BuildShop(p); break;
             case Mode.Tower: titleText.text = "THÁP MƯỜI HAI CANH GIỜ"; BuildTower(p); break;
+            case Mode.Chest: titleText.text = "RƯƠNG NHÀ"; BuildChest(p); break;
+            case Mode.Market: titleText.text = "CHỢ PHIÊN"; BuildMarket(p); break;
             default: titleText.text = "CỔNG LÀNG — LÊN ĐƯỜNG"; BuildGate(p); break;
         }
     }
