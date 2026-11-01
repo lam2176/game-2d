@@ -84,6 +84,8 @@ public static partial class ZodiacLevelBuilder
             case Backdrop.Limestone: BuildLimestone(); break;
             case Backdrop.Lakeshore: BuildLakeshore(); break;
             case Backdrop.Citadel: BuildCitadel(); break;
+            case Backdrop.Beach: BuildBeach(); break;
+            case Backdrop.DragonPalace: BuildDragonPalace(); break;
             default: BuildCave(); break;
         }
         if (IsNight) BuildMoon();
@@ -110,7 +112,7 @@ public static partial class ZodiacLevelBuilder
         manager.laneMaxZ = def.laneMax;
         manager.music = ZodiacVisualSetup.Clip(MusicFor(Base(def.backdrop)));
         manager.stoneFootsteps = Base(def.backdrop) == Backdrop.Cave || def.backdrop == Backdrop.Market || def.backdrop == Backdrop.Lakeshore ||
-                                 def.backdrop == Backdrop.Citadel;
+                                 def.backdrop == Backdrop.Citadel || def.backdrop == Backdrop.DragonPalace;
         manager.act = def.act;
         var canvas = BuildHud(manager, player);
         if (def.hub) BuildHub(manager);
@@ -269,7 +271,7 @@ public static partial class ZodiacLevelBuilder
         var t = ctx.textures;
         float span = def.Length + 80f;
         // Nền rộng ra hai bên con đường (đồng cỏ / nền rừng / nền hang) — mặt trên ở y = 0, có collider
-        Material field = Base(def.backdrop) switch
+        Material field = def.backdrop == Backdrop.Beach ? Mat("Sand", t.soil.texture, def.soil) : Base(def.backdrop) switch
         {
             Backdrop.Village => Mat("Field", t.turf.texture, def.grass),
             Backdrop.Bamboo => Mat("ForestFloor", t.turf.texture, Color.Lerp(def.grass, def.soil, 0.45f)),
@@ -281,6 +283,8 @@ public static partial class ZodiacLevelBuilder
         {
             Backdrop.Market or Backdrop.Lakeshore => Mat("StoneRoad", t.cobble.texture, def.stone),
             Backdrop.Citadel => Mat("PalacePaving", t.brick.texture, def.stone),
+            Backdrop.Beach => Mat("PackedSand", t.soil.texture, Color.Lerp(def.soil, def.stone, 0.3f)),
+            Backdrop.DragonPalace => Mat("PearlPaving", t.cobble.texture, def.stone, 0.4f),
             Backdrop.Pond => Mat("BridgePlanks", t.plank.texture, def.plank),
             Backdrop.Field => Mat("DirtRoad", t.soil.texture, def.soil),
             Backdrop.Limestone => Mat("WetRock", t.cobble.texture, def.stone, 0.45f),
@@ -1252,6 +1256,19 @@ public static partial class ZodiacLevelBuilder
                 fog = Color.Lerp(def.sky, Color.white, 0.1f);
                 fogStart = 26f; fogEnd = 120f;
                 break;
+            case Backdrop.Beach:       // nắng biển chói (màn chiều: nắng đỏ thấp, bóng dài)
+                ZodiacLights.AddSun(lights, Color.Lerp(new Color(1f, 0.95f, 0.85f), def.sky, Dusk ? 0.45f : 0.1f), Dusk ? 1.15f : 1.45f,
+                                    new Vector3(Dusk ? 24f : 50f, -35f, 0f), 0.8f);
+                ambient = Color.Lerp(new Color(0.6f, 0.64f, 0.68f), def.sky, 0.2f);
+                fog = Color.Lerp(def.sky, Color.white, 0.15f);
+                fogStart = 30f; fogEnd = 140f;
+                break;
+            case Backdrop.DragonPalace: // dưới đáy biển: sáng xanh lục rọi xuống, sương nước dày
+                ZodiacLights.AddSun(lights, new Color(0.55f, 0.9f, 0.95f), 0.8f, new Vector3(75f, -20f, 0f), 0.6f);
+                ambient = new Color(0.2f, 0.36f, 0.42f);
+                fog = Color.Lerp(def.sky, new Color(0.05f, 0.2f, 0.28f), 0.3f);
+                fogStart = 12f; fogEnd = 60f;
+                break;
             case Backdrop.Limestone:   // hang ấm, sáng từ lỗ trần
                 ZodiacLights.AddSun(lights, new Color(1f, 0.85f, 0.65f), 0.55f, new Vector3(80f, -10f, 0f), 0.6f);
                 ambient = new Color(0.34f, 0.28f, 0.22f);
@@ -1300,6 +1317,8 @@ public static partial class ZodiacLevelBuilder
             Backdrop.Limestone => ZodiacVisualSetup.EnsureVolumeProfile("Limestone", 0.7f, 0.3f, 6f, 12f, new Color(1f, 0.95f, 0.88f)),
             Backdrop.Citadel => ZodiacVisualSetup.EnsureVolumeProfile("Citadel", 0.5f, 0.24f, 16f, 12f, new Color(1f, 0.95f, 0.88f)),
             Backdrop.Lakeshore => ZodiacVisualSetup.EnsureVolumeProfile("Lakeshore", 0.95f, 0.32f, 6f, 10f, new Color(0.88f, 0.92f, 1f)),
+            Backdrop.Beach => ZodiacVisualSetup.EnsureVolumeProfile("Beach", 0.45f, 0.2f, 14f, 10f, new Color(1f, 0.97f, 0.92f)),
+            Backdrop.DragonPalace => ZodiacVisualSetup.EnsureVolumeProfile("DragonPalace", 1f, 0.34f, 4f, 14f, new Color(0.85f, 0.97f, 1f)),
             _ => ZodiacVisualSetup.EnsureVolumeProfile("Cave", 0.9f, 0.32f, 6f, 14f, new Color(0.95f, 0.93f, 1f)),
         };
     }
@@ -1353,6 +1372,28 @@ public static partial class ZodiacLevelBuilder
                 vel.y = new ParticleSystem.MinMaxCurve(-0.05f, 0.2f);
                 vel.z = new ParticleSystem.MinMaxCurve(-0.2f, 0.2f);
                 noise.strength = 0.8f;
+                noise.frequency = 0.4f;
+                break;
+            case Backdrop.DragonPalace: // bọt nước nổi lên
+                emission.rateOverTime = 12f;
+                main.startLifetime = 6f;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.16f);
+                main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.8f, 0.95f, 1f, 0.7f), new Color(1f, 1f, 1f, 0.5f));
+                vel.x = new ParticleSystem.MinMaxCurve(-0.1f, 0.1f);
+                vel.y = new ParticleSystem.MinMaxCurve(0.5f, 1.2f);
+                vel.z = new ParticleSystem.MinMaxCurve(-0.1f, 0.1f);
+                noise.strength = 0.4f;
+                noise.frequency = 0.8f;
+                break;
+            case Backdrop.Beach:     // bụi nước, cát bay theo gió biển
+                emission.rateOverTime = 7f;
+                main.startLifetime = 6f;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.04f, 0.1f);
+                main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 1f, 1f, 0.7f), new Color(0.95f, 0.88f, 0.7f, 0.6f));
+                vel.x = new ParticleSystem.MinMaxCurve(-2f, -0.8f);
+                vel.y = new ParticleSystem.MinMaxCurve(-0.2f, 0.2f);
+                vel.z = new ParticleSystem.MinMaxCurve(-0.4f, 0.1f);
+                noise.strength = 0.5f;
                 noise.frequency = 0.4f;
                 break;
             case Backdrop.Village:   // lá/hoa vàng bay theo gió

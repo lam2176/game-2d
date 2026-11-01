@@ -267,6 +267,63 @@ public static class ZodiacStory
             L(Me, "Ra khỏi xác nó đi, Hồ Tinh! Đừng nấp sau lưng kẻ khác nữa."),
             L(Fox, "Hi hi… vậy thì nghiền nát ta xem!"),
         },
+        // ───── Hồi 3 — Biển Đông và Long Cung (màn 12–14 = chỉ số 11–13) ─────
+        ["L11-R0"] = new[]
+        {
+            L(Narrator, "Hồi 3 — Biển Đông. Sông Hồng đổ ra biển ở Cửa Thần Phù, nơi người xưa đặt tên cho những con sóng dữ."),
+            L(Narrator, "Thuyền thúng úp mạn trên cát, lưới còn phơi trên cọc. Cả làng chài đã trốn vào bờ."),
+            L(Me, "Mùi cáo lẫn trong gió mặn… Nó đi về phía biển thật rồi."),
+            L(Me, "Biển… quê nội của ta. Mẹ Âu Cơ lên núi, cha Lạc Long Quân xuống biển — năm mươi người con theo cha.", "Dragon_Thin"),
+            L(Me, "Ta không thích nước đâu nhé! …Nhưng thôi, đi thì đi.", "Cat_Mao"),
+        },
+        ["L11-R2"] = new[]
+        {
+            L(Fox, "Dân chài sợ sóng, sợ gió, sợ cả bóng tối ngoài khơi. Ta chỉ thổi thêm một chút thôi."),
+            L(Me, "Làng không người, nhưng bếp còn ấm. Họ sẽ về ăn Tết — ta hứa.", "Dog_Tuat"),
+            L(Me, "Lưới còn nguyên cá khô… không được ăn vụng, không được ăn vụng…", "Pig_Hoi"),
+        },
+        ["L11-R3"] = new[]
+        {
+            L(Narrator, "Đền Cá Ông — nơi ngư dân thờ cá voi đã bao đời cứu thuyền gặp nạn."),
+            L(Me, "Bát hương nguội lạnh. Ông Nam Hải ơi, cho con mượn chút gió thuận."),
+        },
+        ["L12-R0"] = new[]
+        {
+            L(Narrator, "Hoàng hôn đỏ như lửa trên bãi đá ngầm. Ngọn hải đăng ngoài mũi đá tối om."),
+            L(Me, "Mặt trời lặn mà không có ai gáy tiễn. Buồn thật.", "Rooster_Dau"),
+            L(Me, "Ghềnh đá trơn — bước chậm, chắc chân, như trâu cày ruộng.", "Ox_Suu"),
+        },
+        ["L12-R2"] = new[]
+        {
+            L(Fox, "Hải đăng ư? Thuyền nào lạc thì cứ lạc. Tối hơn một chút, Biển Đông mới đẹp."),
+            L(Me, "Ngươi dập tắt cả đèn dẫn đường cho người đi biển? Ta sẽ thắp lại!"),
+            L(Me, "Leo lên hải đăng thì cứ để ta. Trèo cao là nghề của khỉ!", "Monkey_Than"),
+        },
+        ["L12-R3"] = new[]
+        {
+            L(Me, "Dưới mũi đá… nước sâu xanh thẳm, có ánh ngọc le lói tận đáy."),
+            L(Me, "Long Cung. Ta cảm thấy… tổ tiên đang gọi.", "Dragon_Thin"),
+        },
+        ["L13-R0"] = new[]
+        {
+            L(Narrator, "Long Cung dưới đáy Biển Đông. Ngói ngọc, cột san hô, ngọc trai to bằng cái nồi đồng."),
+            L(Narrator, "Không một bóng quan quân thuỷ phủ. Chỉ có Ma Trơi biển lượn lờ như đàn sứa."),
+            L(Me, "Cha Lạc Long Quân từng ngự ở đây… Ta về rồi.", "Dragon_Thin"),
+            L(Me, "Ở dưới nước mà vẫn thở được? Chắc nhờ phép của Long Vương.", "Snake_Ty"),
+        },
+        ["L13-R1"] = new[]
+        {
+            L(Fox, "Đẹp không? Long Vương già đi chơi xa rồi. Giờ Long Cung là của ta."),
+            L(Me, "Hồ Tinh! Ngươi đã làm gì Thuồng Luồng?"),
+            L(Fox, "Ta chỉ hát cho nó nghe một bài ru… một bài rất dài."),
+        },
+        ["L13-R3"] = new[]
+        {
+            L(Narrator, "Trên ngai Long Vương, Thuồng Luồng Biển Đông cuộn mình, mắt đỏ rực bùa mê."),
+            L(Me, "Tỉnh lại đi! Ngươi là thần giữ biển, không phải đầy tớ của Hồ Tinh!"),
+            L(Me, "Ta là con cháu Lạc Long Quân. Nhìn ta mà nhớ lại đi!", "Dragon_Thin"),
+            L(Fox, "Nó không nghe đâu. Cắn đi, rắn biển của ta!"),
+        },
         ["L7-R0"] = new[]
         {
             L(Me, "Hơi lạnh từ đáy Hồ Tây… đây là động của nó."),
@@ -318,6 +375,22 @@ public static class ZodiacStory
             L(Fox, "Lại một đuôi nữa… Ta còn năm đuôi. Xác chằn tinh này cũng chẳng giữ được ta."),
             L(Fox, "Biển Đông rộng lắm, con giáp ạ. Xuống Long Cung mà tìm ta!"),
             L(Narrator, "Chằn Tinh đổ sập. Hồn cáo bay ra như làn khói đỏ về phía biển. Âm Phù thứ mười một sáng lên giữa cổng thành."),
+        },
+        new[]
+        {
+            L(Narrator, "Trên bàn thờ Cá Ông, một chiếc vảy rồng ánh vàng nằm giữa bát hương nguội — dấu Long Cung gửi lên bờ."),
+            L(Me, "Dấu cáo đi dọc ghềnh đá, về phía mặt trời lặn."),
+        },
+        new[]
+        {
+            L(Narrator, "Ngọn hải đăng bừng sáng trở lại. Dưới mũi đá, nước biển rẽ đôi thành một lối bậc ngọc dẫn xuống sâu."),
+            L(Me, "Lối xuống Long Cung! Hít một hơi thật sâu nào."),
+        },
+        new[]
+        {
+            L(Fox, "Lại mất một đuôi… Thuồng Luồng vô dụng! Trả Âm Phù đây!"),
+            L(Narrator, "Thuồng Luồng tỉnh khỏi bùa mê, cúi đầu nhả ra Âm Phù thứ mười hai."),
+            L(Fox, "Đủ mười hai thì đã sao? Ta sẽ gom lại đủ chín đuôi và giữ chặt khắc Giao Thừa trên Thiên Đình!"),
         },
     };
 
@@ -418,6 +491,28 @@ public static class ZodiacStory
         new Panel("Hết Hồi 2",
             "Hồi 3 — Biển Đông và Long Cung — đang chờ phía trước. Về làng nghỉ chân, đập đồ, ghé chợ phiên và thử thách hằng ngày nhé!",
             StoryArt.Kind.Lake),
+    };
+
+    /// <summary>Kết Hồi 3 (thắng Thuồng Luồng ở Long Cung).</summary>
+    public static readonly Panel[] Act3Ending =
+    {
+        new Panel("Long Cung bừng sáng",
+            "Thuồng Luồng tỉnh lại, cúi đầu tạ lỗi. Ngọc trai khắp Long Cung sáng lên — hải đăng trên bờ cũng sáng theo.",
+            StoryArt.Kind.Lake, "@me"),
+        new Panel("Đủ mười hai Âm Phù",
+            "Mười hai nhạc cụ đã có lại tiếng. Nhưng Hồ Tinh gom lại đủ chín đuôi, bay về núi Tản Viên — đường lên Thiên Đình.",
+            StoryArt.Kind.Shards),
+        new Panel("Hết Hồi 3",
+            "Hồi 4 — Núi Tản Viên và Thiên Đình: trận cuối với Hồ Tinh Cửu Vĩ. Về làng chuẩn bị thật kỹ nhé!",
+            StoryArt.Kind.Night),
+    };
+
+    /// <summary>Kết hồi theo số hồi (null = Hồi 1, dùng kết thúc riêng của con giáp).</summary>
+    public static Panel[] ActEnding(int act) => act switch
+    {
+        2 => Act2Ending,
+        3 => Act3Ending,
+        _ => null,
     };
 
     public static readonly Panel[] TrueEnding =

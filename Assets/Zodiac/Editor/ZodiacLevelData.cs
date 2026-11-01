@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Dữ liệu các màn beat 'em up 2.5D — Hồi 1 (8 màn: Làng Quê → … → Động Hồ Tinh) và Hồi 2 (3 màn ở Kinh thành Thăng Long,
-/// act = 2, mở sau khi phá Hồi 1).
+/// Dữ liệu các màn beat 'em up 2.5D — Hồi 1 (8 màn: Làng Quê → … → Động Hồ Tinh), Hồi 2 (3 màn ở Kinh thành Thăng Long,
+/// act = 2) và Hồi 3 (Cửa Biển → Biển Đông → Long Cung, act = 3); mỗi hồi mở sau khi phá màn cuối hồi trước.
 /// Tên scene giữ như cũ cho các màn có từ trước (Level01/02/03), màn mới là Level04…08 — thứ tự chơi là thứ tự trong mảng. Mỗi màn là một chuỗi <b>khu</b> (<see cref="Stage"/>), mỗi khu vừa khít một khung hình
 /// (<see cref="RoomWidth"/> unit dọc trục X, các làn theo chiều sâu Z từ <see cref="LevelDef.laneMin"/> tới <see cref="LevelDef.laneMax"/>).
 /// Camera đứng yên trong khu nên luôn thấy hết quái; dọn xong đi ra mép phải thì màn hình tối lại và chuyển sang khu kế.
@@ -24,7 +24,7 @@ using UnityEngine;
 public static class ZodiacLevelData
 {
     /// <summary>Kiểu cảnh — mỗi màn mới có bộ cảnh riêng (xem ZodiacLevelBuilder.Themes).</summary>
-    public enum Backdrop { Village, Bamboo, Cave, Field, Pond, Market, Limestone, Lakeshore, Citadel }
+    public enum Backdrop { Village, Bamboo, Cave, Field, Pond, Market, Limestone, Lakeshore, Citadel, Beach, DragonPalace }
 
     /// <summary>Bề ngang một khu (unit) — bằng khung hình 16:9 tại làn giữa.</summary>
     public const float RoomWidth = 15f;
@@ -73,7 +73,7 @@ public static class ZodiacLevelData
         public float hubLength = 40f;
         /// <summary>Tháp Mười Hai Canh Giờ: một đấu trường, TowerRun sinh quái theo tầng.</summary>
         public bool tower;
-        /// <summary>Hồi của màn (1 hoặc 2) — màn cuối hồi 2 có kết hồi riêng.</summary>
+        /// <summary>Hồi của màn (1–3) — màn cuối mỗi hồi từ Hồi 2 trở đi có kết hồi riêng.</summary>
         public int act = 1;
 
         /// <summary>Mép trái khu thứ i.</summary>
@@ -366,6 +366,72 @@ public static class ZodiacLevelData
                 {
                     boss = true, bossKind = BossKind.ChanTinh, coinRows = 0, bossName = "Chằn Tinh — Hồ Tinh nhập", bossScale = 1.6f,
                     sign = "Chằn Tinh mang hồn Hồ Tinh: nhanh và đau hơn lần trước.\nGiơ chùy thì lùi ra, nhảy qua sóng chấn; dụ nó húc vào cổng thành rồi đánh!",
+                },
+            },
+        },
+
+        // ───────────────────────── Hồi 3 — Biển Đông và Long Cung ─────────────────────────
+        new LevelDef
+        {
+            sceneName = "Zodiac_Level12", title = "Màn 12 — Cửa Biển Thần Phù", subtitle = "Sóng bạc đầu, thuyền chài úp mạn, dấu cáo trên cát",
+            nextScene = "Zodiac_Level13", backdrop = Backdrop.Beach, act = 3,
+            sky = new Color(0.62f, 0.82f, 0.95f), far = new Color(0.45f, 0.58f, 0.62f), mid = new Color(0.40f, 0.55f, 0.42f),
+            soil = new Color(0.86f, 0.78f, 0.58f), grass = new Color(0.55f, 0.65f, 0.38f), stone = new Color(0.66f, 0.64f, 0.58f),
+            plank = new Color(0.62f, 0.46f, 0.30f),
+            stages = new[]
+            {
+                new Stage("Bến thuyền chài", "W Q W", "H H W")
+                {
+                    sign = "Hồi 3 — Biển Đông: Cóc Tía nhảy lên từ sóng, Lính Khiên chắn bãi cát.\nNhảy tránh cú đè, túm ({Interact}) lính choáng ném vào hàng khiên!",
+                },
+                new Stage("Bãi cát dài", "S S H Q", "F W W S") { hazard = true },
+                new Stage("Làng chài bỏ hoang", "Q W H F", "T W S")
+                {
+                    coinRows = 2, secret = true, secretTitle = "Hang ốc", secretWaves = new[] { "H H S", "!H" },
+                },
+                new Stage("Đền Cá Ông", "W W Q Q S", "F H T", "!S") { coinRows = 2 },
+            },
+        },
+        new LevelDef
+        {
+            sceneName = "Zodiac_Level13", title = "Màn 13 — Biển Đông", subtitle = "Bãi đá ngầm lúc hoàng hôn, hải đăng không còn sáng",
+            nextScene = "Zodiac_Level14", backdrop = Backdrop.Beach, act = 3,
+            sky = new Color(0.95f, 0.55f, 0.45f), far = new Color(0.40f, 0.35f, 0.48f), mid = new Color(0.32f, 0.36f, 0.40f),
+            soil = new Color(0.62f, 0.56f, 0.48f), grass = new Color(0.40f, 0.48f, 0.36f), stone = new Color(0.52f, 0.50f, 0.52f),
+            plank = new Color(0.55f, 0.40f, 0.28f),
+            stages = new[]
+            {
+                new Stage("Ghềnh đá", "H Q H", "W T W S"),
+                new Stage("Bãi san hô", "F F S S", "Q H W F") { hazard = true },
+                new Stage("Dưới chân hải đăng", "T Q Q W", "H H F S")
+                {
+                    coinRows = 2, secret = true, secretTitle = "Kho đèn dầu", secretWaves = new[] { "F F F", "!F" },
+                },
+                new Stage("Mũi đá cuối trời", "W Q S F H", "T T H Q", "!Q") { coinRows = 2 },
+            },
+        },
+        new LevelDef
+        {
+            sceneName = "Zodiac_Level14", title = "Màn 14 — Long Cung", subtitle = "Cung điện dưới đáy biển, Thuồng Luồng bị Hồ Tinh mê hoặc",
+            nextScene = "", backdrop = Backdrop.DragonPalace, act = 3,
+            sky = new Color(0.10f, 0.32f, 0.42f), far = new Color(0.12f, 0.30f, 0.38f), mid = new Color(0.14f, 0.36f, 0.40f),
+            soil = new Color(0.52f, 0.50f, 0.44f), grass = new Color(0.20f, 0.45f, 0.38f), stone = new Color(0.55f, 0.70f, 0.72f),
+            plank = new Color(0.50f, 0.42f, 0.35f),
+            stages = new[]
+            {
+                new Stage("Cổng ngọc trai", "Q F Q", "H S W F")
+                {
+                    sign = "Long Cung dưới đáy biển — Ma Trơi biển phát sáng lượn khắp nơi.\nĐánh rơi chúng trước, rồi mới lo bọn lính khiên.",
+                },
+                new Stage("Vườn san hô", "S S F F", "T H H W")
+                {
+                    hazard = true, secret = true, secretTitle = "Kho báu Long Vương", secretWaves = new[] { "Q Q F", "!W" },
+                },
+                new Stage("Điện Thuỷ Tinh", "T W Q F H", "W W Q S", "!H") { coinRows = 2 },
+                new Stage("Ngai Long Vương")
+                {
+                    boss = true, bossKind = BossKind.ThuongLuong, coinRows = 0, bossName = "Thuồng Luồng Biển Đông", bossScale = 2f,
+                    sign = "Thuồng Luồng Biển Đông bị Hồ Tinh mê hoặc: lặn nhanh, phun nước ba làn.\nChạy khỏi vòng sóng, đổi làn tránh tia nước, đánh khi nó trồi lên phơi mình!",
                 },
             },
         },

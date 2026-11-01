@@ -11,6 +11,7 @@ using static ZodiacLevelData;
 ///   • Bờ Hồ Tây: kè đá lan can, mặt hồ mênh mông, vệt trăng, bảo tháp trên đảo, thuyền đèn, liễu rủ, đèn đá.
 ///   • Kinh thành (Hồi 2): tường thành gạch đỏ có lỗ châu mai, lầu cổng hai tầng mái ngói vàng, cờ đuôi nheo,
 ///     thềm rồng đá, lư đồng, đèn lồng vàng, hàng cây đa.
+///   • Bãi biển, Long Cung (Hồi 3): xem ZodiacLevelBuilder.Sea.
 /// Các phần chung (nền, ánh sáng gốc, nhạc) theo kiểu cảnh gốc <see cref="Base"/>.
 /// </summary>
 public static partial class ZodiacLevelBuilder
@@ -18,9 +19,9 @@ public static partial class ZodiacLevelBuilder
     /// <summary>Kiểu cảnh gốc để dùng chung nhạc, bước chân, nền xa…</summary>
     static Backdrop Base(Backdrop b) => b switch
     {
-        Backdrop.Field or Backdrop.Market or Backdrop.Lakeshore or Backdrop.Citadel => Backdrop.Village,
+        Backdrop.Field or Backdrop.Market or Backdrop.Lakeshore or Backdrop.Citadel or Backdrop.Beach => Backdrop.Village,
         Backdrop.Pond => Backdrop.Bamboo,
-        Backdrop.Limestone => Backdrop.Cave,
+        Backdrop.Limestone or Backdrop.DragonPalace => Backdrop.Cave,
         _ => b,
     };
 
@@ -544,6 +545,14 @@ public static partial class ZodiacLevelBuilder
                 CreateHayBale(room, new Vector3(xMin + 3.8f, 0f, def.laneMin + 0.5f));
                 CreateHayBale(room, new Vector3(xMin + 10.5f, 0f, def.laneMax - 0.55f));
                 break;
+            case Backdrop.Beach:        // giỏ cá trên bãi
+                CreateBasket(room, new Vector3(xMin + 4.2f, 0f, def.laneMax - 0.5f));
+                CreateBasket(room, new Vector3(xMin + 11.6f, 0f, def.laneMin + 0.5f));
+                break;
+            case Backdrop.DragonPalace: // chum ngọc của Long Vương
+                CreateJar(room, new Vector3(xMin + 3.4f, 0f, def.laneMax - 0.45f));
+                CreateJar(room, new Vector3(xMin + 12f, 0f, def.laneMax - 0.5f));
+                break;
             case Backdrop.Market:
                 CreateJar(room, new Vector3(xMin + 6.6f, 0f, def.laneMin + 0.45f));
                 CreateJar(room, new Vector3(xMin + 7.3f, 0f, def.laneMin + 0.5f));
@@ -564,7 +573,7 @@ public static partial class ZodiacLevelBuilder
         {
             Backdrop.Market => new[] { WeaponPickup.Kind.Jar, WeaponPickup.Kind.Lantern, WeaponPickup.Kind.Pole },
             Backdrop.Pond or Backdrop.Lakeshore => new[] { WeaponPickup.Kind.Lantern, WeaponPickup.Kind.Pole },
-            Backdrop.Cave or Backdrop.Limestone => new[] { WeaponPickup.Kind.Jar, WeaponPickup.Kind.Lantern },
+            Backdrop.Cave or Backdrop.Limestone or Backdrop.DragonPalace => new[] { WeaponPickup.Kind.Jar, WeaponPickup.Kind.Lantern },
             _ => new[] { WeaponPickup.Kind.Pole, WeaponPickup.Kind.Jar },
         };
         var kind = pool[(index + rnd.Next(pool.Length)) % pool.Length];
@@ -705,6 +714,9 @@ public static partial class ZodiacLevelBuilder
                 Box("PlankR", go.transform, center + new Vector3(1.3f, 0.06f, 0f), new Vector3(0.3f, 0.08f, depth), plank, 1f, euler: new Vector3(0f, 0f, -14f));
                 return true;
             }
+            case Backdrop.Beach:
+            case Backdrop.DragonPalace:
+                return SeaHazardLook(go, x, zMin, zMax);
             default:
                 return false;
         }

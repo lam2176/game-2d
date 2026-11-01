@@ -51,7 +51,7 @@ public static class ZodiacJournal
         },
         new Beast
         {
-            id = "Boss_ThuongLuong", name = "Thuồng Luồng", art = "ThuongLuong", where = "Đầm Sen",
+            id = "Boss_ThuongLuong", name = "Thuồng Luồng", art = "ThuongLuong", where = "Đầm Sen · Long Cung",
             lore = "Rắn nước khổng lồ có sừng trong truyện cổ, nằm dưới đáy đầm sâu, hay lật thuyền người qua. Hồ Tinh đánh thức nó bằng tiếng trống vỡ.",
             tip = "Gợn sóng bám theo là sắp trồi lên — chạy khỏi vòng. Trồi xong nó nằm phơi mình: đánh lúc đó. Đuôi rực sáng thì {Jump}.",
         },

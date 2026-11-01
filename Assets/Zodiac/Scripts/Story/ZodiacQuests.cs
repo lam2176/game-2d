@@ -28,10 +28,11 @@ public static class ZodiacQuests
     {
         "Làng Quê", "Cánh Đồng Lúa", "Rừng Trúc", "Đầm Sen", "Chợ Phiên Ma", "Hang Đá Vôi", "Bờ Hồ Tây", "Động Hồ Tinh",
         "Phố Cổ Thăng Long", "Hoàng Thành", "Cổng Đoan Môn",
+        "Cửa Biển Thần Phù", "Biển Đông", "Long Cung",
     };
 
     /// <summary>Màn cuối mỗi hồi (đếm từ 1) — nhiệm vụ thưởng lớn hơn.</summary>
-    static bool ActFinale(int level) => level == 8 || level == 11;
+    static bool ActFinale(int level) => level == 8 || level == 11 || level == 14;
 
     public static readonly Quest[] All = Build();
 
@@ -50,6 +51,7 @@ public static class ZodiacQuests
                 title = $"Màn {level} — {LevelNames[i]}",
                 text = level == 8 ? "Xuống động dưới đáy Hồ Tây, hạ Hồ Tinh và ghép lại Trống Đồng Thiên Âm."
                      : level == 11 ? "Hạ Chằn Tinh mang hồn Hồ Tinh ở cổng Đoan Môn, giành Âm Phù thứ mười một."
+                     : level == 14 ? "Xuống Long Cung, giải bùa mê cho Thuồng Luồng Biển Đông và giành Âm Phù thứ mười hai."
                      : $"Dọn sạch quái ở {LevelNames[i]} và đi tới cuối màn.",
                 progress = p => p.unlockedLevels > level ? 1 : 0,
                 coins = 40 + i * 30, xp = 30 + i * 25,
