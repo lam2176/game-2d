@@ -562,9 +562,14 @@ public static class ZodiacEnemyFactory
         var v = Visual(root);
         Color plume = new Color(0.45f, 0.3f, 0.18f), gold = new Color(1f, 0.75f, 0.3f);
         bool art = Art(v, "DaiBang", 3.2f, Vector2.zero, 8) != null;
-        var glow = art
-            ? Halos(v, new[] { new Vector3(-1.2f, 2f, 1.4f), new Vector3(1.1f, 2.1f, 1.3f), new Vector3(0.6f, 2.7f, 0.4f) }, gold, 1)
-            : EagleShapes(v, plume, gold);
+        List<SpriteRenderer> glow;
+        if (art)
+        {
+            // Ảnh vẽ: quầng sau mép lông vàng hai cánh, quầng nhỏ phủ lên mắt (vị trí theo ảnh DaiBang)
+            glow = Halos(v, new[] { new Vector3(-1.2f, 2f, 1.5f), new Vector3(1.3f, 1.6f, 1f) }, gold, 1);
+            glow.AddRange(Halos(v, new[] { new Vector3(1.0f, 2.55f, 0.35f) }, gold, 30));
+        }
+        else glow = EagleShapes(v, plume, gold);
         var ai = root.AddComponent<BossEagle>();
         BossCommon(ai, root, v, plume, "Đại Bàng Tinh", "long_dai_bang", 2.4f);
         ai.minionPrefab = minion;
