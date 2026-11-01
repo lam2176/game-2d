@@ -63,7 +63,7 @@ public static class ZodiacUi
     }
 
     public static Text MakeText(Transform parent, string content, int size, Color color, Vector2 anchor, Vector2 pos, Vector2 box,
-                            TextAnchor align = TextAnchor.MiddleCenter)
+                            TextAnchor align = TextAnchor.MiddleCenter, bool outline = true)
     {
         var t = new GameObject("Text", typeof(RectTransform)).AddComponent<Text>();
         t.transform.SetParent(parent, false);
@@ -76,7 +76,7 @@ public static class ZodiacUi
         t.raycastTarget = false;
         t.horizontalOverflow = HorizontalWrapMode.Wrap;
         t.verticalOverflow = VerticalWrapMode.Overflow;
-        t.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.6f);
+        if (outline) t.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.6f);
         Place(t.rectTransform, anchor, pos, box);
         return t;
     }

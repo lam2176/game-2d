@@ -113,6 +113,7 @@ app.MapPost("/api/save_progress", (JsonObject body) =>
            """,
            ("$p", profile.ToJsonString()), ("$lv", Int(body, "p_level")), ("$co", Int(body, "p_coins")),
            ("$ul", Int(body, "p_unlocked_levels")), ("$ps", Int(body, "p_play_seconds")), ("$t", Now()), ("$id", id));
+    Db.UpdateSummary(c, id);
     return Results.Ok(new { });
 });
 
@@ -144,7 +145,7 @@ admin.MapGet("/accounts", (string? q) =>
     var list = c.Rows($"""
         select id, username, character, level, coins, unlocked_levels, play_seconds, banned, ban_reason,
                created_at, last_login_at, last_seen_at, saved_at, save_count, length(profile) as profile_size,
-               {Db.ProfileColumns}
+               difficulty, tower_best, endings, quests, kills, xp
         from accounts where $q is null or username like '%' || $q || '%'
         order by coalesce(last_seen_at, created_at) desc
         """, ("$q", string.IsNullOrWhiteSpace(q) ? null : q.Trim().ToLowerInvariant()));
@@ -236,6 +237,7 @@ admin.MapPost("/accounts/{id:long}/character", (long id, JsonObject body) =>
     if (character != null && !Rules.Characters.Contains(character)) return Results.BadRequest(new { message = "Con giáp không hợp lệ" });
     using var c = db.Open();
     c.Exec("update accounts set character = $c where id = $id", ("$c", character), ("$id", id));
+    Db.UpdateSummary(c, id);   // XP hiển thị theo con giáp đang chọn
     c.Exec("delete from sessions where account_id = $id", ("$id", id));
     return Results.Ok(new { });
 });
@@ -268,6 +270,7 @@ admin.MapPost("/accounts/{id:long}/profile", (long id, JsonObject body) =>
                                          where json_extract(value, '$.character') = accounts.character), level))
             where id = $id
             """, ("$id", id));
+    Db.UpdateSummary(c, id);
     c.Exec("delete from sessions where account_id = $id", ("$id", id));
     return Results.Ok(new { });
 });
@@ -333,8 +336,24 @@ record Catalog(Dictionary<string, Dictionary<string, object>> items, Dictionary<
         }
         foreach (Match m in Regex.Matches(Read("Assets/Zodiac/Scripts/Story/ZodiacJournal.cs"), @"id = ""([^""]+)"", name = ""([^""]+)"""))
             beasts[m.Groups[1].Value] = m.Groups[2].Value;
-        foreach (Match m in Regex.Matches(Read("Assets/Zodiac/Scripts/Story/ZodiacQuests.cs"), @"id = ""([^""]+)"",[^\n]*?title = ""([^""]+)"""))
+        // Nhiệm vụ: id + tên viết thẳng (cùng dòng hoặc dòng sau), cộng các nhiệm vụ sinh theo vòng lặp trong ZodiacQuests.Build
+        string questSrc = Read("Assets/Zodiac/Scripts/Story/ZodiacQuests.cs");
+        foreach (Match m in Regex.Matches(questSrc, @"id = ""([^""]+)"",[^;{}]*?title = ""([^""]+)""", RegexOptions.Singleline))
             quests[m.Groups[1].Value] = m.Groups[2].Value;
+        if (Regex.Match(questSrc, @"LevelNames\s*=\s*\{(?<list>[^}]*)\}") is { Success: true } levels)
+        {
+            var names = Regex.Matches(levels.Groups["list"].Value, @"""([^""]+)""").Select(x => x.Groups[1].Value).ToList();
+            for (int i = 0; i < names.Count; i++) quests[$"story_{i + 1}"] = $"Màn {i + 1} — {names[i]}";
+        }
+        foreach (Match m in Regex.Matches(questSrc, @"\(""((?:Enemy|Boss)_\w+)"", (\d+), \d+\)"))
+        {
+            string id = m.Groups[1].Value, name = beasts.TryGetValue(id, out var n) ? n : id;
+            quests["hunt_" + id] = id.StartsWith("Boss_") ? $"Trừ {name}" : $"Hạ {m.Groups[2].Value} {name}";
+        }
+        foreach (var (variable, prefix, title) in new[] { ("lv", "train_level_", "Lên cấp {0}"), ("floors", "train_tower_", "Tháp {0} tầng") })
+            if (Regex.Match(questSrc, $@"int {variable} in new\[\] \{{(?<list>[\d,\s]+)\}}") is { Success: true } loop)
+                foreach (Match v in Regex.Matches(loop.Groups["list"].Value, @"\d+"))
+                    quests[prefix + v.Value] = string.Format(title, v.Value);
         return new Catalog(items, beasts, quests);
     }
 }
@@ -442,31 +461,52 @@ class Db
             create index if not exists login_events_account_idx on login_events (account_id, id);
             """);
         // Cột thêm sau (DB cũ chưa có)
-        foreach (var (column, type) in new[] { ("last_seen_at", "text"), ("save_count", "integer not null default 0") })
+        bool summaryAdded = false;
+        foreach (var (column, type) in new[]
+                 {
+                     ("last_seen_at", "text"), ("save_count", "integer not null default 0"),
+                     ("difficulty", "integer"), ("tower_best", "integer"), ("endings", "integer not null default 0"),
+                     ("quests", "integer not null default 0"), ("kills", "integer not null default 0"), ("xp", "integer"),
+                 })
             if (c.Scalar("select count(*) from pragma_table_info('accounts') where name = $n", ("$n", column)) is long n && n == 0)
+            {
                 c.Exec($"alter table accounts add column {column} {type}");
+                summaryAdded |= column is "difficulty" or "tower_best" or "endings" or "quests" or "kills" or "xp";
+            }
+        if (summaryAdded) c.Exec(SummaryUpdate);   // DB cũ: tính một lần cho mọi tài khoản
     }
 
     /// <summary>Còn gửi tin trong 2 phút gần nhất (game ping mỗi phút) = đang online.</summary>
     public static string OnlineSince() => DateTime.UtcNow.AddMinutes(-2).ToString("o");
 
-    /// <summary>Cột tóm tắt lấy từ hồ sơ JSON cho danh sách tài khoản.</summary>
-    public const string ProfileColumns = """
-        json_extract(profile, '$.difficulty') as difficulty,
-        json_extract(profile, '$.towerBest') as tower_best,
-        coalesce(json_array_length(profile, '$.endingsSeen'), 0) as endings,
-        coalesce(json_array_length(profile, '$.questsClaimed'), 0) as quests,
-        coalesce((select sum(json_extract(value, '$.count')) from json_each(profile, '$.kills')), 0) as kills,
-        (select json_extract(value, '$.xp') from json_each(profile, '$.characters')
-         where json_extract(value, '$.character') = accounts.character) as xp
+    /// <summary>
+    /// Cột tóm tắt cho danh sách tài khoản, tính một lần lúc lưu hồ sơ (không đọc lại JSON mỗi lần mở trang quản trị).
+    /// Ép về số nguyên nên hồ sơ gửi lên có giá trị lạ cũng không lọt chữ vào trang; JSON hỏng thì bỏ qua, giữ số cũ.
+    /// </summary>
+    const string SummaryUpdate = """
+        update accounts set
+            difficulty = cast(json_extract(profile, '$.difficulty') as integer),
+            tower_best = cast(json_extract(profile, '$.towerBest') as integer),
+            endings    = coalesce(json_array_length(profile, '$.endingsSeen'), 0),
+            quests     = coalesce(json_array_length(profile, '$.questsClaimed'), 0),
+            kills      = coalesce((select sum(cast(json_extract(value, '$.count') as integer))
+                                   from json_each(profile, '$.kills') where type = 'object'), 0),
+            xp         = (select cast(json_extract(value, '$.xp') as integer) from json_each(profile, '$.characters')
+                          where type = 'object' and json_extract(value, '$.character') = accounts.character)
+        where json_valid(profile)
         """;
+
+    /// <summary>Tính lại cột tóm tắt của một tài khoản (sau khi lưu hồ sơ / đổi con giáp).</summary>
+    public static void UpdateSummary(SqliteConnection c, long id) => c.Exec(SummaryUpdate + " and id = $id", ("$id", id));
 
     /// <summary>Ghi một lần đăng nhập / đăng ký / vào lại (giữ 200 dòng gần nhất mỗi tài khoản).</summary>
     public static void LogEvent(SqliteConnection c, long account, string kind, HttpContext http)
     {
         string agent = http.Request.Headers.UserAgent.ToString();
+        var ip = http.Connection.RemoteIpAddress;
+        if (ip is { IsIPv4MappedToIPv6: true }) ip = ip.MapToIPv4();   // chỉ gỡ "::ffff:1.2.3.4", giữ nguyên IPv6 thật
         c.Exec("insert into login_events (account_id, kind, ip, agent, at) values ($a, $k, $ip, $ag, $t)",
-               ("$a", account), ("$k", kind), ("$ip", http.Connection.RemoteIpAddress?.MapToIPv4().ToString()),
+               ("$a", account), ("$k", kind), ("$ip", ip?.ToString()),
                ("$ag", agent.Length > 200 ? agent[..200] : agent), ("$t", Now()));
         c.Exec("""
             delete from login_events where account_id = $a and id not in
