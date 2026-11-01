@@ -182,7 +182,7 @@ public class StoryUi : MonoBehaviour
         }
         var kb = Keyboard.current;
         var pad = Gamepad.current;
-        bool skip = (kb != null && kb.escapeKey.wasPressedThisFrame) ||
+        bool skip = ZodiacInput.BackPressed ||
                     (pad != null && pad.startButton.wasPressedThisFrame);
         if (skip)
         {

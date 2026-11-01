@@ -1,7 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Dữ liệu 8 màn beat 'em up 2.5D (Hồi 1: Làng Quê → … → Động Hồ Tinh).
+/// Dữ liệu các màn beat 'em up 2.5D — Hồi 1 (8 màn: Làng Quê → … → Động Hồ Tinh) và Hồi 2 (3 màn ở Kinh thành Thăng Long,
+/// act = 2, mở sau khi phá Hồi 1).
 /// Tên scene giữ như cũ cho các màn có từ trước (Level01/02/03), màn mới là Level04…08 — thứ tự chơi là thứ tự trong mảng. Mỗi màn là một chuỗi <b>khu</b> (<see cref="Stage"/>), mỗi khu vừa khít một khung hình
 /// (<see cref="RoomWidth"/> unit dọc trục X, các làn theo chiều sâu Z từ <see cref="LevelDef.laneMin"/> tới <see cref="LevelDef.laneMax"/>).
 /// Camera đứng yên trong khu nên luôn thấy hết quái; dọn xong đi ra mép phải thì màn hình tối lại và chuyển sang khu kế.
@@ -23,7 +24,7 @@ using UnityEngine;
 public static class ZodiacLevelData
 {
     /// <summary>Kiểu cảnh — mỗi màn mới có bộ cảnh riêng (xem ZodiacLevelBuilder.Themes).</summary>
-    public enum Backdrop { Village, Bamboo, Cave, Field, Pond, Market, Limestone, Lakeshore }
+    public enum Backdrop { Village, Bamboo, Cave, Field, Pond, Market, Limestone, Lakeshore, Citadel }
 
     /// <summary>Bề ngang một khu (unit) — bằng khung hình 16:9 tại làn giữa.</summary>
     public const float RoomWidth = 15f;
@@ -49,6 +50,9 @@ public static class ZodiacLevelData
         public bool secret;
         public string secretTitle = "";
         public string[] secretWaves = System.Array.Empty<string>();
+        /// <summary>Đổi tên boss trên thanh máu (rỗng = tên gốc) và nhân máu boss (boss Hồi 2 mạnh hơn).</summary>
+        public string bossName = "";
+        public float bossScale = 1f;
 
         public Stage(string title, params string[] waves)
         {
@@ -69,6 +73,8 @@ public static class ZodiacLevelData
         public float hubLength = 40f;
         /// <summary>Tháp Mười Hai Canh Giờ: một đấu trường, TowerRun sinh quái theo tầng.</summary>
         public bool tower;
+        /// <summary>Hồi của màn (1 hoặc 2) — màn cuối hồi 2 có kết hồi riêng.</summary>
+        public int act = 1;
 
         /// <summary>Mép trái khu thứ i.</summary>
         public float RoomX(int i) => 4f + i * RoomSpacing;
@@ -80,7 +86,7 @@ public static class ZodiacLevelData
     public static readonly LevelDef Village = new LevelDef
     {
         sceneName = "Zodiac_Village", title = "Làng Trung Tâm", subtitle = "Lò rèn, tiệm thuốc, bàn thờ tổ — nghỉ chân trước khi lên đường",
-        backdrop = Backdrop.Village, hub = true,
+        backdrop = Backdrop.Village, hub = true, hubLength = 56f,
         sky = new Color(0.98f, 0.86f, 0.66f), far = new Color(0.62f, 0.72f, 0.70f), mid = new Color(0.55f, 0.70f, 0.40f),
         soil = new Color(0.66f, 0.5f, 0.34f), grass = new Color(0.42f, 0.68f, 0.32f), stone = new Color(0.68f, 0.6f, 0.5f),
         plank = new Color(0.80f, 0.62f, 0.32f),
@@ -292,6 +298,74 @@ public static class ZodiacLevelData
                 {
                     boss = true, coinRows = 0,
                     sign = "Hồ Tinh: đuôi sáng xanh là sắp ra đòn — đổi làn tránh cú vồ,\nchạy khỏi vòng xanh, nhảy qua sóng chấn",
+                },
+            },
+        },
+
+        // ───────────────────────── Hồi 2 — Kinh thành Thăng Long ─────────────────────────
+        new LevelDef
+        {
+            sceneName = "Zodiac_Level09", title = "Màn 9 — Phố Cổ Thăng Long", subtitle = "Ba mươi sáu phố phường, đèn lồng không tắt",
+            nextScene = "Zodiac_Level10", backdrop = Backdrop.Market, act = 2,
+            sky = new Color(0.95f, 0.62f, 0.45f), far = new Color(0.50f, 0.35f, 0.40f), mid = new Color(0.45f, 0.32f, 0.30f),
+            soil = new Color(0.50f, 0.40f, 0.32f), grass = new Color(0.45f, 0.40f, 0.30f), stone = new Color(0.62f, 0.55f, 0.48f),
+            plank = new Color(0.70f, 0.50f, 0.30f),
+            stages = new[]
+            {
+                new Stage("Ô Quan Chưởng", "W Q W", "S W Q S")
+                {
+                    sign = "Hồi 2 — Kinh thành: quái đông và lì hơn hẳn.\nTung chiêu ({Skill}), tuyệt kỹ ({Ultimate}) và túm ném ({Interact}) thật nhiều!",
+                },
+                new Stage("Phố Hàng Mã", "F F W Q", "H S F") { hazard = true },
+                new Stage("Phố Hàng Bạc", "Q Q W W", "T F H")
+                {
+                    coinRows = 2, secret = true, secretTitle = "Hầm thợ bạc", secretWaves = new[] { "Q Q", "!Q" },
+                },
+                new Stage("Đình Kim Ngân", "T W Q F", "H H S W"),
+                new Stage("Chợ Đồng Xuân", "W W Q Q S", "F H T", "!H") { coinRows = 2 },
+            },
+        },
+        new LevelDef
+        {
+            sceneName = "Zodiac_Level10", title = "Màn 10 — Hoàng Thành", subtitle = "Tường thành đỏ, lầu ngói vàng, rồng đá canh thềm",
+            nextScene = "Zodiac_Level11", backdrop = Backdrop.Citadel, act = 2,
+            sky = new Color(0.98f, 0.85f, 0.62f), far = new Color(0.62f, 0.60f, 0.62f), mid = new Color(0.50f, 0.55f, 0.40f),
+            soil = new Color(0.62f, 0.50f, 0.38f), grass = new Color(0.45f, 0.60f, 0.35f), stone = new Color(0.72f, 0.60f, 0.50f),
+            plank = new Color(0.75f, 0.50f, 0.25f),
+            stages = new[]
+            {
+                new Stage("Cửa Bắc", "Q W Q", "T W W S")
+                {
+                    sign = "Lính Khiên canh thành đứng thành hàng — đá bay qua đầu khiên ({Jump} rồi {Attack}),\nhoặc túm ({Interact}) lính đang choáng ném thẳng vào hàng khiên!",
+                },
+                new Stage("Thềm rồng đá", "T T W", "F F Q H") { hazard = true },
+                new Stage("Điện Kính Thiên", "Q Q F W", "S S H T")
+                {
+                    coinRows = 2, secret = true, secretTitle = "Mật đạo hoàng cung", secretWaves = new[] { "T W W", "!W" },
+                },
+                new Stage("Hậu Lâu", "H H F F", "Q W Q W", "!Q"),
+                new Stage("Lầu canh", "W Q S F H", "T T Q W") { coinRows = 2 },
+            },
+        },
+        new LevelDef
+        {
+            sceneName = "Zodiac_Level11", title = "Màn 11 — Cổng Đoan Môn", subtitle = "Chằn Tinh mang hồn Hồ Tinh chắn cổng thành",
+            nextScene = "", backdrop = Backdrop.Citadel, act = 2,
+            sky = new Color(0.85f, 0.50f, 0.40f), far = new Color(0.45f, 0.35f, 0.42f), mid = new Color(0.42f, 0.38f, 0.32f),
+            soil = new Color(0.55f, 0.42f, 0.34f), grass = new Color(0.40f, 0.45f, 0.30f), stone = new Color(0.66f, 0.54f, 0.46f),
+            plank = new Color(0.70f, 0.45f, 0.25f),
+            stages = new[]
+            {
+                new Stage("Ngoài Đoan Môn", "W W Q T", "F H S Q"),
+                new Stage("Cầu đá", "Q Q Q", "H F F W")
+                {
+                    hazard = true, secret = true, secretTitle = "Gầm cầu", secretWaves = new[] { "S S F", "!S" },
+                },
+                new Stage("Sân rồng", "T W Q F H", "W W Q Q", "!F") { coinRows = 2 },
+                new Stage("Cổng Đoan Môn")
+                {
+                    boss = true, bossKind = BossKind.ChanTinh, coinRows = 0, bossName = "Chằn Tinh — Hồ Tinh nhập", bossScale = 1.6f,
+                    sign = "Chằn Tinh mang hồn Hồ Tinh: nhanh và đau hơn lần trước.\nGiơ chùy thì lùi ra, nhảy qua sóng chấn; dụ nó húc vào cổng thành rồi đánh!",
                 },
             },
         },

@@ -336,7 +336,7 @@ public class BossFoxSpirit : BossBase
         for (int i = 0; i < tails.Length; i++)
         {
             if (tails[i] == null) continue;
-            tails[i].color = Color.Lerp(tailIdle, tailCharge, winding ? 0.5f + flicker * 0.5f : (phase2 ? 0.35f : 0f));
+            tails[i].color = WithGlowAlpha(Color.Lerp(tailIdle, tailCharge, winding ? 0.5f + flicker * 0.5f : (phase2 ? 0.35f : 0f)));
             float sway = Mathf.Sin(Time.time * 3f + i * 0.7f) * 6f;
             tails[i].transform.parent.localRotation = Quaternion.Euler(0f, 0f, (i - (tails.Length - 1) / 2f) * 14f + 30f + sway);
         }

@@ -280,7 +280,7 @@ public class BossBogeyman : BossBase
         if (eyes == null) return;
         bool winding = state == State.ThrowWindup || state == State.LungeWindup || state == State.Scatter || state == State.Appear;
         foreach (var e in eyes)
-            if (e != null) e.color = winding ? Color.Lerp(new Color(1f, 0.85f, 0.2f), Color.red, 0.5f + 0.5f * Mathf.Sin(Time.time * 25f))
-                                             : phase2 ? new Color(1f, 0.4f, 0.3f) : new Color(1f, 0.85f, 0.2f);
+            if (e != null) e.color = WithGlowAlpha(winding ? Color.Lerp(new Color(1f, 0.85f, 0.2f), Color.red, 0.5f + 0.5f * Mathf.Sin(Time.time * 25f))
+                                             : phase2 ? new Color(1f, 0.4f, 0.3f) : new Color(1f, 0.85f, 0.2f));
     }
 }

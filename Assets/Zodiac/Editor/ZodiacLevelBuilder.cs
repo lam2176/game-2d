@@ -83,6 +83,7 @@ public static partial class ZodiacLevelBuilder
             case Backdrop.Market: BuildMarket(); break;
             case Backdrop.Limestone: BuildLimestone(); break;
             case Backdrop.Lakeshore: BuildLakeshore(); break;
+            case Backdrop.Citadel: BuildCitadel(); break;
             default: BuildCave(); break;
         }
         if (IsNight) BuildMoon();
@@ -108,7 +109,9 @@ public static partial class ZodiacLevelBuilder
         manager.laneMinZ = def.laneMin;
         manager.laneMaxZ = def.laneMax;
         manager.music = ZodiacVisualSetup.Clip(MusicFor(Base(def.backdrop)));
-        manager.stoneFootsteps = Base(def.backdrop) == Backdrop.Cave || def.backdrop == Backdrop.Market || def.backdrop == Backdrop.Lakeshore;
+        manager.stoneFootsteps = Base(def.backdrop) == Backdrop.Cave || def.backdrop == Backdrop.Market || def.backdrop == Backdrop.Lakeshore ||
+                                 def.backdrop == Backdrop.Citadel;
+        manager.act = def.act;
         var canvas = BuildHud(manager, player);
         if (def.hub) BuildHub(manager);
         else BuildRooms(manager, canvas);
@@ -277,6 +280,7 @@ public static partial class ZodiacLevelBuilder
         Material road = def.backdrop switch
         {
             Backdrop.Market or Backdrop.Lakeshore => Mat("StoneRoad", t.cobble.texture, def.stone),
+            Backdrop.Citadel => Mat("PalacePaving", t.brick.texture, def.stone),
             Backdrop.Pond => Mat("BridgePlanks", t.plank.texture, def.plank),
             Backdrop.Field => Mat("DirtRoad", t.soil.texture, def.soil),
             Backdrop.Limestone => Mat("WetRock", t.cobble.texture, def.stone, 0.45f),
@@ -696,6 +700,10 @@ public static partial class ZodiacLevelBuilder
     // ───────────────────────────── Làng Trung Tâm ─────────────────────────────
 
     /// <summary>Năm điểm dọc đường làng: Bàn thờ tổ · Tiệm thuốc · Lò rèn · Tháp canh giờ · Cổng làng (đứng gần bấm F).</summary>
+    // Vị trí các điểm trong Làng Trung Tâm (trục X), người chơi xuất hiện ở x = 3
+    const float HubChestX = 5.5f, HubAltarX = 11.5f, HubShopX = 18f, HubForgeX = 24.5f, HubMarketX = 31f, HubTowerX = 37.5f,
+                HubShrineX = 44f, HubGateX = 51f;
+
     static void BuildHub(ZodiacGameManager manager)
     {
         var root = new GameObject("Village").transform;
@@ -711,55 +719,96 @@ public static partial class ZodiacLevelBuilder
         var candle = Plain("HubCandle", new Color(1f, 0.9f, 0.6f), new Color(1f, 0.8f, 0.4f) * 2f);
         var jar = Mat("HubJar", ctx.textures.brick.texture, new Color(0.55f, 0.35f, 0.25f));
 
+        // Rương nhà: rương gỗ sơn son, khoá đồng — kho đồ chung
+        var chest = Station(root, VillageStation.Kind.Chest, HubChestX, "Rương nhà", "{Interact}: Cất · Lấy đồ");
+        var brass = Plain("HubBrass", new Color(0.85f, 0.65f, 0.25f));
+        Box("ChestBody", chest, new Vector3(HubChestX, 0.4f, back), new Vector3(1.6f, 0.8f, 0.9f), red, 1f);
+        Box("ChestLid", chest, new Vector3(HubChestX, 0.9f, back), new Vector3(1.7f, 0.22f, 1f), wood, 1f);
+        Box("ChestLock", chest, new Vector3(HubChestX, 0.6f, back - 0.47f), new Vector3(0.25f, 0.3f, 0.05f), brass, 1f);
+        foreach (float dx in new[] { -0.55f, 0.55f })
+            Box("ChestBand", chest, new Vector3(HubChestX + dx, 0.5f, back - 0.46f), new Vector3(0.1f, 0.85f, 0.04f), brass, 1f);
+
         // Bàn thờ tổ: bàn sơn đỏ, bát hương, hai cây nến
-        var altar = Station(root, VillageStation.Kind.Altar, 6f, "Bàn thờ tổ", "{Interact}: Tu luyện");
-        Box("AltarTable", altar, new Vector3(6f, 0.55f, back), new Vector3(2.2f, 1.1f, 1f), red, 1f);
-        Primitive(PrimitiveType.Cylinder, "Incense", altar, new Vector3(6f, 1.25f, back), new Vector3(0.45f, 0.15f, 0.45f), jar);
+        var altar = Station(root, VillageStation.Kind.Altar, HubAltarX, "Bàn thờ tổ", "{Interact}: Tu luyện");
+        Box("AltarTable", altar, new Vector3(HubAltarX, 0.55f, back), new Vector3(2.2f, 1.1f, 1f), red, 1f);
+        Primitive(PrimitiveType.Cylinder, "Incense", altar, new Vector3(HubAltarX, 1.25f, back), new Vector3(0.45f, 0.15f, 0.45f), jar);
         foreach (float dx in new[] { -0.8f, 0.8f })
         {
-            var c = Primitive(PrimitiveType.Cylinder, "Candle", altar, new Vector3(6f + dx, 1.35f, back), new Vector3(0.12f, 0.25f, 0.12f), candle);
+            var c = Primitive(PrimitiveType.Cylinder, "Candle", altar, new Vector3(HubAltarX + dx, 1.35f, back), new Vector3(0.12f, 0.25f, 0.12f), candle);
             ZodiacLights.AddPoint(c, new Color(1f, 0.75f, 0.4f), 4f, 1.6f);
         }
 
         // Tiệm thuốc: quầy gỗ + chum thuốc
-        var shop = Station(root, VillageStation.Kind.Shop, 14f, "Tiệm thuốc bắc", "{Interact}: Mua bán · Luyện đan");
-        Box("Counter", shop, new Vector3(14f, 0.55f, back), new Vector3(3f, 1.1f, 1f), wood, 1f);
+        var shop = Station(root, VillageStation.Kind.Shop, HubShopX, "Tiệm thuốc bắc", "{Interact}: Mua bán · Luyện đan");
+        Box("Counter", shop, new Vector3(HubShopX, 0.55f, back), new Vector3(3f, 1.1f, 1f), wood, 1f);
         for (int i = 0; i < 4; i++)
-            Primitive(PrimitiveType.Cylinder, "Jar", shop, new Vector3(13f + i * 0.65f, 1.35f, back), new Vector3(0.4f, 0.25f, 0.4f), jar);
+            Primitive(PrimitiveType.Cylinder, "Jar", shop, new Vector3(HubShopX - 1f + i * 0.65f, 1.35f, back), new Vector3(0.4f, 0.25f, 0.4f), jar);
 
         // Lò rèn: đe sắt + lò lửa
-        var forge = Station(root, VillageStation.Kind.Forge, 22f, "Lò rèn", "{Interact}: Đập đồ · Phân giải");
-        Box("AnvilBase", forge, new Vector3(21.3f, 0.35f, back - 0.2f), new Vector3(0.6f, 0.7f, 0.5f), dark, 1f);
-        Box("AnvilTop", forge, new Vector3(21.3f, 0.8f, back - 0.2f), new Vector3(1.2f, 0.25f, 0.5f), dark, 1f);
-        Box("Furnace", forge, new Vector3(23f, 1f, back + 0.2f), new Vector3(1.6f, 2f, 1.2f), Mat("HubBrick", ctx.textures.brick.texture, new Color(0.55f, 0.4f, 0.35f)), 1f);
-        var fire = Box("FurnaceFire", forge, new Vector3(23f, 0.7f, back - 0.42f), new Vector3(0.8f, 0.6f, 0.05f), glow, 1f);
+        var forge = Station(root, VillageStation.Kind.Forge, HubForgeX, "Lò rèn", "{Interact}: Đập đồ · Phân giải");
+        Box("AnvilBase", forge, new Vector3(HubForgeX - 0.7f, 0.35f, back - 0.2f), new Vector3(0.6f, 0.7f, 0.5f), dark, 1f);
+        Box("AnvilTop", forge, new Vector3(HubForgeX - 0.7f, 0.8f, back - 0.2f), new Vector3(1.2f, 0.25f, 0.5f), dark, 1f);
+        Box("Furnace", forge, new Vector3(HubForgeX + 1f, 1f, back + 0.2f), new Vector3(1.6f, 2f, 1.2f), Mat("HubBrick", ctx.textures.brick.texture, new Color(0.55f, 0.4f, 0.35f)), 1f);
+        var fire = Box("FurnaceFire", forge, new Vector3(HubForgeX + 1f, 0.7f, back - 0.42f), new Vector3(0.8f, 0.6f, 0.05f), glow, 1f);
         ZodiacLights.AddPoint(fire, new Color(1f, 0.55f, 0.2f), 6f, 3f);
 
+        // Chợ phiên: sạp mái vải sọc, thúng hàng, đèn lồng — thương nhân đổi hàng mỗi lần về làng
+        var market = Station(root, VillageStation.Kind.Market, HubMarketX, "Chợ phiên", "{Interact}: Xem hàng");
+        var awning = Plain("HubAwning", new Color(0.75f, 0.15f, 0.12f));
+        var stripe = Plain("HubStripe", new Color(0.95f, 0.9f, 0.8f));
+        foreach (float dx in new[] { -1.5f, 1.5f })
+            Box("StallPost", market, new Vector3(HubMarketX + dx, 1.2f, back - 0.3f), new Vector3(0.1f, 2.4f, 0.1f), wood, 1f);
+        for (int k = 0; k < 4; k++)
+            Box("Awning", market, new Vector3(HubMarketX - 1.35f + k * 0.9f, 2.45f, back), new Vector3(0.9f, 0.06f, 1.6f), k % 2 == 0 ? awning : stripe, 1f,
+                euler: new Vector3(-14f, 0f, 0f));
+        Box("StallTable", market, new Vector3(HubMarketX, 0.45f, back), new Vector3(3f, 0.9f, 1f), wood, 1f);
+        for (int k = 0; k < 3; k++)
+            Primitive(PrimitiveType.Cylinder, "Basket", market, new Vector3(HubMarketX - 1f + k, 1f, back), new Vector3(0.7f, 0.12f, 0.7f), jar);
+        var marketLantern = Primitive(PrimitiveType.Sphere, "Lantern", market, new Vector3(HubMarketX + 1.5f, 2.1f, back - 0.4f), new Vector3(0.35f, 0.45f, 0.35f),
+                                      Plain("HubLantern", new Color(0.95f, 0.25f, 0.12f), new Color(0.9f, 0.2f, 0.05f) * 2f));
+        ZodiacLights.AddPoint(marketLantern, new Color(1f, 0.4f, 0.2f), 4f, 1.6f);
+
         // Tháp canh giờ: tháp đá nhỏ nhiều tầng, mười hai đèn lồng — vào chế độ vượt tầng
-        var tower = Station(root, VillageStation.Kind.Tower, 28.5f, "Tháp canh giờ", "{Interact}: Vượt tháp");
+        var tower = Station(root, VillageStation.Kind.Tower, HubTowerX, "Tháp canh giờ", "{Interact}: Vượt tháp");
         var stone = Mat("TowerStone", ctx.textures.brick.texture, new Color(0.6f, 0.5f, 0.45f));
         var towerRoof = Mat("TowerRoof", ctx.textures.roof.texture, RoofColor);
         for (int k = 0; k < 4; k++)
         {
             float w = 1.8f - k * 0.3f, y = k * 1.1f;
-            Box("TowerTier", tower, new Vector3(28.5f, y + 0.5f, back + 0.4f), new Vector3(w, 1f, w), stone, 1f);
-            Box("TowerEave", tower, new Vector3(28.5f, y + 1.05f, back + 0.4f), new Vector3(w + 0.6f, 0.15f, w + 0.6f), towerRoof, 1f);
+            Box("TowerTier", tower, new Vector3(HubTowerX, y + 0.5f, back + 0.4f), new Vector3(w, 1f, w), stone, 1f);
+            Box("TowerEave", tower, new Vector3(HubTowerX, y + 1.05f, back + 0.4f), new Vector3(w + 0.6f, 0.15f, w + 0.6f), towerRoof, 1f);
         }
         var lanternMat = Plain("TowerLantern", new Color(0.95f, 0.25f, 0.12f), new Color(0.9f, 0.2f, 0.05f) * 2f);
         for (int k = 0; k < 12; k++)
         {
             float a = k / 12f * Mathf.PI * 2f;
-            var l = Primitive(PrimitiveType.Sphere, "HourLantern", tower, new Vector3(28.5f + Mathf.Cos(a) * 1.3f, 0.35f, back + 0.4f + Mathf.Sin(a) * 0.5f),
+            var l = Primitive(PrimitiveType.Sphere, "HourLantern", tower, new Vector3(HubTowerX + Mathf.Cos(a) * 1.3f, 0.35f, back + 0.4f + Mathf.Sin(a) * 0.5f),
                               new Vector3(0.18f, 0.22f, 0.18f), lanternMat);
             if (k % 4 == 0) ZodiacLights.AddPoint(l, new Color(1f, 0.4f, 0.2f), 3f, 1.2f);
         }
 
+        // Miếu thử thách: miếu nhỏ mái cong, bát hương, cờ đuôi nheo — thử thách hằng ngày
+        var shrine = Station(root, VillageStation.Kind.Shrine, HubShrineX, "Miếu thử thách", "{Interact}: Thử thách hôm nay");
+        var shrineWall = Mat("ShrineWall", ctx.textures.brick.texture, new Color(0.85f, 0.75f, 0.6f));
+        Box("ShrineBase", shrine, new Vector3(HubShrineX, 0.25f, back + 0.3f), new Vector3(2.4f, 0.5f, 1.6f), shrineWall, 1f);
+        Box("ShrineBody", shrine, new Vector3(HubShrineX, 1.2f, back + 0.4f), new Vector3(1.8f, 1.4f, 1.2f), red, 1f);
+        Box("ShrineRoof", shrine, new Vector3(HubShrineX, 2.05f, back + 0.4f), new Vector3(2.6f, 0.3f, 1.8f), Mat("ShrineRoof", ctx.textures.roof.texture, RoofColor), 1f);
+        Box("ShrineDoor", shrine, new Vector3(HubShrineX, 1.1f, back - 0.22f), new Vector3(0.8f, 1f, 0.05f), dark, 1f);
+        var incense = Primitive(PrimitiveType.Cylinder, "Incense", shrine, new Vector3(HubShrineX, 0.65f, back - 0.5f), new Vector3(0.4f, 0.15f, 0.4f), jar);
+        ZodiacLights.AddPoint(incense, new Color(1f, 0.6f, 0.3f), 3.5f, 1.4f);
+        var flag = Plain("ShrineFlag", new Color(0.95f, 0.75f, 0.15f));
+        foreach (float dx in new[] { -1.6f, 1.6f })
+        {
+            Box("FlagPole", shrine, new Vector3(HubShrineX + dx, 1.6f, back - 0.2f), new Vector3(0.08f, 3.2f, 0.08f), wood, 1f);
+            Box("Flag", shrine, new Vector3(HubShrineX + dx + 0.3f, 2.8f, back - 0.2f), new Vector3(0.6f, 0.5f, 0.03f), flag, 1f);
+        }
+
         // Cổng làng: lên đường vào các màn
-        var gate = Station(root, VillageStation.Kind.Gate, 35f, "Cổng làng", "{Interact}: Lên đường");
+        var gate = Station(root, VillageStation.Kind.Gate, HubGateX, "Cổng làng", "{Interact}: Lên đường");
         foreach (float z in new[] { def.laneMin - 1.1f, def.laneMax + 1.1f })
-            Box("Pillar", gate, new Vector3(35f, 2.2f, z), new Vector3(0.45f, 4.4f, 0.45f), red, 1f);
-        Box("Beam", gate, new Vector3(35f, 4.1f, LaneCenter), new Vector3(0.35f, 0.35f, def.laneMax - def.laneMin + 2.8f), red, 1f);
-        Box("Roof", gate, new Vector3(35f, 4.65f, LaneCenter), new Vector3(1.4f, 0.35f, def.laneMax - def.laneMin + 3.8f),
+            Box("Pillar", gate, new Vector3(HubGateX, 2.2f, z), new Vector3(0.45f, 4.4f, 0.45f), red, 1f);
+        Box("Beam", gate, new Vector3(HubGateX, 4.1f, LaneCenter), new Vector3(0.35f, 0.35f, def.laneMax - def.laneMin + 2.8f), red, 1f);
+        Box("Roof", gate, new Vector3(HubGateX, 4.65f, LaneCenter), new Vector3(1.4f, 0.35f, def.laneMax - def.laneMin + 3.8f),
             Mat("GateRoof", ctx.textures.roof.texture, RoofColor), 1f);
     }
 
@@ -818,7 +867,7 @@ public static partial class ZodiacLevelBuilder
             BuildRoomGimmick(go.transform, i, stage, xMin, xMax);
             zone.waves = new EncounterZone.Wave[stage.waves.Length];
             for (int w = 0; w < stage.waves.Length; w++) zone.waves[w] = ParseWave(xMin, xMax, w, stage.waves[w]);
-            if (stage.boss) BuildBoss(zone, xMin, xMax, canvas, stage.bossKind);
+            if (stage.boss) BuildBoss(zone, xMin, xMax, canvas, stage);
             if (stage.secret && !last) BuildSecret(root, go.transform, i, stage, xMax);
             // Cổng đích sát mép phải (như lối ra các khu khác): đánh xong cứ đi sang phải là tới
             if (def.tower) { }   // tháp: không có cổng đích, TowerRun lo các tầng
@@ -1118,9 +1167,9 @@ public static partial class ZodiacLevelBuilder
         return new EncounterZone.Wave { spawns = spawns.ToArray() };
     }
 
-    static void BuildBoss(EncounterZone zone, float xMin, float xMax, Transform canvas, BossKind kind)
+    static void BuildBoss(EncounterZone zone, float xMin, float xMax, Transform canvas, ZodiacLevelData.Stage stage)
     {
-        var prefab = kind switch
+        var prefab = stage.bossKind switch
         {
             BossKind.ThuongLuong => ctx.prefabs.serpent,
             BossKind.OngBaBi => ctx.prefabs.bogeyman,
@@ -1130,7 +1179,9 @@ public static partial class ZodiacLevelBuilder
         var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
         go.transform.position = new Vector3(Mathf.Lerp(xMin, xMax, 0.72f), 0.05f, LaneCenter);
         var boss = go.GetComponent<BossBase>();
+        if (!string.IsNullOrEmpty(stage.bossName)) boss.bossName = stage.bossName;
         zone.boss = boss;
+        zone.bossScale = stage.bossScale;
         zone.bossMusic = ZodiacVisualSetup.Clip("Music/music_boss");
 
         // Thanh máu boss trên HUD
@@ -1195,6 +1246,12 @@ public static partial class ZodiacLevelBuilder
                 fog = Color.Lerp(def.sky, new Color(0.3f, 0.2f, 0.35f), 0.3f);
                 fogStart = 18f; fogEnd = 80f;
                 break;
+            case Backdrop.Citadel:     // nắng vàng trên tường thành (màn chiều thì đỏ hơn theo màu trời)
+                ZodiacLights.AddSun(lights, Color.Lerp(new Color(1f, 0.88f, 0.7f), def.sky, 0.3f), 1.3f, new Vector3(40f, -35f, 0f), 0.8f);
+                ambient = Color.Lerp(new Color(0.56f, 0.52f, 0.5f), def.sky, 0.15f);
+                fog = Color.Lerp(def.sky, Color.white, 0.1f);
+                fogStart = 26f; fogEnd = 120f;
+                break;
             case Backdrop.Limestone:   // hang ấm, sáng từ lỗ trần
                 ZodiacLights.AddSun(lights, new Color(1f, 0.85f, 0.65f), 0.55f, new Vector3(80f, -10f, 0f), 0.6f);
                 ambient = new Color(0.34f, 0.28f, 0.22f);
@@ -1241,6 +1298,7 @@ public static partial class ZodiacLevelBuilder
             Backdrop.Pond => ZodiacVisualSetup.EnsureVolumeProfile("Pond", 0.9f, 0.34f, 8f, 10f, new Color(0.88f, 0.93f, 1f)),
             Backdrop.Market => ZodiacVisualSetup.EnsureVolumeProfile("Market", 0.85f, 0.3f, 14f, 12f, new Color(1f, 0.9f, 0.95f)),
             Backdrop.Limestone => ZodiacVisualSetup.EnsureVolumeProfile("Limestone", 0.7f, 0.3f, 6f, 12f, new Color(1f, 0.95f, 0.88f)),
+            Backdrop.Citadel => ZodiacVisualSetup.EnsureVolumeProfile("Citadel", 0.5f, 0.24f, 16f, 12f, new Color(1f, 0.95f, 0.88f)),
             Backdrop.Lakeshore => ZodiacVisualSetup.EnsureVolumeProfile("Lakeshore", 0.95f, 0.32f, 6f, 10f, new Color(0.88f, 0.92f, 1f)),
             _ => ZodiacVisualSetup.EnsureVolumeProfile("Cave", 0.9f, 0.32f, 6f, 14f, new Color(0.95f, 0.93f, 1f)),
         };

@@ -10,12 +10,13 @@ using UnityEngine.UI;
 ///     Ngọc may mắn; Phân giải đồ thừa ra nguyên liệu (<see cref="Forge"/>).
 ///   • <b>Tiệm thuốc</b>: Mua · Bán · Luyện đan (<see cref="Shop"/>).
 ///   • <b>Cổng làng</b>: chọn màn đã mở để lên đường.
+///   • <b>Rương nhà</b>, <b>Chợ phiên</b>: xem VillageWindow.Storage.cs.
 /// Nội dung dựng lại mỗi lần thao tác (ít phần tử, chỉ chạy khi bấm) — giữ nguyên ô đang chọn cho tay cầm.
 /// Esc / phím Tương tác (F) / B tay cầm: đóng.
 /// </summary>
-public class VillageWindow : MonoBehaviour
+public partial class VillageWindow : MonoBehaviour
 {
-    public enum Mode { Forge, Shop, Gate, Tower }
+    public enum Mode { Forge, Shop, Gate, Tower, Chest, Market, Daily }
     enum ShopTab { Buy, Accessory, Sell, Craft }
     enum ForgeTab { Upgrade, Socket }
     ForgeTab forgeTab;
@@ -56,6 +57,7 @@ public class VillageWindow : MonoBehaviour
         ZodiacUi.Stretch((RectTransform)c.transform);
         content = c.transform;
         window.SetActive(false);
+        Market.NewVisit(PlayerProfile.Current);   // mỗi lần về làng thương nhân bày phiên hàng mới
     }
 
     void OnDestroy()
@@ -97,7 +99,7 @@ public class VillageWindow : MonoBehaviour
         if (!IsOpen || Time.frameCount == openedFrame) return;
         var kb = Keyboard.current;
         var interact = ZodiacInput.Find("Interact");
-        if ((kb != null && kb.escapeKey.wasPressedThisFrame) || (interact != null && interact.WasPressedThisFrame()) ||
+        if (ZodiacInput.BackPressed || (interact != null && interact.WasPressedThisFrame()) ||
             (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame)) Close();
     }
 
@@ -122,6 +124,9 @@ public class VillageWindow : MonoBehaviour
             case Mode.Forge: titleText.text = "LÒ RÈN"; BuildForgeTabs(); if (forgeTab == ForgeTab.Socket) BuildSocket(p); else BuildForge(p); break;
             case Mode.Shop: titleText.text = "TIỆM THUỐC BẮC"; BuildShop(p); break;
             case Mode.Tower: titleText.text = "THÁP MƯỜI HAI CANH GIỜ"; BuildTower(p); break;
+            case Mode.Chest: titleText.text = "RƯƠNG NHÀ"; BuildChest(p); break;
+            case Mode.Market: titleText.text = "CHỢ PHIÊN"; BuildMarket(p); break;
+            case Mode.Daily: titleText.text = "MIẾU THỬ THÁCH — HÔM NAY"; BuildDaily(p); break;
             default: titleText.text = "CỔNG LÀNG — LÊN ĐƯỜNG"; BuildGate(p); break;
         }
     }
@@ -573,6 +578,42 @@ public class VillageWindow : MonoBehaviour
         bool open = p.unlockedLevels >= TowerUnlockLevels && !string.IsNullOrEmpty(towerScene);
         var enter = ZodiacUi.MakeButton(content, open ? "Vào tháp" : "Qua màn 2 để mở tháp", new Vector2(0.5f, 0f), new Vector2(0f, 110f), new Vector2(420f, 72f), () =>
         {
+            TowerRun.DailyMode = false;
+            Close();
+            ScreenFader.LoadScene(towerScene);
+        });
+        enter.interactable = open;
+    }
+
+    /// <summary>Thử thách hằng ngày: ba canh giờ của hôm nay, boss cuối, thưởng, chuỗi ngày — vào bằng scene tháp.</summary>
+    void BuildDaily(PlayerProfile p)
+    {
+        var mid = new Vector2(0.5f, 1f);
+        ZodiacUi.MakeText(content, "Mỗi ngày một thử thách: ba tầng liền trong đấu trường, mỗi tầng một luật canh giờ, tầng cuối có boss.\n" +
+                                   "Phá lần đầu trong ngày được thưởng nguyên liệu hiếm. Chơi liên tiếp nhiều ngày thì thưởng đồng tăng dần.",
+                          24, ZodiacUi.Ink, mid, new Vector2(0f, -150f), new Vector2(1400f, 80f));
+        var rules = TowerRun.DailyRules();
+        for (int i = 0; i < rules.Length; i++)
+        {
+            var r = TowerRun.Rules[rules[i]];
+            ZodiacUi.MakeText(content, $"<color=#ffd27a>Tầng {i + 1} · Canh {r.hour}</color>  <b>{r.name}</b> — {r.desc}" + (i == rules.Length - 1 ? "  <color=#ff8a7a>+ boss</color>" : ""),
+                              26, ZodiacUi.Ink, mid, new Vector2(0f, -250f - i * 56f), new Vector2(1200f, 50f));
+        }
+        var reward = new System.Text.StringBuilder($"{TowerRun.DailyCoins(p)} đồng");
+        foreach (var (id, count) in TowerRun.DailyRewards)
+        {
+            var def = ItemDatabase.Get(id);
+            if (def != null) reward.Append($" · {def.displayName} ×{count}");
+        }
+        bool done = p.dailyDone == TowerRun.Today;
+        ZodiacUi.MakeText(content, done ? "<color=#9fe39a>Hôm nay đã nhận thưởng — vẫn đánh lại được để luyện tay.</color>" : $"Thưởng: {reward}",
+                          24, ZodiacUi.Gold, mid, new Vector2(0f, -450f), new Vector2(1400f, 40f));
+        ZodiacUi.MakeText(content, p.dailyStreak > 0 ? $"Chuỗi hiện tại: {p.dailyStreak} ngày (lần phá gần nhất {p.dailyDone})" : "Chưa có chuỗi ngày nào",
+                          22, ZodiacUi.Muted, mid, new Vector2(0f, -500f), new Vector2(1200f, 34f));
+        bool open = p.unlockedLevels >= TowerUnlockLevels && !string.IsNullOrEmpty(towerScene);
+        var enter = ZodiacUi.MakeButton(content, open ? "Vào thử thách" : "Qua màn 2 để mở", new Vector2(0.5f, 0f), new Vector2(0f, 110f), new Vector2(420f, 72f), () =>
+        {
+            TowerRun.DailyMode = true;
             Close();
             ScreenFader.LoadScene(towerScene);
         });
@@ -586,10 +627,10 @@ public class VillageWindow : MonoBehaviour
             int index = i;
             bool open = i < p.unlockedLevels;
             string title = i < levelTitles.Length ? levelTitles[i] : levelScenes[i];
-            // Hai cột cho đủ chỗ 8 màn
+            // Hai cột, hàng thấp cho đủ chỗ 11 màn (Hồi 1 + Hồi 2)
             var b = ZodiacUi.MakeButton(content, open ? title : $"{title}  (chưa mở)", new Vector2(0.5f, 1f),
-                                        new Vector2(i % 2 == 0 ? -360f : 360f, -180f - (i / 2) * 94f),
-                                        new Vector2(680f, 80f), () =>
+                                        new Vector2(i % 2 == 0 ? -360f : 360f, -170f - (i / 2) * 74f),
+                                        new Vector2(680f, 64f), () =>
                                         {
                                             Close();
                                             ScreenFader.LoadScene(levelScenes[index]);
@@ -598,7 +639,7 @@ public class VillageWindow : MonoBehaviour
         }
 
         // Độ khó
-        float y = -200f - (levelScenes.Length + 1) / 2 * 94f;
+        float y = -180f - (levelScenes.Length + 1) / 2 * 74f;
         ZodiacUi.MakeText(content, "Độ khó", 32, ZodiacUi.Gold, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(600f, 44f)).fontStyle = FontStyle.Bold;
         for (int d = 0; d < ZodiacDifficulty.Names.Length; d++)
         {
@@ -606,7 +647,7 @@ public class VillageWindow : MonoBehaviour
             bool unlocked = ZodiacDifficulty.IsUnlocked(d, p);
             bool chosen = p.difficulty == d;
             string label = ZodiacDifficulty.Names[d] + (unlocked ? "" : " (khoá)");
-            var b = ZodiacUi.MakeButton(content, label, new Vector2(0.5f, 1f), new Vector2((d - 1) * 330f, y - 70f), new Vector2(310f, 64f), () =>
+            var b = ZodiacUi.MakeButton(content, label, new Vector2(0.5f, 1f), new Vector2((d - 1) * 330f, y - 60f), new Vector2(310f, 56f), () =>
             {
                 if (PlayerProfile.Current.SetDifficulty(level) && ZodiacResources.Get != null) Sound(ZodiacResources.Get.coin, 0.6f);
                 Refresh();
@@ -616,9 +657,9 @@ public class VillageWindow : MonoBehaviour
         }
         int current = Mathf.Clamp(p.difficulty, 0, ZodiacDifficulty.Help.Length - 1);
         ZodiacUi.MakeText(content, ZodiacDifficulty.Help[current], 24, ZodiacDifficulty.Colors[current],
-                          new Vector2(0.5f, 1f), new Vector2(0f, y - 135f), new Vector2(1300f, 36f));
+                          new Vector2(0.5f, 1f), new Vector2(0f, y - 115f), new Vector2(1300f, 36f));
 
-        ZodiacUi.MakeText(content, "Thắng một màn để mở màn kế. Đánh lại màn cũ để kiếm thêm đồ và nguyên liệu.", 24, ZodiacUi.Muted,
-                          new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(1300f, 40f));
+        ZodiacUi.MakeText(content, "Thắng một màn để mở màn kế — phá Động Hồ Tinh thì mở Hồi 2 ở Kinh thành. Đánh lại màn cũ để kiếm thêm đồ.", 22, ZodiacUi.Muted,
+                          new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(1400f, 36f));
     }
 }

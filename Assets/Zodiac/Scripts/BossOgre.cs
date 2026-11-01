@@ -280,6 +280,6 @@ public class BossOgre : BossBase
         if (clubGlow != null) clubGlow.color = new Color(1f, 0.5f, 0.2f, winding ? 0.4f + 0.5f * flicker : 0f);
         if (eyes != null)
             foreach (var e in eyes)
-                if (e != null) e.color = Color.Lerp(new Color(1f, 0.85f, 0.3f), Rage, winding ? flicker : phase2 ? 0.6f : 0f);
+                if (e != null) e.color = WithGlowAlpha(Color.Lerp(new Color(1f, 0.85f, 0.3f), Rage, winding ? flicker : phase2 ? 0.6f : 0f));
     }
 }

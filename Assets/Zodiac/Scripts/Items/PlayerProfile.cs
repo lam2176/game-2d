@@ -117,6 +117,8 @@ public class PlayerProfile
     public const int CurrentVersion = 3;
     public const int BagSize = 30;
     public const int QuickSlots = 2;
+    /// <summary>Số ô của Rương nhà (kho chung trong làng).</summary>
+    public const int ChestSize = 60;
     /// <summary>Thứ tự ô trang bị.</summary>
     public static readonly EquipSlot[] EquipSlots = { EquipSlot.Weapon, EquipSlot.Armor, EquipSlot.Charm, EquipSlot.Gem, EquipSlot.Gem };
 
@@ -124,6 +126,8 @@ public class PlayerProfile
     public int version;
     public ItemStack[] bag = NewStacks(BagSize);
     public ItemStack[] equipped = NewStacks(5);
+    /// <summary>Rương nhà: kho đồ chung, không mang theo khi lên đường.</summary>
+    public ItemStack[] chest = NewStacks(ChestSize);
     public string[] quick = { "", "" };
     public int coins;
     [Tooltip("Số màn đã mở (1 = chỉ màn 1).")]
@@ -144,6 +148,12 @@ public class PlayerProfile
     [Tooltip("Tháp Mười Hai Canh Giờ: số tầng cao nhất đã qua và con giáp lập kỷ lục.")]
     public int towerBest;
     public string towerBestCharacter = "";
+    /// <summary>Phiên chợ hiện tại (sinh hàng của <see cref="Market"/>) và các món đã mua trong phiên.</summary>
+    public int marketSeed;
+    public List<int> marketSold = new List<int>();
+    /// <summary>Thử thách hằng ngày: ngày (yyyy-MM-dd) đã nhận thưởng, số ngày liên tiếp.</summary>
+    public string dailyDone = "";
+    public int dailyStreak;
     [Tooltip("Lần lưu gần nhất (giờ máy) — hiện ở bảng ô lưu.")]
     public string lastSaved = "";
     [Tooltip("Tổng thời gian chơi trong màn / làng (giây).")]
@@ -311,7 +321,10 @@ public class PlayerProfile
         endingsSeen ??= new List<string>();
         kills ??= new List<KillCount>();
         questsClaimed ??= new List<string>();
-        foreach (var arr in new[] { bag, equipped })
+        marketSold ??= new List<int>();
+        dailyDone ??= "";
+        if (chest == null || chest.Length != ChestSize) Array.Resize(ref chest, ChestSize);
+        foreach (var arr in new[] { bag, equipped, chest })
             for (int i = 0; i < arr.Length; i++)
             {
                 arr[i] ??= new ItemStack();
@@ -451,6 +464,97 @@ public class PlayerProfile
             var placed = stack.Clone();
             placed.count = put;
             bag[i] = placed;
+            left -= put;
+        }
+        return left;
+    }
+
+    // ───────── Rương nhà ─────────
+
+    /// <summary>Cất cả chồng ở ô túi bagIndex vào rương (dồn vào chồng cùng loại trước). False nếu rương đầy.</summary>
+    public bool StoreToChest(int bagIndex)
+    {
+        var s = bag[bagIndex];
+        if (s.IsEmpty) return false;
+        int left = Place(chest, s.Clone());
+        if (left == s.count) return false;
+        s.count = left;
+        if (s.count <= 0) s.Clear();
+        Commit();
+        return true;
+    }
+
+    /// <summary>Lấy cả chồng ở ô rương chestIndex về túi. False nếu túi đầy.</summary>
+    public bool TakeFromChest(int chestIndex)
+    {
+        var s = chest[chestIndex];
+        if (s.IsEmpty) return false;
+        int left = Place(bag, s.Clone());
+        if (left == s.count) return false;
+        s.count = left;
+        if (s.count <= 0) s.Clear();
+        Commit();
+        return true;
+    }
+
+    /// <summary>Cất mọi nguyên liệu trong túi vào rương — dọn túi nhanh trước khi lên đường.</summary>
+    public int StoreAllMaterials()
+    {
+        int moved = 0;
+        for (int i = 0; i < bag.Length; i++)
+        {
+            var s = bag[i];
+            var def = s.Def;
+            if (def == null || def.type != ItemType.Material) continue;
+            int left = Place(chest, s.Clone());
+            if (left == s.count) continue;
+            moved++;
+            s.count = left;
+            if (s.count <= 0) s.Clear();
+        }
+        if (moved > 0) Commit();
+        return moved;
+    }
+
+    /// <summary>Xếp rương: gộp chồng, theo loại rồi độ hiếm.</summary>
+    public void SortChest()
+    {
+        var items = new List<ItemStack>();
+        foreach (var s in chest) if (!s.IsEmpty) items.Add(s.Clone());
+        for (int i = 0; i < chest.Length; i++) chest[i] = new ItemStack();
+        items.Sort((a, b) =>
+        {
+            int t = a.Def.type.CompareTo(b.Def.type);
+            if (t != 0) return t;
+            int r = b.Def.rarity.CompareTo(a.Def.rarity);
+            return r != 0 ? r : string.CompareOrdinal(a.id, b.id);
+        });
+        foreach (var s in items) Place(chest, s);
+        Commit();
+    }
+
+    /// <summary>Cất vào một dãy ô bất kỳ: dồn chồng cùng loại trước, rồi ô trống. Trả về số không cất được.</summary>
+    static int Place(ItemStack[] slots, ItemStack stack)
+    {
+        var def = stack.Def;
+        int left = stack.count;
+        if (def == null) return left;
+        if (def.Stackable)
+            foreach (var s in slots)
+            {
+                if (left <= 0) break;
+                if (!s.StacksWith(def) || s.count >= def.maxStack) continue;
+                int put = Mathf.Min(left, def.maxStack - s.count);
+                s.count += put;
+                left -= put;
+            }
+        for (int i = 0; i < slots.Length && left > 0; i++)
+        {
+            if (!slots[i].IsEmpty) continue;
+            int put = Mathf.Min(left, def.maxStack);
+            var placed = stack.Clone();
+            placed.count = put;
+            slots[i] = placed;
             left -= put;
         }
         return left;

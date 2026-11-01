@@ -215,6 +215,58 @@ public static class ZodiacStory
             L(Fox, "Này chú khỉ… đổi chũm chọe lấy một pháp bảo thật sự không? Người ta sẽ nhớ tên chú mãi.", "Monkey_Than"),
             L(Me, "…Nghe hay đấy. Nhưng thôi. Bạn bè ta còn đang chờ tiếng chũm chọe này.", "Monkey_Than"),
         },
+        // ───── Hồi 2 — Kinh thành Thăng Long (màn 9–11 = chỉ số 8–10) ─────
+        ["L8-R0"] = new[]
+        {
+            L(Narrator, "Hồi 2 — Kinh thành Thăng Long. Hồ Tinh bỏ chạy ngược sông Hồng, mang theo sáu đuôi và những Âm Phù cuối cùng."),
+            L(Narrator, "Kinh thành vẫn đứng ở khắc cuối của năm cũ. Đèn lồng phố cổ đỏ rực, nhưng không một bóng người."),
+            L(Me, "Mùi cáo lẫn trong mùi trầm hương… nó trốn đâu đó giữa ba mươi sáu phố phường."),
+            L(Me, "Phố đông, ngõ nhỏ, chỗ nào cũng có ngách để luồn. Ta thích rồi đấy!", "Rat_Ty"),
+            L(Me, "Kinh thành này tổ tiên ta dựng lên — rồng bay lên từ đây. Không để nó vấy bẩn được.", "Dragon_Thin"),
+        },
+        ["L8-R2"] = new[]
+        {
+            L(Fox, "Bạc, vàng, ngọc… người kinh thành giữ của kỹ thật. Nhưng có giữ được năm cũ không?"),
+            L(Me, "Ánh bạc này lấp lánh quá… Không! Tập trung nào.", "Monkey_Than"),
+        },
+        ["L8-R4"] = new[]
+        {
+            L(Me, "Chợ Đồng Xuân… lính đất nung đứng chật cả gian hàng."),
+            L(Me, "Chợ Tết mà không ai bán bánh chưng thì buồn lắm.", "Pig_Hoi"),
+        },
+        ["L9-R0"] = new[]
+        {
+            L(Me, "Hoàng Thành. Tường đỏ, ngói vàng — nơi vua ngự ngày xưa."),
+            L(Narrator, "Ánh ban mai không tới. Bầu trời đứng yên như một bức tranh cũ."),
+            L(Me, "Đường thẳng tắp tới cổng thành. Phi một mạch thôi!", "Horse_Ngo"),
+        },
+        ["L9-R2"] = new[]
+        {
+            L(Fox, "Điện Kính Thiên… nơi các ngươi tôn vinh kẻ đã dìm ta xuống đáy hồ."),
+            L(Me, "Lạc Long Quân không dìm ngươi vì ghét ngươi. Ngươi đã bắt người làng ăn thịt, Hồ Tinh.", "Dragon_Thin"),
+            L(Me, "Lại định đổ tội cho rắn à? Lần này ta đi trước, ngươi theo sau.", "Snake_Ty"),
+        },
+        ["L9-R4"] = new[]
+        {
+            L(Me, "Từ lầu canh thấy rõ cổng Đoan Môn… có thứ gì to lớn đang đứng chắn ở đó."),
+            L(Me, "To thì sao? Ta là chúa sơn lâm! …Nhưng lần này ta không đi một mình nữa.", "Tiger_Dan"),
+        },
+        ["L10-R0"] = new[]
+        {
+            L(Me, "Cổng Đoan Môn. Mặt đất rung lên từng nhịp như trống trận."),
+            L(Fox, "Nhớ con chằn tinh trong hang đá chứ? Ta mượn xác nó một chút thôi."),
+        },
+        ["L10-R2"] = new[]
+        {
+            L(Me, "Sân rồng… mười hai bậc đá, mười hai con giáp."),
+            L(Me, "Trời sắp sáng chưa? Cổ ta ngứa lắm rồi, chỉ chờ được gáy thôi.", "Rooster_Dau"),
+        },
+        ["L10-R3"] = new[]
+        {
+            L(Fox, "Đánh đi, con giáp nhỏ. Mỗi đòn vào nó là một đòn vào kẻ từng bị Thạch Sanh tha mạng."),
+            L(Me, "Ra khỏi xác nó đi, Hồ Tinh! Đừng nấp sau lưng kẻ khác nữa."),
+            L(Fox, "Hi hi… vậy thì nghiền nát ta xem!"),
+        },
         ["L7-R0"] = new[]
         {
             L(Me, "Hơi lạnh từ đáy Hồ Tây… đây là động của nó."),
@@ -258,6 +310,14 @@ public static class ZodiacStory
             L(Fox, "Ba đuôi… ta mất ba đuôi rồi. Nhưng ta vẫn còn sáu đuôi nữa, con giáp ạ."),
             L(Fox, "Năm mới của các ngươi… chưa chắc đã đến đâu."),
             L(Narrator, "Âm Phù thứ tám sáng lên trong tay. Hồ Tinh tan vào làn nước đen, bỏ chạy."),
+        },
+        new[] { L(Narrator, "Trong gian hàng cuối chợ Đồng Xuân, Âm Phù thứ chín rơi ra từ chiếc mõ gỗ của lính gác."), L(Me, "Dấu cáo dẫn về phía Hoàng Thành.") },
+        new[] { L(Narrator, "Âm Phù thứ mười nằm dưới bậc thềm Điện Kính Thiên, sáng như một ngọn nến."), L(Me, "Cổng Đoan Môn… Âm Phù cuối của kinh thành ở đó.") },
+        new[]
+        {
+            L(Fox, "Lại một đuôi nữa… Ta còn năm đuôi. Xác chằn tinh này cũng chẳng giữ được ta."),
+            L(Fox, "Biển Đông rộng lắm, con giáp ạ. Xuống Long Cung mà tìm ta!"),
+            L(Narrator, "Chằn Tinh đổ sập. Hồn cáo bay ra như làn khói đỏ về phía biển. Âm Phù thứ mười một sáng lên giữa cổng thành."),
         },
     };
 
@@ -345,6 +405,20 @@ public static class ZodiacStory
         list.Add(new Panel("Còn sáu đuôi", "Phá đảo với cả mười hai con giáp để nghe trọn Khúc Giao Thừa.", StoryArt.Kind.Shards));
         return list.ToArray();
     }
+
+    /// <summary>Kết Hồi 2 (thắng Cổng Đoan Môn).</summary>
+    public static readonly Panel[] Act2Ending =
+    {
+        new Panel("Kinh thành thức giấc",
+            "Âm Phù thứ mười một ngân lên. Chuông chùa Một Cột đổ một hồi dài — đèn lồng ba mươi sáu phố phường cùng sáng.",
+            StoryArt.Kind.Village, "@me"),
+        new Panel("Còn một Âm Phù",
+            "Mười một nhạc cụ đã có lại tiếng. Âm Phù cuối cùng theo Hồ Tinh xuống tận Long Cung dưới Biển Đông.",
+            StoryArt.Kind.Shards),
+        new Panel("Hết Hồi 2",
+            "Hồi 3 — Biển Đông và Long Cung — đang chờ phía trước. Về làng nghỉ chân, đập đồ, ghé chợ phiên và thử thách hằng ngày nhé!",
+            StoryArt.Kind.Lake),
+    };
 
     public static readonly Panel[] TrueEnding =
     {

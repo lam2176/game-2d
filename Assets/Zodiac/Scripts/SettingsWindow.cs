@@ -62,7 +62,7 @@ public class SettingsWindow : MonoBehaviour
             return;
         }
         if (Time.frameCount <= ZodiacInput.RebindEndFrame + 1) return;   // phím vừa gán / vừa huỷ không tính là đóng
-        if ((kb != null && kb.escapeKey.wasPressedThisFrame) || (pad != null && pad.buttonEast.wasPressedThisFrame)) Close();
+        if (ZodiacInput.BackPressed || (pad != null && pad.buttonEast.wasPressedThisFrame)) Close();
     }
 
     public void Close()

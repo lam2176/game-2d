@@ -24,6 +24,30 @@ public static class ZodiacInput
         }
     }
 
+    static int backFrame = -1;
+    static bool backValue;
+
+    /// <summary>
+    /// Esc trên bất kỳ bàn phím nào, hoặc nút Back của Android, được bấm trong khung này — đóng cửa sổ / mở menu tạm dừng.
+    /// Input System chỉ báo nút Back qua bàn phím ảo của Android (có máy không tạo thiết bị bàn phím), nên trên Android
+    /// đọc thêm phím Escape của Input cũ (project bật cả hai hệ nhập).
+    /// </summary>
+    public static bool BackPressed
+    {
+        get
+        {
+            if (backFrame == Time.frameCount) return backValue;
+            backFrame = Time.frameCount;
+            backValue = false;
+            foreach (var device in InputSystem.devices)
+                if (device is Keyboard k && k.escapeKey.wasPressedThisFrame) { backValue = true; break; }
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (!backValue && Application.platform == RuntimePlatform.Android) backValue = Input.GetKeyDown(KeyCode.Escape);
+#endif
+            return backValue;
+        }
+    }
+
     /// <summary>Các hành động đổi được phím, theo thứ tự hiện trong cửa sổ cài đặt.</summary>
     public static readonly Entry[] Rebindable =
     {

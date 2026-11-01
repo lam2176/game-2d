@@ -27,7 +27,11 @@ public static class ZodiacQuests
     static readonly string[] LevelNames =
     {
         "Làng Quê", "Cánh Đồng Lúa", "Rừng Trúc", "Đầm Sen", "Chợ Phiên Ma", "Hang Đá Vôi", "Bờ Hồ Tây", "Động Hồ Tinh",
+        "Phố Cổ Thăng Long", "Hoàng Thành", "Cổng Đoan Môn",
     };
+
+    /// <summary>Màn cuối mỗi hồi (đếm từ 1) — nhiệm vụ thưởng lớn hơn.</summary>
+    static bool ActFinale(int level) => level == 8 || level == 11;
 
     public static readonly Quest[] All = Build();
 
@@ -39,13 +43,14 @@ public static class ZodiacQuests
         for (int i = 0; i < LevelNames.Length; i++)
         {
             int level = i + 1;
-            bool last = level == LevelNames.Length;
+            bool last = ActFinale(level);
             list.Add(new Quest
             {
                 id = $"story_{level}", category = 0,
                 title = $"Màn {level} — {LevelNames[i]}",
-                text = last ? "Xuống động dưới đáy Hồ Tây, hạ Hồ Tinh và ghép lại Trống Đồng Thiên Âm."
-                            : $"Dọn sạch quái ở {LevelNames[i]} và đi tới cuối màn.",
+                text = level == 8 ? "Xuống động dưới đáy Hồ Tây, hạ Hồ Tinh và ghép lại Trống Đồng Thiên Âm."
+                     : level == 11 ? "Hạ Chằn Tinh mang hồn Hồ Tinh ở cổng Đoan Môn, giành Âm Phù thứ mười một."
+                     : $"Dọn sạch quái ở {LevelNames[i]} và đi tới cuối màn.",
                 progress = p => p.unlockedLevels > level ? 1 : 0,
                 coins = 40 + i * 30, xp = 30 + i * 25,
                 item = last ? "manh_huyet_dan" : i % 2 == 0 ? "binh_mau_nho" : "manh_khi_dan", itemCount = last ? 3 : 1,
