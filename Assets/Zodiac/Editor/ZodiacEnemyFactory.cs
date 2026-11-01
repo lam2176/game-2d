@@ -496,10 +496,10 @@ public static class ZodiacEnemyFactory
             // Ảnh vẽ: thân và chùy đá tách riêng — chùy xoay quanh nắm tay phải
             glowAlpha = 0.5f;
             Art(v, "ChanTinh", 3.3f, Vector2.zero, 8);
-            eyes.Add(Glow(v, new Vector2(0.33f, 2.72f), 0.4f, new Color(1f, 0.85f, 0.3f), 30));
+            eyes.Add(Glow(v, new Vector2(0.44f, 2.83f), 0.35f, new Color(1f, 0.85f, 0.3f), 30));
             club = new GameObject("Club").transform;
             club.SetParent(v, false);
-            club.localPosition = new Vector3(0.75f, 1.5f, -12 * LayerDepth);
+            club.localPosition = new Vector3(0.76f, 1.42f, -12 * LayerDepth);
             Art(club, "ChuyDa", 1.9f, new Vector2(0f, 0.7f), 12);
             glow = Glow(club, new Vector2(0f, 1.3f), 1.2f, new Color(1f, 0.5f, 0.2f, 0f), 31);
         }
