@@ -81,6 +81,18 @@ public static class ZodiacUi
         return t;
     }
 
+    /// <summary>Chữ trên nút tự thu nhỏ (tới minSize) khi dài hơn nút — dùng cho danh sách màn nhiều cột.</summary>
+    public static void FitLabel(Button button, int minSize)
+    {
+        var t = button.GetComponentInChildren<Text>();
+        if (t == null) return;
+        t.resizeTextMaxSize = t.fontSize;
+        t.resizeTextMinSize = Mathf.Min(minSize, t.fontSize);
+        t.resizeTextForBestFit = true;
+        t.horizontalOverflow = HorizontalWrapMode.Wrap;
+        t.verticalOverflow = VerticalWrapMode.Truncate;   // tự co chữ chỉ chạy khi không được tràn
+    }
+
     public static Button MakeButton(Transform parent, string label, Vector2 anchor, Vector2 pos, Vector2 size, UnityAction onClick)
     {
         var img = MakeImage(parent, "Button " + label, ButtonRed);

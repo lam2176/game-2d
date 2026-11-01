@@ -11,6 +11,7 @@ using static ZodiacLevelData;
 ///   • Bờ Hồ Tây: kè đá lan can, mặt hồ mênh mông, vệt trăng, bảo tháp trên đảo, thuyền đèn, liễu rủ, đèn đá.
 ///   • Kinh thành (Hồi 2): tường thành gạch đỏ có lỗ châu mai, lầu cổng hai tầng mái ngói vàng, cờ đuôi nheo,
 ///     thềm rồng đá, lư đồng, đèn lồng vàng, hàng cây đa.
+///   • Bãi biển, Long Cung (Hồi 3): xem ZodiacLevelBuilder.Sea. Núi Tản Viên, Thiên Đình (Hồi 4): xem ZodiacLevelBuilder.Sky.
 /// Các phần chung (nền, ánh sáng gốc, nhạc) theo kiểu cảnh gốc <see cref="Base"/>.
 /// </summary>
 public static partial class ZodiacLevelBuilder
@@ -18,9 +19,9 @@ public static partial class ZodiacLevelBuilder
     /// <summary>Kiểu cảnh gốc để dùng chung nhạc, bước chân, nền xa…</summary>
     static Backdrop Base(Backdrop b) => b switch
     {
-        Backdrop.Field or Backdrop.Market or Backdrop.Lakeshore or Backdrop.Citadel => Backdrop.Village,
-        Backdrop.Pond => Backdrop.Bamboo,
-        Backdrop.Limestone => Backdrop.Cave,
+        Backdrop.Field or Backdrop.Market or Backdrop.Lakeshore or Backdrop.Citadel or Backdrop.Beach or Backdrop.Heaven => Backdrop.Village,
+        Backdrop.Pond or Backdrop.Mountain => Backdrop.Bamboo,
+        Backdrop.Limestone or Backdrop.DragonPalace => Backdrop.Cave,
         _ => b,
     };
 
@@ -536,6 +537,7 @@ public static partial class ZodiacLevelBuilder
         BuildRoomWeapons(room, index, xMin);
         switch (def.backdrop)
         {
+            case Backdrop.Mountain:   // đá lở từ vách núi
             case Backdrop.Limestone:
                 int traps = stage.hazard ? 2 : 1;
                 for (int k = 0; k < traps; k++) CreateStalactiteTrap(room, xMin, xMax, k);
@@ -543,6 +545,14 @@ public static partial class ZodiacLevelBuilder
             case Backdrop.Field:
                 CreateHayBale(room, new Vector3(xMin + 3.8f, 0f, def.laneMin + 0.5f));
                 CreateHayBale(room, new Vector3(xMin + 10.5f, 0f, def.laneMax - 0.55f));
+                break;
+            case Backdrop.Beach:        // giỏ cá trên bãi
+                CreateBasket(room, new Vector3(xMin + 4.2f, 0f, def.laneMax - 0.5f));
+                CreateBasket(room, new Vector3(xMin + 11.6f, 0f, def.laneMin + 0.5f));
+                break;
+            case Backdrop.DragonPalace: // chum ngọc của Long Vương
+                CreateJar(room, new Vector3(xMin + 3.4f, 0f, def.laneMax - 0.45f));
+                CreateJar(room, new Vector3(xMin + 12f, 0f, def.laneMax - 0.5f));
                 break;
             case Backdrop.Market:
                 CreateJar(room, new Vector3(xMin + 6.6f, 0f, def.laneMin + 0.45f));
@@ -563,8 +573,8 @@ public static partial class ZodiacLevelBuilder
         WeaponPickup.Kind[] pool = def.backdrop switch
         {
             Backdrop.Market => new[] { WeaponPickup.Kind.Jar, WeaponPickup.Kind.Lantern, WeaponPickup.Kind.Pole },
-            Backdrop.Pond or Backdrop.Lakeshore => new[] { WeaponPickup.Kind.Lantern, WeaponPickup.Kind.Pole },
-            Backdrop.Cave or Backdrop.Limestone => new[] { WeaponPickup.Kind.Jar, WeaponPickup.Kind.Lantern },
+            Backdrop.Pond or Backdrop.Lakeshore or Backdrop.Heaven => new[] { WeaponPickup.Kind.Lantern, WeaponPickup.Kind.Pole },
+            Backdrop.Cave or Backdrop.Limestone or Backdrop.DragonPalace => new[] { WeaponPickup.Kind.Jar, WeaponPickup.Kind.Lantern },
             _ => new[] { WeaponPickup.Kind.Pole, WeaponPickup.Kind.Jar },
         };
         var kind = pool[(index + rnd.Next(pool.Length)) % pool.Length];
@@ -630,9 +640,18 @@ public static partial class ZodiacLevelBuilder
         var rock = new GameObject("Rock").transform;
         rock.SetParent(go.transform, false);
         var drip = Plain("Dripstone", Color.Lerp(def.stone, Color.white, 0.25f));
-        // Mũi nhọn quay xuống: tâm (chân mũi) ở dưới cùng
-        Box("Tip", rock, rock.position + Vector3.up * 0.45f, new Vector3(0.28f, 0.9f, 0.28f), drip, 1f, euler: new Vector3(0f, 45f, 0f));
-        Box("Body", rock, rock.position + Vector3.up * 1.4f, new Vector3(0.5f, 1.2f, 0.5f), drip, 1f, euler: new Vector3(0f, 45f, 0f));
+        if (def.backdrop == Backdrop.Mountain)
+        {
+            // Núi: tảng đá lở từ vách (tâm ở đáy tảng)
+            Primitive(PrimitiveType.Sphere, "Boulder", rock, rock.position + Vector3.up * 0.45f, new Vector3(0.9f, 0.8f, 0.85f), drip);
+            Primitive(PrimitiveType.Sphere, "BoulderChip", rock, rock.position + new Vector3(0.3f, 0.75f, 0.1f), new Vector3(0.45f, 0.4f, 0.4f), drip);
+        }
+        else
+        {
+            // Mũi nhọn quay xuống: tâm (chân mũi) ở dưới cùng
+            Box("Tip", rock, rock.position + Vector3.up * 0.45f, new Vector3(0.28f, 0.9f, 0.28f), drip, 1f, euler: new Vector3(0f, 45f, 0f));
+            Box("Body", rock, rock.position + Vector3.up * 1.4f, new Vector3(0.5f, 1.2f, 0.5f), drip, 1f, euler: new Vector3(0f, 45f, 0f));
+        }
         trap.rock = rock;
     }
 
@@ -705,6 +724,12 @@ public static partial class ZodiacLevelBuilder
                 Box("PlankR", go.transform, center + new Vector3(1.3f, 0.06f, 0f), new Vector3(0.3f, 0.08f, depth), plank, 1f, euler: new Vector3(0f, 0f, -14f));
                 return true;
             }
+            case Backdrop.Beach:
+            case Backdrop.DragonPalace:
+                return SeaHazardLook(go, x, zMin, zMax);
+            case Backdrop.Mountain:
+            case Backdrop.Heaven:
+                return SkyHazardLook(go, x, zMin, zMax);
             default:
                 return false;
         }

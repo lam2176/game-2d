@@ -237,16 +237,20 @@ public class ZodiacStartMenu : MonoBehaviour
         foreach (Transform child in levelList) Destroy(child.gameObject);
         int unlocked = PlayerProfile.Current.unlockedLevels;
         GameObject first = null;
-        for (int i = 0; i < levelScenes.Length; i++)
+        // Khung danh sách cao 520: tới 8 màn hai cột hàng cao; tới 12 màn hai cột hàng thấp; nhiều hơn thì ba cột
+        int n = levelScenes.Length, columns = n > 12 ? 3 : 2;
+        float rowStep = n > 8 ? 70f : 96f, rowHeight = n > 8 ? 60f : 80f;
+        float colWidth = columns == 3 ? 395f : 590f, colStep = columns == 3 ? 412f : 620f;
+        for (int i = 0; i < n; i++)
         {
             int index = i;
             bool open = i < unlocked;
             string title = i < levelTitles.Length ? levelTitles[i] : levelScenes[i];
-            // Hai cột: màn lẻ bên trái, màn chẵn bên phải
-            var b = MakeButton(levelList, open ? title : $"{title}  (chưa mở)", new Vector2(0.5f, 1f),
-                               new Vector2(i % 2 == 0 ? -310f : 310f, -45f - (i / 2) * 96f),
-                               new Vector2(590f, 80f), () => ScreenFader.LoadScene(levelScenes[index]));
+            var b = MakeButton(levelList, open ? title : $"{title}  (khoá)", new Vector2(0.5f, 1f),
+                               new Vector2((i % columns - (columns - 1) / 2f) * colStep, -10f - rowHeight / 2f - (i / columns) * rowStep),
+                               new Vector2(colWidth, rowHeight), () => ScreenFader.LoadScene(levelScenes[index]));
             b.interactable = open;
+            ZodiacUi.FitLabel(b, 18);
             if (open) first = b.gameObject;   // chọn sẵn màn mới nhất đã mở
         }
         if (EventSystem.current != null && first != null) EventSystem.current.SetSelectedGameObject(first);

@@ -65,6 +65,10 @@ public static class ZodiacItemDefs
                   mods = new[] { Flat(StatType.Defense, 28), Flat(StatType.MaxHealth, 20) }, price = 140, icon = Icon.Armor, color = new Color(0.3f, 0.7f, 0.65f) },
 
         // ── Bùa
+        new Def { id = "long_dai_bang", name = "Lông vàng Đại Bàng", desc = "Chiếc lông vàng cứng như thép — người mang nhẹ như gió núi. Rơi từ Đại Bàng Tinh.",
+                  type = ItemType.Equipment, slot = EquipSlot.Charm, rarity = ItemRarity.Rare,
+                  mods = new[] { Flat(StatType.Attack, 8), Flat(StatType.CritChance, 0.06f), Flat(StatType.MaxHealth, 20) }, price = 180,
+                  icon = Icon.Charm, color = new Color(1f, 0.78f, 0.3f) },
         new Def { id = "vong_bac", name = "Vòng bạc trừ tà", desc = "Vòng bạc bà đeo cho cháu từ bé — tà khí tránh xa.", type = ItemType.Equipment,
                   slot = EquipSlot.Charm, mods = new[] { Flat(StatType.Defense, 6), Flat(StatType.MaxHealth, 10) }, price = 45,
                   icon = Icon.Charm, color = new Color(0.85f, 0.88f, 0.92f) },
