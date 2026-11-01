@@ -24,8 +24,8 @@ public abstract class BossBase : EnemyBase
         canBeKnockedDown = false;
         grabImmune = true;
         // Quầng sáng của boss dựng bằng ảnh vẽ: sprite tròn mờ tạo lúc chạy (không lưu sẵn trong prefab được)
-        foreach (var sr in GetComponentsInChildren<SpriteRenderer>(true))
-            if (sr.sprite == null && sr.name.StartsWith("Glow")) sr.sprite = ZodiacFx.SoftCircle;
+        foreach (var glow in GetComponentsInChildren<GlowPart>(true))
+            if (glow.TryGetComponent(out SpriteRenderer sr) && sr.sprite == null) sr.sprite = ZodiacFx.SoftCircle;
     }
 
     /// <summary>Độ đục của quầng sáng (1 = hình khối cũ tô đặc; ảnh vẽ dùng quầng mờ phủ lên).</summary>

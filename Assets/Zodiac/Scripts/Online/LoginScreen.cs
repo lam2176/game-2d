@@ -66,7 +66,7 @@ public class LoginScreen : MonoBehaviour
             {
                 SetBusy(false, "");
                 if (error == null) Leave();
-                else ShowForm(error == ZodiacCloud.Offline ? error : "");
+                else ShowForm(error);   // mất mạng / hết phiên / bị khoá (kèm lý do) — báo rõ thay vì form trống
             });
         }
         else ShowForm("");
@@ -249,22 +249,9 @@ public class LoginScreen : MonoBehaviour
         return img;
     }
 
-    /// <summary>Chữ trơn (không viền đen như ZodiacUi.MakeText).</summary>
-    static Text Label(Transform parent, string content, int size, Color color, Vector2 anchor, Vector2 pos, Vector2 box)
-    {
-        var t = new GameObject("Text", typeof(RectTransform)).AddComponent<Text>();
-        t.transform.SetParent(parent, false);
-        t.font = ZodiacUi.Font;
-        t.text = content;
-        t.fontSize = size;
-        t.color = color;
-        t.alignment = TextAnchor.MiddleCenter;
-        t.raycastTarget = false;
-        t.horizontalOverflow = HorizontalWrapMode.Wrap;
-        t.verticalOverflow = VerticalWrapMode.Overflow;
-        ZodiacUi.Place(t.rectTransform, anchor, pos, box);
-        return t;
-    }
+    /// <summary>Chữ trơn (không viền đen).</summary>
+    static Text Label(Transform parent, string content, int size, Color color, Vector2 anchor, Vector2 pos, Vector2 box) =>
+        ZodiacUi.MakeText(parent, content, size, color, anchor, pos, box, outline: false);
 
     // ───────── Trạng thái ─────────
 
