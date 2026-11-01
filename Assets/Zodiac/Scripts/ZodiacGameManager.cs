@@ -322,13 +322,19 @@ public class ZodiacGameManager : MonoBehaviour
                     winPanel.SetActive(true);
                     return;
                 }
+                int total = player.roster != null ? player.roster.Count : 12;
                 var actEnding = ZodiacStory.ActEnding(act);
                 if (actEnding != null)
                 {
-                    StoryUi.ShowPanels(actEnding, () => winPanel.SetActive(true));
+                    // Trận cuối (Hồi 4) cũng tính là phá đảo với con giáp này; đủ mười hai con thì xem kết thúc thật
+                    bool allSeen = act >= 4 && PlayerProfile.Current.AddEnding(CharacterKey, total);
+                    StoryUi.ShowPanels(actEnding, () =>
+                    {
+                        if (allSeen) StoryUi.ShowPanels(ZodiacStory.TrueEnding, () => winPanel.SetActive(true));
+                        else winPanel.SetActive(true);
+                    });
                     return;
                 }
-                int total = player.roster != null ? player.roster.Count : 12;
                 bool all = PlayerProfile.Current.AddEnding(CharacterKey, total);
                 StoryUi.ShowPanels(ZodiacStory.Ending(CharacterKey), () =>
                 {

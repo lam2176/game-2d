@@ -2,7 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// Dữ liệu các màn beat 'em up 2.5D — Hồi 1 (8 màn: Làng Quê → … → Động Hồ Tinh), Hồi 2 (3 màn ở Kinh thành Thăng Long,
-/// act = 2) và Hồi 3 (Cửa Biển → Biển Đông → Long Cung, act = 3); mỗi hồi mở sau khi phá màn cuối hồi trước.
+/// act = 2), Hồi 3 (Cửa Biển → Biển Đông → Long Cung, act = 3) và Hồi 4 (Núi Tản Viên → Thiên Đình, act = 4, trận cuối);
+/// mỗi hồi mở sau khi phá màn cuối hồi trước.
 /// Tên scene giữ như cũ cho các màn có từ trước (Level01/02/03), màn mới là Level04…08 — thứ tự chơi là thứ tự trong mảng. Mỗi màn là một chuỗi <b>khu</b> (<see cref="Stage"/>), mỗi khu vừa khít một khung hình
 /// (<see cref="RoomWidth"/> unit dọc trục X, các làn theo chiều sâu Z từ <see cref="LevelDef.laneMin"/> tới <see cref="LevelDef.laneMax"/>).
 /// Camera đứng yên trong khu nên luôn thấy hết quái; dọn xong đi ra mép phải thì màn hình tối lại và chuyển sang khu kế.
@@ -14,7 +15,7 @@ using UnityEngine;
 ///   S  Bọ Gai (lăn dọc làn)     F  Ma Trơi (bay)     H  Cóc Tía (nhảy đè)
 ///   T  Thạch Sư (tượng phun lửa — đứng ở làn trong cùng)
 /// Thêm "!" trước mã (vd. "!W") = quái trùm (<see cref="MiniBoss"/>): to, trâu, thanh máu riêng, chắc chắn rơi mảnh Đan.
-/// Khu có boss = true thì boss (bossKind: Hồ Tinh, Thuồng Luồng, Ông Ba Bị, Chằn Tinh) đứng chờ sẵn.
+/// Khu có boss = true thì boss (bossKind: Hồ Tinh, Thuồng Luồng, Ông Ba Bị, Chằn Tinh, Đại Bàng Tinh) đứng chờ sẵn.
 /// Khu có secret = true: góc trong mép phải có vật đập vỡ được (bụi tre rậm / vách đá nứt) che lối sang khu bí mật
 /// nằm trong khoảng trống trước khu kế — có rương báu và các đợt quái riêng (secretWaves).
 ///
@@ -24,7 +25,7 @@ using UnityEngine;
 public static class ZodiacLevelData
 {
     /// <summary>Kiểu cảnh — mỗi màn mới có bộ cảnh riêng (xem ZodiacLevelBuilder.Themes).</summary>
-    public enum Backdrop { Village, Bamboo, Cave, Field, Pond, Market, Limestone, Lakeshore, Citadel, Beach, DragonPalace }
+    public enum Backdrop { Village, Bamboo, Cave, Field, Pond, Market, Limestone, Lakeshore, Citadel, Beach, DragonPalace, Mountain, Heaven }
 
     /// <summary>Bề ngang một khu (unit) — bằng khung hình 16:9 tại làn giữa.</summary>
     public const float RoomWidth = 15f;
@@ -32,7 +33,7 @@ public static class ZodiacLevelData
     public const float RoomSpacing = 36f;
 
     /// <summary>Boss đứng chờ ở khu có boss = true.</summary>
-    public enum BossKind { HoTinh, ThuongLuong, OngBaBi, ChanTinh }
+    public enum BossKind { HoTinh, ThuongLuong, OngBaBi, ChanTinh, DaiBang }
 
     public class Stage
     {
@@ -73,7 +74,7 @@ public static class ZodiacLevelData
         public float hubLength = 40f;
         /// <summary>Tháp Mười Hai Canh Giờ: một đấu trường, TowerRun sinh quái theo tầng.</summary>
         public bool tower;
-        /// <summary>Hồi của màn (1–3) — màn cuối mỗi hồi từ Hồi 2 trở đi có kết hồi riêng.</summary>
+        /// <summary>Hồi của màn (1–4) — màn cuối mỗi hồi từ Hồi 2 trở đi có kết hồi riêng.</summary>
         public int act = 1;
 
         /// <summary>Mép trái khu thứ i.</summary>
@@ -432,6 +433,76 @@ public static class ZodiacLevelData
                 {
                     boss = true, bossKind = BossKind.ThuongLuong, coinRows = 0, bossName = "Thuồng Luồng Biển Đông", bossScale = 2f,
                     sign = "Thuồng Luồng Biển Đông bị Hồ Tinh mê hoặc: lặn nhanh, phun nước ba làn.\nChạy khỏi vòng sóng, đổi làn tránh tia nước, đánh khi nó trồi lên phơi mình!",
+                },
+            },
+        },
+
+        // ───────────────────────── Hồi 4 — Núi Tản Viên và Thiên Đình ─────────────────────────
+        new LevelDef
+        {
+            sceneName = "Zodiac_Level15", title = "Màn 15 — Chân núi Tản Viên", subtitle = "Rừng thông sương mù, bậc đá rêu, đền thờ Sơn Tinh",
+            nextScene = "Zodiac_Level16", backdrop = Backdrop.Mountain, act = 4,
+            sky = new Color(0.72f, 0.82f, 0.85f), far = new Color(0.40f, 0.50f, 0.55f), mid = new Color(0.30f, 0.42f, 0.38f),
+            soil = new Color(0.48f, 0.42f, 0.34f), grass = new Color(0.32f, 0.50f, 0.32f), stone = new Color(0.58f, 0.58f, 0.55f),
+            plank = new Color(0.55f, 0.40f, 0.28f),
+            stages = new[]
+            {
+                new Stage("Bậc đá đầu núi", "W W Q", "H S W F")
+                {
+                    sign = "Hồi 4 — trận cuối. Quái núi Tản Viên mạnh nhất từ trước tới nay.\nĐá lở từ vách: thấy vòng đỏ dưới chân thì đổi làn hoặc lăn ra!",
+                },
+                new Stage("Rừng thông", "F F Q W", "T H S S") { hazard = true },
+                new Stage("Thác trắng", "Q Q T W", "H F F W")
+                {
+                    coinRows = 2, secret = true, secretTitle = "Hang sau thác", secretWaves = new[] { "T Q Q", "!T" },
+                },
+                new Stage("Đền Hạ", "W Q S F H", "T T Q W", "!W") { coinRows = 2 },
+            },
+        },
+        new LevelDef
+        {
+            sceneName = "Zodiac_Level16", title = "Màn 16 — Đỉnh Tản Viên", subtitle = "Mây vờn đỉnh núi, Đại Bàng Tinh làm tổ trên vách",
+            nextScene = "Zodiac_Level17", backdrop = Backdrop.Mountain, act = 4,
+            sky = new Color(0.90f, 0.70f, 0.55f), far = new Color(0.48f, 0.42f, 0.50f), mid = new Color(0.36f, 0.38f, 0.40f),
+            soil = new Color(0.50f, 0.44f, 0.38f), grass = new Color(0.36f, 0.46f, 0.34f), stone = new Color(0.62f, 0.60f, 0.58f),
+            plank = new Color(0.55f, 0.40f, 0.28f),
+            stages = new[]
+            {
+                new Stage("Đền Trung", "Q T Q W", "F H S W"),
+                new Stage("Sống núi", "S S F F H", "W Q Q T") { hazard = true },
+                new Stage("Vách đại bàng", "T W Q F H", "W W Q S", "!F")
+                {
+                    coinRows = 2, secret = true, secretTitle = "Tổ chim cũ", secretWaves = new[] { "F F H", "!H" },
+                },
+                new Stage("Đỉnh Tản Viên")
+                {
+                    boss = true, bossKind = BossKind.DaiBang, coinRows = 0, bossScale = 1.8f,
+                    sign = "Đại Bàng Tinh: bay vút lên thì bóng đen bám theo — vòng đỏ hiện là sắp bổ nhào, chạy ra!\nXoè cánh là mưa lông thép — đổi làn; lùi lại vỗ cánh là gió sát đất — nhảy qua.",
+                },
+            },
+        },
+        new LevelDef
+        {
+            sceneName = "Zodiac_Level17", title = "Màn 17 — Thiên Đình", subtitle = "Nam Thiên Môn trên biển mây — Hồ Tinh Cửu Vĩ chờ khắc Giao Thừa",
+            nextScene = "", backdrop = Backdrop.Heaven, act = 4,
+            sky = new Color(0.55f, 0.45f, 0.75f), far = new Color(0.60f, 0.55f, 0.80f), mid = new Color(0.75f, 0.70f, 0.90f),
+            soil = new Color(0.90f, 0.88f, 0.95f), grass = new Color(0.95f, 0.93f, 1f), stone = new Color(0.85f, 0.78f, 0.55f),
+            plank = new Color(0.80f, 0.55f, 0.30f),
+            stages = new[]
+            {
+                new Stage("Cầu mây", "F Q F W", "H H T S")
+                {
+                    sign = "Thiên Đình — mây sấm loé điện trên lối đi, đừng đứng lên!\nĐây là trận cuối: dùng hết bình thuốc, Đan và tuyệt kỹ ({Ultimate}).",
+                },
+                new Stage("Nam Thiên Môn", "Q Q T W H", "F F S W Q", "!Q") { hazard = true, coinRows = 2 },
+                new Stage("Vườn đào tiên", "T W Q F", "H S F W", "!T")
+                {
+                    coinRows = 2, secret = true, secretTitle = "Vườn đào tiên", secretWaves = new[] { "F F Q Q", "!F" },
+                },
+                new Stage("Điện Lăng Tiêu")
+                {
+                    boss = true, bossKind = BossKind.HoTinh, coinRows = 0, bossName = "Hồ Tinh Cửu Vĩ", bossScale = 2.6f,
+                    sign = "Hồ Tinh Cửu Vĩ — đủ chín đuôi, nhanh và hiểm hơn mọi lần.\nĐuôi sáng xanh: đổi làn tránh cú vồ, chạy khỏi vòng xanh, nhảy qua sóng chấn!",
                 },
             },
         },

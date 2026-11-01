@@ -69,9 +69,15 @@ public static class ZodiacJournal
         },
         new Beast
         {
-            id = "Boss_HoTinh", name = "Hồ Tinh", art = "HoTinh", where = "Động Hồ Tinh (dưới Hồ Tây)",
+            id = "Boss_HoTinh", name = "Hồ Tinh", art = "HoTinh", where = "Động Hồ Tinh (dưới Hồ Tây) · Thiên Đình",
             lore = "Cáo chín đuôi bị Lạc Long Quân đánh chìm dưới đáy Hồ Tây từ ngàn năm trước. Sống lại nhờ oán khí, nó đập vỡ Trống Đồng Thiên Âm thành mười hai Âm Phù để năm cũ không bao giờ hết.",
             tip = "Đuôi sáng xanh là sắp ra đòn: đổi làn tránh cú vồ, chạy khỏi vòng xanh, nhảy qua sóng chấn.",
+        },
+        new Beast
+        {
+            id = "Boss_DaiBang", name = "Đại Bàng Tinh", art = "DaiBang", where = "Đỉnh Tản Viên",
+            lore = "Chim yêu khổng lồ trong truyện Thạch Sanh, từng quắp công chúa về hang và bị mũi tên của Thạch Sanh hạ gục. Hồ Tinh gọi nó dậy canh đường lên Thiên Đình.",
+            tip = "Bay vút lên thì bóng đen bám theo — vòng đỏ là sắp bổ nhào, chạy ra rồi đánh khi nó cắm mỏ xuống đất. Xoè cánh: đổi làn. Vỗ cánh: {Jump}.",
         },
     };
 

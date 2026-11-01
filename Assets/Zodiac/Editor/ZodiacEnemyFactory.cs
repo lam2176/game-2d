@@ -23,7 +23,7 @@ public static class ZodiacEnemyFactory
 
     public class Prefabs
     {
-        public GameObject walker, shield, roller, flyer, hopper, turret, boss, serpent, bogeyman, ogre;
+        public GameObject walker, shield, roller, flyer, hopper, turret, boss, serpent, bogeyman, ogre, eagle;
     }
 
     static readonly Color BarBackColor = new Color(0.15f, 0.1f, 0.1f, 0.85f);
@@ -58,6 +58,7 @@ public static class ZodiacEnemyFactory
         p.serpent = Ensure("Boss_ThuongLuong", () => BuildSerpent(p.hopper));
         p.bogeyman = Ensure("Boss_OngBaBi", () => BuildBogeyman(p.walker));
         p.ogre = Ensure("Boss_ChanTinh", BuildOgre);
+        p.eagle = Ensure("Boss_DaiBang", () => BuildEagle(p.flyer));
         return p;
     }
 
@@ -547,6 +548,55 @@ public static class ZodiacEnemyFactory
         Shape(v, "ArmFront", false, new Vector2(0.8f, 1.6f), new Vector2(0.5f, 1.1f), hide, 12, -20f);
         Shape(v, "Fist", true, new Vector2(1.0f, 1.95f), new Vector2(0.45f, 0.4f), hide, 13);
         return glowGo.GetComponent<SpriteRenderer>();
+    }
+
+    /// <summary>
+    /// Đại Bàng Tinh (Hồi 4): chim yêu khổng lồ lông nâu, đầu trắng, mỏ quặp vàng, cánh xoè rộng, lông cánh vàng phát sáng.
+    /// Có ảnh vẽ "DaiBang" trong Art/Enemies thì dùng ảnh (quầng mờ sau cánh), không thì ghép hình khối.
+    /// </summary>
+    static GameObject BuildEagle(GameObject minion)
+    {
+        var root = Root("Eagle", kinematic: false, hp: 28);
+        root.GetComponent<Rigidbody>().mass = 5f;
+        AddBox(root, new Vector3(1.8f, 2.4f, 1.1f));
+        var v = Visual(root);
+        Color plume = new Color(0.45f, 0.3f, 0.18f), gold = new Color(1f, 0.75f, 0.3f);
+        bool art = Art(v, "DaiBang", 3.2f, Vector2.zero, 8) != null;
+        var glow = art
+            ? Halos(v, new[] { new Vector3(-1.2f, 2f, 1.4f), new Vector3(1.1f, 2.1f, 1.3f), new Vector3(0.6f, 2.7f, 0.4f) }, gold, 1)
+            : EagleShapes(v, plume, gold);
+        var ai = root.AddComponent<BossEagle>();
+        BossCommon(ai, root, v, plume, "Đại Bàng Tinh", "long_dai_bang", 2.4f);
+        ai.minionPrefab = minion;
+        ai.glowParts = glow.ToArray();
+        ai.glowAlpha = art ? ArtGlowAlpha : 1f;
+        return root;
+    }
+
+    /// <summary>Đại Bàng Tinh ghép hình khối: trả về mắt và lông cánh phát sáng.</summary>
+    static List<SpriteRenderer> EagleShapes(Transform v, Color plume, Color gold)
+    {
+        Color dark = new Color(0.3f, 0.2f, 0.12f), head = new Color(0.95f, 0.92f, 0.85f), beak = new Color(1f, 0.78f, 0.25f);
+        Shape(v, "WingBack", false, new Vector2(-0.9f, 1.9f), new Vector2(2.2f, 0.9f), dark, 4, 25f);
+        Shape(v, "LegBack", false, new Vector2(-0.2f, 0.3f), new Vector2(0.14f, 0.6f), beak, 5);
+        Shape(v, "Tail", false, new Vector2(-1.0f, 0.9f), new Vector2(0.9f, 0.4f), dark, 6, -20f);
+        Shape(v, "Body", true, new Vector2(0f, 1.3f), new Vector2(1.5f, 1.6f), plume, 7);
+        Shape(v, "Chest", true, new Vector2(0.3f, 1.2f), new Vector2(0.8f, 1.1f), Color.Lerp(plume, head, 0.4f), 8);
+        Shape(v, "LegFront", false, new Vector2(0.25f, 0.3f), new Vector2(0.14f, 0.6f), beak, 9);
+        Shape(v, "Talons", false, new Vector2(0.3f, 0.05f), new Vector2(0.4f, 0.1f), dark, 10);
+        Shape(v, "Neck", true, new Vector2(0.45f, 2.15f), new Vector2(0.6f, 0.6f), head, 10);
+        Shape(v, "WingFront", false, new Vector2(-0.4f, 1.7f), new Vector2(2f, 0.8f), plume, 11, 15f);
+        Shape(v, "Head", true, new Vector2(0.65f, 2.55f), new Vector2(0.75f, 0.65f), head, 12);
+        Shape(v, "Beak", false, new Vector2(1.1f, 2.45f), new Vector2(0.45f, 0.2f), beak, 13, -15f);
+        Shape(v, "BeakHook", true, new Vector2(1.3f, 2.35f), new Vector2(0.14f, 0.16f), beak, 13);
+        var glow = new List<SpriteRenderer>
+        {
+            Unlit(Shape(v, "Eye", true, new Vector2(0.8f, 2.62f), new Vector2(0.14f, 0.12f), gold, 14)).GetComponent<SpriteRenderer>(),
+        };
+        for (int i = 0; i < 4; i++)
+            glow.Add(Unlit(Shape(v, "Feather", false, new Vector2(-1.5f + i * 0.35f, 1.35f - i * 0.05f), new Vector2(0.16f, 0.5f), gold, 12, 20f))
+                     .GetComponent<SpriteRenderer>());
+        return glow;
     }
 
     // ───────────────────────────── Dựng chung ─────────────────────────────

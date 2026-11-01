@@ -29,10 +29,11 @@ public static class ZodiacQuests
         "Làng Quê", "Cánh Đồng Lúa", "Rừng Trúc", "Đầm Sen", "Chợ Phiên Ma", "Hang Đá Vôi", "Bờ Hồ Tây", "Động Hồ Tinh",
         "Phố Cổ Thăng Long", "Hoàng Thành", "Cổng Đoan Môn",
         "Cửa Biển Thần Phù", "Biển Đông", "Long Cung",
+        "Chân núi Tản Viên", "Đỉnh Tản Viên", "Thiên Đình",
     };
 
     /// <summary>Màn cuối mỗi hồi (đếm từ 1) — nhiệm vụ thưởng lớn hơn.</summary>
-    static bool ActFinale(int level) => level == 8 || level == 11 || level == 14;
+    static bool ActFinale(int level) => level == 8 || level == 11 || level == 14 || level == 16 || level == 17;
 
     public static readonly Quest[] All = Build();
 
@@ -52,6 +53,8 @@ public static class ZodiacQuests
                 text = level == 8 ? "Xuống động dưới đáy Hồ Tây, hạ Hồ Tinh và ghép lại Trống Đồng Thiên Âm."
                      : level == 11 ? "Hạ Chằn Tinh mang hồn Hồ Tinh ở cổng Đoan Môn, giành Âm Phù thứ mười một."
                      : level == 14 ? "Xuống Long Cung, giải bùa mê cho Thuồng Luồng Biển Đông và giành Âm Phù thứ mười hai."
+                     : level == 16 ? "Lên đỉnh Tản Viên, hạ Đại Bàng Tinh đang canh đường lên Thiên Đình."
+                     : level == 17 ? "Đánh bại Hồ Tinh Cửu Vĩ ở điện Lăng Tiêu, để Khúc Giao Thừa vang lên."
                      : $"Dọn sạch quái ở {LevelNames[i]} và đi tới cuối màn.",
                 progress = p => p.unlockedLevels > level ? 1 : 0,
                 coins = 40 + i * 30, xp = 30 + i * 25,
@@ -76,7 +79,7 @@ public static class ZodiacQuests
         {
             ("Enemy_LinhDatNung", 30, 60), ("Enemy_LinhKhien", 15, 70), ("Enemy_BoGaiLan", 15, 70),
             ("Enemy_MaTroi", 15, 80), ("Enemy_CocTia", 10, 90), ("Enemy_ThachSu", 8, 100),
-            ("Boss_ThuongLuong", 1, 150), ("Boss_OngBaBi", 1, 150), ("Boss_ChanTinh", 1, 200), ("Boss_HoTinh", 1, 300),
+            ("Boss_ThuongLuong", 1, 150), ("Boss_OngBaBi", 1, 150), ("Boss_ChanTinh", 1, 200), ("Boss_HoTinh", 1, 300), ("Boss_DaiBang", 1, 250),
         };
         foreach (var (id, target, coins) in hunts)
         {
