@@ -4,15 +4,15 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Ảnh quái: tách nền trắng của ảnh gốc (vẽ bằng AI / tự vẽ, đặt ở Assets/Zodiac/Art/Enemies/Raw) thành sprite nền trong suốt
+/// Ảnh quái: tách nền trắng của ảnh gốc (vẽ bằng AI / tự vẽ, đặt ở ArtSource/Enemies — ngoài Assets nên Unity không nhập) thành sprite nền trong suốt
 /// ở Assets/Zodiac/Art/Enemies. Nền được loang từ mép ảnh vào nên phần trắng nằm trong thân (ngực, đốm sáng) vẫn giữ;
 /// viền giáp nền được làm mờ và khử quầng trắng. Ảnh cắt sát hình, pivot ở chân (quái bay / đồ vật: ở giữa).
-/// Menu: Tools/Zodiac/Tách nền ảnh quái. <see cref="ZodiacEnemyFactory"/> dùng sprite nếu có, không thì ghép hình khối.
+/// Sprite đã tách được commit cùng .meta (GUID cố định giữa các máy). Menu: Tools/Zodiac/Tách nền ảnh quái. <see cref="ZodiacEnemyFactory"/> dùng sprite nếu có, không thì ghép hình khối.
 /// </summary>
 public static class ZodiacEnemyArt
 {
     public const string Folder = "Assets/Zodiac/Art/Enemies";
-    const string RawFolder = Folder + "/Raw";
+    const string RawFolder = "ArtSource/Enemies";   // tính từ thư mục dự án
 
     /// <summary>Tên sprite pivot ở giữa (bay lơ lửng hoặc là đồ vật), còn lại pivot ở chân.</summary>
     static readonly HashSet<string> CenterPivot = new HashSet<string> { "MaTroi", "Giao", "Khien", "ChuyDa" };

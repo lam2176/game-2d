@@ -176,7 +176,12 @@ let catalog = { items:{}, beasts:{}, quests:{} };
 let accounts = [], onlineSince = "", sort = { col:"last_seen_at", asc:false };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-const fmt = n => Number(n || 0).toLocaleString("vi-VN");
+const fmt = n => num(n).toLocaleString("vi-VN");
+// Số lấy từ hồ sơ người chơi gửi lên: ép về số để chuỗi lạ không lọt vào HTML
+const num = v => Number.isFinite(+v) ? +v : 0;
+// data-tip được đưa vào tooltip bằng innerHTML, mà trình duyệt giải mã thực thể trong thuộc tính một lần.
+// Vì vậy dữ liệu bên trong phải esc() trước, rồi cả đoạn HTML esc() thêm lần nữa khi gắn vào thuộc tính.
+const tipAttr = html => esc(html);
 const when = s => s ? new Date(s).toLocaleString("vi-VN", { dateStyle:"short", timeStyle:"short" }) : "—";
 const ago = s => {
   if (!s) return "—";
@@ -218,13 +223,13 @@ async function loadOverview() {
   const maxChar = Math.max(1, ...o.characters.map(c => c.count));
   const hbars = ORDER.map(k => {
     const c = byChar[k] || { count:0, avg_level:0, max_level:0, play_seconds:0 };
-    return `<div class="hbar" data-tip="<b>${esc(NAMES[k])}</b><br>${c.count} người · cấp TB ${c.avg_level || 0} · cao nhất ${c.max_level || 0}<br>Tổng ${hours(c.play_seconds)}">
+    return `<div class="hbar" data-tip="${tipAttr(`<b>${esc(NAMES[k])}</b><br>${num(c.count)} người · cấp TB ${num(c.avg_level)} · cao nhất ${num(c.max_level)}<br>Tổng ${hours(c.play_seconds)}`)}">
       <span>${esc(NAMES[k])}</span><div class="track"><div class="fill" style="width:${c.count / maxChar * 100}%"></div></div>
       <span class="val">${c.count} <span class="faint">· cấp ${c.avg_level || 0}</span></span></div>`;
   }).join("");
   const vbars = (rows, label, tipText) => {
     const max = Math.max(1, ...rows.map(r => r.v));
-    return `<div class="vbars">${rows.map(r => `<div class="vbar" data-tip="${tipText(r)}"><span class="top">${r.v || ""}</span>
+    return `<div class="vbars">${rows.map(r => `<div class="vbar" data-tip="${tipAttr(tipText(r))}"><span class="top">${r.v || ""}</span>
         <div class="col" style="height:${r.v / max * 100}%"></div></div>`).join("")}</div>
       <div class="vlabels">${rows.map(r => `<span>${label(r)}</span>`).join("")}</div>`;
   };
@@ -257,10 +262,10 @@ async function loadOverview() {
     <div class="three" style="margin-top:16px">
       <div class="card"><h2>Cấp cao nhất</h2><div class="list">${o.top.map((a, i) => `<div><span><span class="faint">${i + 1}.</span>
         <span class="link" data-open="${a.id}">${esc(a.username)}</span> <span class="muted">${esc(charName(a.character))}</span></span>
-        <span class="num">cấp ${a.level}</span></div>`).join("") || `<div class="muted">Chưa có</div>`}</div></div>
+        <span class="num">cấp ${num(a.level)}</span></div>`).join("") || `<div class="muted">Chưa có</div>`}</div></div>
       <div class="card"><h2>Hoạt động gần đây</h2><div class="list">${o.recent.map(e => `<div><span>
         <span class="link" data-open="${e.id}">${esc(e.username)}</span> <span class="muted">${esc(KIND[e.kind] || e.kind)}</span></span>
-        <span class="faint" data-tip="${esc(when(e.at))} · IP ${esc(e.ip || "?")}">${ago(e.at)}</span></div>`).join("") || `<div class="muted">Chưa có</div>`}</div></div>
+        <span class="faint" data-tip="${tipAttr(`${esc(when(e.at))} · IP ${esc(e.ip || "?")}`)}">${ago(e.at)}</span></div>`).join("") || `<div class="muted">Chưa có</div>`}</div></div>
       <div class="card"><h2>Mới đăng ký</h2><div class="list">${o.newest.map(a => `<div><span>
         <span class="link" data-open="${a.id}">${esc(a.username)}</span> <span class="muted">${esc(charName(a.character))}</span></span>
         <span class="faint">${ago(a.created_at)}</span></div>`).join("") || `<div class="muted">Chưa có</div>`}</div></div>
@@ -273,18 +278,18 @@ const COLS = [
   ["#", "id", a => `<span class="faint">${a.id}</span>`, "r"],
   ["Tài khoản", "username", a => `<b>${esc(a.username)}</b>`],
   ["Con giáp", "character", a => esc(charName(a.character))],
-  ["Cấp", "level", a => a.level, "r"],
+  ["Cấp", "level", a => num(a.level), "r"],
   ["XP", "xp", a => a.xp == null ? "—" : `${fmt(a.xp)}<span class="faint">/${fmt(xpToNext(a.level))}</span>`, "r"],
   ["Đồng", "coins", a => fmt(a.coins), "r"],
-  ["Màn", "unlocked_levels", a => `${a.unlocked_levels}/${STAGES}`, "r"],
+  ["Màn", "unlocked_levels", a => `${num(a.unlocked_levels)}/${STAGES}`, "r"],
   ["Độ khó", "difficulty", a => DIFF[a.difficulty] || "—"],
   ["Quái hạ", "kills", a => fmt(a.kills), "r"],
-  ["Tháp", "tower_best", a => a.tower_best ? `${a.tower_best} tầng` : "—", "r"],
-  ["Phá đảo", "endings", a => `${a.endings}/12`, "r"],
+  ["Tháp", "tower_best", a => a.tower_best ? `${num(a.tower_best)} tầng` : "—", "r"],
+  ["Phá đảo", "endings", a => `${num(a.endings)}/12`, "r"],
   ["Giờ chơi", "play_seconds", a => hours(a.play_seconds), "r"],
-  ["Hoạt động", "last_seen_at", a => `<span data-tip="${esc(when(a.last_seen_at))}">${ago(a.last_seen_at)}</span>`],
+  ["Hoạt động", "last_seen_at", a => `<span data-tip="${tipAttr(esc(when(a.last_seen_at)))}">${ago(a.last_seen_at)}</span>`],
   ["Tạo lúc", "created_at", a => when(a.created_at)],
-  ["Trạng thái", "banned", a => a.banned ? `<span class="badge ban" data-tip="${esc(a.ban_reason || "Không ghi lý do")}">Bị khoá</span>` : `<span class="badge ok">Bình thường</span>`],
+  ["Trạng thái", "banned", a => a.banned ? `<span class="badge ban" data-tip="${tipAttr(esc(a.ban_reason || "Không ghi lý do"))}">Bị khoá</span>` : `<span class="badge ok">Bình thường</span>`],
 ];
 
 async function loadPlayers() {
@@ -342,9 +347,9 @@ const PANES = {
       <div class="grid">
         <div class="card"><div class="kv">
           <div><span>Con giáp</span><b>${esc(charName(a.character))}</b></div>
-          <div><span>Cấp</span><b>${a.level}</b></div>
+          <div><span>Cấp</span><b>${num(a.level)}</b></div>
           <div><span>Đồng</span><b>${fmt(a.coins)}</b></div>
-          <div><span>Màn đã mở</span><b>${a.unlocked_levels}/${STAGES}</b></div>
+          <div><span>Màn đã mở</span><b>${num(a.unlocked_levels)}/${STAGES}</b></div>
           <div><span>Độ khó</span><b>${DIFF[p?.difficulty] || "—"}${p?.nightmareUnlocked ? " · đã mở Ác Mộng" : ""}</b></div>
           <div><span>Thời gian chơi</span><b>${hours(a.play_seconds)}</b></div>
           <div><span>Tạo tài khoản</span><b>${when(a.created_at)}</b></div>
@@ -352,27 +357,27 @@ const PANES = {
           <div><span>Hoạt động cuối</span><b>${when(a.last_seen_at)}</b></div>
           <div><span>Lưu cuối</span><b>${when(a.saved_at)}</b></div>
           <div><span>Số lần lưu</span><b>${fmt(a.save_count)}</b></div>
-          <div><span>Phiên đang mở</span><b>${a.sessions}</b></div>
-          <div><span>Sai mật khẩu liên tiếp</span><b>${a.failed_logins}${a.locked_until && a.locked_until > new Date().toISOString() ? " · đang khoá tạm" : ""}</b></div>
+          <div><span>Phiên đang mở</span><b>${num(a.sessions)}</b></div>
+          <div><span>Sai mật khẩu liên tiếp</span><b>${num(a.failed_logins)}${a.locked_until && a.locked_until > new Date().toISOString() ? " · đang khoá tạm" : ""}</b></div>
           <div><span>Dung lượng hồ sơ</span><b>${a.profile ? fmt(a.profile.length) + " byte" : "—"}</b></div>
         </div></div>
         ${prog ? `<div class="card"><h2>Tu luyện — ${esc(charName(a.character))}</h2>
-          <div class="kv"><div><span>Cấp ${prog.level}/${MAX_LEVEL}</span><b>${fmt(prog.xp)} / ${fmt(xpToNext(prog.level))} XP</b>
-            <div class="xp"><div style="width:${xpToNext(prog.level) ? Math.min(100, prog.xp / xpToNext(prog.level) * 100) : 100}%"></div></div></div>
-            <div><span>Điểm chưa cộng</span><b>${prog.points}</b></div></div>
+          <div class="kv"><div><span>Cấp ${num(prog.level)}/${MAX_LEVEL}</span><b>${fmt(prog.xp)} / ${fmt(xpToNext(num(prog.level)))} XP</b>
+            <div class="xp"><div style="width:${xpToNext(num(prog.level)) ? Math.min(100, num(prog.xp) / xpToNext(num(prog.level)) * 100) : 100}%"></div></div></div>
+            <div><span>Điểm chưa cộng</span><b>${num(prog.points)}</b></div></div>
           <div class="stats4" style="margin-top:12px">
-            <div><span>Sinh lực</span><b>${prog.vitality}</b></div><div><span>Nội khí</span><b>${prog.spirit}</b></div>
-            <div><span>Sức mạnh</span><b>${prog.strength}</b></div><div><span>Thân pháp</span><b>${prog.agility}</b></div>
-            <div><span>Huyết Đan</span><b>${prog.bloodPills}</b></div><div><span>Khí Đan</span><b>${prog.energyPills}</b></div>
+            <div><span>Sinh lực</span><b>${num(prog.vitality)}</b></div><div><span>Nội khí</span><b>${num(prog.spirit)}</b></div>
+            <div><span>Sức mạnh</span><b>${num(prog.strength)}</b></div><div><span>Thân pháp</span><b>${num(prog.agility)}</b></div>
+            <div><span>Huyết Đan</span><b>${num(prog.bloodPills)}</b></div><div><span>Khí Đan</span><b>${num(prog.energyPills)}</b></div>
           </div></div>` : ""}
         ${p ? `<div class="card"><h2>Sửa nhanh<small>lưu xong người chơi bị đăng xuất để tải bản mới</small></h2>
           <div class="form">
-            <label>Đồng<input id="eCoins" type="number" min="0" value="${p.coins}"></label>
-            <label>Màn đã mở<input id="eStage" type="number" min="1" max="${STAGES}" value="${p.unlockedLevels}"></label>
+            <label>Đồng<input id="eCoins" type="number" min="0" value="${num(p.coins)}"></label>
+            <label>Màn đã mở<input id="eStage" type="number" min="1" max="${STAGES}" value="${num(p.unlockedLevels)}"></label>
             <label>Độ khó<select id="eDiff">${DIFF.map((d, i) => `<option value="${i}" ${p.difficulty === i ? "selected" : ""}>${d}</option>`).join("")}</select></label>
-            ${prog ? `<label>Cấp<input id="eLevel" type="number" min="1" max="${MAX_LEVEL}" value="${prog.level}"></label>
-            <label>XP<input id="eXp" type="number" min="0" value="${prog.xp}"></label>
-            <label>Điểm tu luyện<input id="ePoints" type="number" min="0" value="${prog.points}"></label>` : ""}
+            ${prog ? `<label>Cấp<input id="eLevel" type="number" min="1" max="${MAX_LEVEL}" value="${num(prog.level)}"></label>
+            <label>XP<input id="eXp" type="number" min="0" value="${num(prog.xp)}"></label>
+            <label>Điểm tu luyện<input id="ePoints" type="number" min="0" value="${num(prog.points)}"></label>` : ""}
             <button id="quickSave" style="align-self:end">Lưu</button>
           </div></div>` : `<div class="card muted">Chưa có hồ sơ (người chơi chưa vào game lần nào).</div>`}
       </div>`;
@@ -384,13 +389,13 @@ const PANES = {
     const cell = (s, label, where, i) => {
       if (!s || !s.id || s.count <= 0) return `<div class="slot empty"><div class="t">${label}</div><div class="faint">Trống</div></div>`;
       const def = catalog.items[s.id] || {};
-      const affixes = (s.affixes || []).map(m => `<li>${STAT[m.stat] || "?"} ${m.kind === 1 ? "+" + Math.round(m.value * 100) + "%" :
-        (m.stat === 5 || m.stat === 6 ? "+" + Math.round(m.value * 100) + "%" : "+" + Math.round(m.value * 10) / 10)}</li>`).join("");
+      const affixes = (s.affixes || []).map(m => `<li>${STAT[m.stat] || "?"} ${m.kind === 1 ? "+" + Math.round(num(m.value) * 100) + "%" :
+        (m.stat === 5 || m.stat === 6 ? "+" + Math.round(num(m.value) * 100) + "%" : "+" + Math.round(num(m.value) * 10) / 10)}</li>`).join("");
       const gems = (s.gems || []).map(g => `<li>Ngọc: ${esc(itemName(g))}</li>`).join("");
-      return `<div class="slot rar-${def.rarity || "Common"}" data-tip="${esc(RARITY[def.rarity] || "")}${def.price ? " · giá " + def.price + " đồng" : ""}<br><span class='faint'>${esc(s.id)}</span>">
+      return `<div class="slot rar-${esc(def.rarity || "Common")}" data-tip="${tipAttr(`${esc(RARITY[def.rarity] || "")}${def.price ? " · giá " + num(def.price) + " đồng" : ""}<br><span class='faint'>${esc(s.id)}</span>`)}">
         <button class="x" data-del="${where}:${i}" title="Xoá">✕</button>
         <div class="t">${label}</div>
-        <div class="n">${esc(itemName(s.id))}${s.level ? ` <span style="color:var(--gold)">+${s.level}</span>` : ""}${s.count > 1 ? ` <span class="muted">×${s.count}</span>` : ""}</div>
+        <div class="n">${esc(itemName(s.id))}${num(s.level) ? ` <span style="color:var(--gold)">+${num(s.level)}</span>` : ""}${num(s.count) > 1 ? ` <span class="muted">×${num(s.count)}</span>` : ""}</div>
         ${affixes || gems ? `<ul>${affixes}${gems}</ul>` : ""}</div>`;
     };
     const used = p.bag.filter(s => s.id && s.count > 0).length;
@@ -413,7 +418,7 @@ const PANES = {
   records() {
     const p = profile;
     if (!p) return `<div class="card muted">Chưa có hồ sơ.</div>`;
-    const kills = [...(p.kills || [])].sort((a, b) => b.count - a.count);
+    const kills = (Array.isArray(p.kills) ? p.kills : []).map(k => ({ id:String(k?.id ?? ""), count:num(k?.count) })).sort((a, b) => b.count - a.count);
     const total = kills.reduce((n, k) => n + k.count, 0);
     const maxKill = Math.max(1, ...kills.map(k => k.count));
     return `
@@ -423,7 +428,7 @@ const PANES = {
           <div class="track"><div class="fill" style="width:${k.count / maxKill * 100}%"></div></div><span class="val">${fmt(k.count)}</span></div>`).join("")
           || `<div class="muted">Chưa hạ con nào</div>`}</div></div>
         <div class="grid">
-          <div class="card"><h2>Tháp Mười Hai Canh Giờ</h2>${p.towerBest ? `<b>${p.towerBest} tầng</b> <span class="muted">— lập bằng ${esc(charName(p.towerBestCharacter))}</span>` : `<span class="muted">Chưa leo tháp</span>`}</div>
+          <div class="card"><h2>Tháp Mười Hai Canh Giờ</h2>${num(p.towerBest) ? `<b>${num(p.towerBest)} tầng</b> <span class="muted">— lập bằng ${esc(charName(p.towerBestCharacter))}</span>` : `<span class="muted">Chưa leo tháp</span>`}</div>
           <div class="card"><h2>Kết thúc đã xem<small>${(p.endingsSeen || []).length}/12</small></h2>
             <div class="chips">${(p.endingsSeen || []).map(e => `<span>${esc(charName(e))}</span>`).join("") || `<span class="muted" style="border:0;background:none">Chưa phá đảo</span>`}</div></div>
           <div class="card"><h2>Nhiệm vụ đã nhận thưởng<small>${(p.questsClaimed || []).length}</small></h2>
