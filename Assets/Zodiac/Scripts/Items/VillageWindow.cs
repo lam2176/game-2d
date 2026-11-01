@@ -627,10 +627,10 @@ public partial class VillageWindow : MonoBehaviour
             int index = i;
             bool open = i < p.unlockedLevels;
             string title = i < levelTitles.Length ? levelTitles[i] : levelScenes[i];
-            // Hai cột cho đủ chỗ 8 màn
+            // Hai cột, hàng thấp cho đủ chỗ 11 màn (Hồi 1 + Hồi 2)
             var b = ZodiacUi.MakeButton(content, open ? title : $"{title}  (chưa mở)", new Vector2(0.5f, 1f),
-                                        new Vector2(i % 2 == 0 ? -360f : 360f, -180f - (i / 2) * 94f),
-                                        new Vector2(680f, 80f), () =>
+                                        new Vector2(i % 2 == 0 ? -360f : 360f, -170f - (i / 2) * 74f),
+                                        new Vector2(680f, 64f), () =>
                                         {
                                             Close();
                                             ScreenFader.LoadScene(levelScenes[index]);
@@ -639,7 +639,7 @@ public partial class VillageWindow : MonoBehaviour
         }
 
         // Độ khó
-        float y = -200f - (levelScenes.Length + 1) / 2 * 94f;
+        float y = -180f - (levelScenes.Length + 1) / 2 * 74f;
         ZodiacUi.MakeText(content, "Độ khó", 32, ZodiacUi.Gold, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(600f, 44f)).fontStyle = FontStyle.Bold;
         for (int d = 0; d < ZodiacDifficulty.Names.Length; d++)
         {
@@ -647,7 +647,7 @@ public partial class VillageWindow : MonoBehaviour
             bool unlocked = ZodiacDifficulty.IsUnlocked(d, p);
             bool chosen = p.difficulty == d;
             string label = ZodiacDifficulty.Names[d] + (unlocked ? "" : " (khoá)");
-            var b = ZodiacUi.MakeButton(content, label, new Vector2(0.5f, 1f), new Vector2((d - 1) * 330f, y - 70f), new Vector2(310f, 64f), () =>
+            var b = ZodiacUi.MakeButton(content, label, new Vector2(0.5f, 1f), new Vector2((d - 1) * 330f, y - 60f), new Vector2(310f, 56f), () =>
             {
                 if (PlayerProfile.Current.SetDifficulty(level) && ZodiacResources.Get != null) Sound(ZodiacResources.Get.coin, 0.6f);
                 Refresh();
@@ -657,9 +657,9 @@ public partial class VillageWindow : MonoBehaviour
         }
         int current = Mathf.Clamp(p.difficulty, 0, ZodiacDifficulty.Help.Length - 1);
         ZodiacUi.MakeText(content, ZodiacDifficulty.Help[current], 24, ZodiacDifficulty.Colors[current],
-                          new Vector2(0.5f, 1f), new Vector2(0f, y - 135f), new Vector2(1300f, 36f));
+                          new Vector2(0.5f, 1f), new Vector2(0f, y - 115f), new Vector2(1300f, 36f));
 
-        ZodiacUi.MakeText(content, "Thắng một màn để mở màn kế. Đánh lại màn cũ để kiếm thêm đồ và nguyên liệu.", 24, ZodiacUi.Muted,
-                          new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(1300f, 40f));
+        ZodiacUi.MakeText(content, "Thắng một màn để mở màn kế — phá Động Hồ Tinh thì mở Hồi 2 ở Kinh thành. Đánh lại màn cũ để kiếm thêm đồ.", 22, ZodiacUi.Muted,
+                          new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(1400f, 36f));
     }
 }

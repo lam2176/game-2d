@@ -36,6 +36,8 @@ public class ZodiacGameManager : MonoBehaviour
     public string levelTitle = "";
     [Tooltip("Thứ tự màn (0 = màn 1) — thắng thì mở màn kế trong hồ sơ.")]
     public int levelIndex;
+    [Tooltip("Hồi của màn — thắng màn cuối Hồi 2 thì xem kết hồi thay cho kết thúc riêng của con giáp.")]
+    public int act = 1;
     [Tooltip("Scene Làng Trung Tâm (nút Về làng).")]
     public string villageScene = "";
     [Tooltip("Scene này là làng (không có khu, quái).")]
@@ -318,6 +320,11 @@ public class ZodiacGameManager : MonoBehaviour
                 if (!final)
                 {
                     winPanel.SetActive(true);
+                    return;
+                }
+                if (act >= 2)
+                {
+                    StoryUi.ShowPanels(ZodiacStory.Act2Ending, () => winPanel.SetActive(true));
                     return;
                 }
                 int total = player.roster != null ? player.roster.Count : 12;

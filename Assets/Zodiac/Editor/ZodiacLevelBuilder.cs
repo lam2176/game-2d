@@ -83,6 +83,7 @@ public static partial class ZodiacLevelBuilder
             case Backdrop.Market: BuildMarket(); break;
             case Backdrop.Limestone: BuildLimestone(); break;
             case Backdrop.Lakeshore: BuildLakeshore(); break;
+            case Backdrop.Citadel: BuildCitadel(); break;
             default: BuildCave(); break;
         }
         if (IsNight) BuildMoon();
@@ -108,7 +109,9 @@ public static partial class ZodiacLevelBuilder
         manager.laneMinZ = def.laneMin;
         manager.laneMaxZ = def.laneMax;
         manager.music = ZodiacVisualSetup.Clip(MusicFor(Base(def.backdrop)));
-        manager.stoneFootsteps = Base(def.backdrop) == Backdrop.Cave || def.backdrop == Backdrop.Market || def.backdrop == Backdrop.Lakeshore;
+        manager.stoneFootsteps = Base(def.backdrop) == Backdrop.Cave || def.backdrop == Backdrop.Market || def.backdrop == Backdrop.Lakeshore ||
+                                 def.backdrop == Backdrop.Citadel;
+        manager.act = def.act;
         var canvas = BuildHud(manager, player);
         if (def.hub) BuildHub(manager);
         else BuildRooms(manager, canvas);
@@ -277,6 +280,7 @@ public static partial class ZodiacLevelBuilder
         Material road = def.backdrop switch
         {
             Backdrop.Market or Backdrop.Lakeshore => Mat("StoneRoad", t.cobble.texture, def.stone),
+            Backdrop.Citadel => Mat("PalacePaving", t.brick.texture, def.stone),
             Backdrop.Pond => Mat("BridgePlanks", t.plank.texture, def.plank),
             Backdrop.Field => Mat("DirtRoad", t.soil.texture, def.soil),
             Backdrop.Limestone => Mat("WetRock", t.cobble.texture, def.stone, 0.45f),
@@ -863,7 +867,7 @@ public static partial class ZodiacLevelBuilder
             BuildRoomGimmick(go.transform, i, stage, xMin, xMax);
             zone.waves = new EncounterZone.Wave[stage.waves.Length];
             for (int w = 0; w < stage.waves.Length; w++) zone.waves[w] = ParseWave(xMin, xMax, w, stage.waves[w]);
-            if (stage.boss) BuildBoss(zone, xMin, xMax, canvas, stage.bossKind);
+            if (stage.boss) BuildBoss(zone, xMin, xMax, canvas, stage);
             if (stage.secret && !last) BuildSecret(root, go.transform, i, stage, xMax);
             // Cổng đích sát mép phải (như lối ra các khu khác): đánh xong cứ đi sang phải là tới
             if (def.tower) { }   // tháp: không có cổng đích, TowerRun lo các tầng
@@ -1163,9 +1167,9 @@ public static partial class ZodiacLevelBuilder
         return new EncounterZone.Wave { spawns = spawns.ToArray() };
     }
 
-    static void BuildBoss(EncounterZone zone, float xMin, float xMax, Transform canvas, BossKind kind)
+    static void BuildBoss(EncounterZone zone, float xMin, float xMax, Transform canvas, ZodiacLevelData.Stage stage)
     {
-        var prefab = kind switch
+        var prefab = stage.bossKind switch
         {
             BossKind.ThuongLuong => ctx.prefabs.serpent,
             BossKind.OngBaBi => ctx.prefabs.bogeyman,
@@ -1175,7 +1179,9 @@ public static partial class ZodiacLevelBuilder
         var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
         go.transform.position = new Vector3(Mathf.Lerp(xMin, xMax, 0.72f), 0.05f, LaneCenter);
         var boss = go.GetComponent<BossBase>();
+        if (!string.IsNullOrEmpty(stage.bossName)) boss.bossName = stage.bossName;
         zone.boss = boss;
+        zone.bossScale = stage.bossScale;
         zone.bossMusic = ZodiacVisualSetup.Clip("Music/music_boss");
 
         // Thanh máu boss trên HUD
@@ -1240,6 +1246,12 @@ public static partial class ZodiacLevelBuilder
                 fog = Color.Lerp(def.sky, new Color(0.3f, 0.2f, 0.35f), 0.3f);
                 fogStart = 18f; fogEnd = 80f;
                 break;
+            case Backdrop.Citadel:     // nắng vàng trên tường thành (màn chiều thì đỏ hơn theo màu trời)
+                ZodiacLights.AddSun(lights, Color.Lerp(new Color(1f, 0.88f, 0.7f), def.sky, 0.3f), 1.3f, new Vector3(40f, -35f, 0f), 0.8f);
+                ambient = Color.Lerp(new Color(0.56f, 0.52f, 0.5f), def.sky, 0.15f);
+                fog = Color.Lerp(def.sky, Color.white, 0.1f);
+                fogStart = 26f; fogEnd = 120f;
+                break;
             case Backdrop.Limestone:   // hang ấm, sáng từ lỗ trần
                 ZodiacLights.AddSun(lights, new Color(1f, 0.85f, 0.65f), 0.55f, new Vector3(80f, -10f, 0f), 0.6f);
                 ambient = new Color(0.34f, 0.28f, 0.22f);
@@ -1286,6 +1298,7 @@ public static partial class ZodiacLevelBuilder
             Backdrop.Pond => ZodiacVisualSetup.EnsureVolumeProfile("Pond", 0.9f, 0.34f, 8f, 10f, new Color(0.88f, 0.93f, 1f)),
             Backdrop.Market => ZodiacVisualSetup.EnsureVolumeProfile("Market", 0.85f, 0.3f, 14f, 12f, new Color(1f, 0.9f, 0.95f)),
             Backdrop.Limestone => ZodiacVisualSetup.EnsureVolumeProfile("Limestone", 0.7f, 0.3f, 6f, 12f, new Color(1f, 0.95f, 0.88f)),
+            Backdrop.Citadel => ZodiacVisualSetup.EnsureVolumeProfile("Citadel", 0.5f, 0.24f, 16f, 12f, new Color(1f, 0.95f, 0.88f)),
             Backdrop.Lakeshore => ZodiacVisualSetup.EnsureVolumeProfile("Lakeshore", 0.95f, 0.32f, 6f, 10f, new Color(0.88f, 0.92f, 1f)),
             _ => ZodiacVisualSetup.EnsureVolumeProfile("Cave", 0.9f, 0.32f, 6f, 14f, new Color(0.95f, 0.93f, 1f)),
         };

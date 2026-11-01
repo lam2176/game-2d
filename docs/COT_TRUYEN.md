@@ -33,7 +33,7 @@ nhờ oán khí của những năm tháng con người quên lời ông bà. Đ�
 | Hồi | Nơi | Âm Phù | Boss | Ghi chú |
 |---|---|---|---|---|
 | 1 | Làng Quê → Cánh Đồng Lúa → Rừng Trúc → Đầm Sen → Chợ Phiên Ma → Hang Đá Vôi → Bờ Hồ Tây → Động Hồ Tinh | 8 | Thuồng Luồng (Đầm Sen), Ông Ba Bị (Chợ Phiên Ma), Chằn Tinh (Hang Đá Vôi), Hồ Tinh (hình người, 3 đuôi) | Đã có màn chơi (8 Âm Phù), mỗi màn một bộ cảnh riêng, quái trùm giữa màn và khu bí mật. Hồ Tinh thua, bỏ chạy, để lộ nó còn 6 đuôi nữa. |
-| 2 | Kinh thành Thăng Long (phố cổ, hoàng thành) | 3 | Chằn Tinh (truyện Thạch Sanh) | Hồ Tinh mượn xác chằn tinh giữ cổng thành. |
+| 2 | Kinh thành Thăng Long: Phố Cổ → Hoàng Thành → Cổng Đoan Môn | 3 | Chằn Tinh — Hồ Tinh nhập (Cổng Đoan Môn) | Đã có màn chơi (màn 9–11, mở sau khi phá Hồi 1), cảnh Kinh thành riêng (tường thành, lầu ngói vàng, thềm rồng). Hồ Tinh mượn xác chằn tinh giữ cổng thành, thua thì còn năm đuôi, chạy ra Biển Đông. |
 | 3 | Biển Đông → Long Cung | 3 | Thuồng Luồng | Rồng gặp lại tổ tiên; truyện Lạc Long Quân. |
 | 4 | Núi Tản Viên → Thiên Đình | 3 | Đại Bàng Tinh → Hồ Tinh Cửu Vĩ | Trận cuối: đủ chín đuôi, đánh trên mây. |
 

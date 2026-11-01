@@ -9,6 +9,8 @@ using static ZodiacLevelData;
 ///   • Chợ Phiên Ma: dãy sạp mái vải sọc, hàng hoá, nhà ống, dây đèn lồng đỏ; nhiều thúng, hũ đập vỡ; bẫy bếp than hàng nướng.
 ///   • Hang Đá Vôi: nhũ đá rủ từ trần, cột sáng lọt qua lỗ trần, suối ngầm, ruộng bậc thạch nhũ; nhũ đá rơi (<see cref="FallingStalactite"/>).
 ///   • Bờ Hồ Tây: kè đá lan can, mặt hồ mênh mông, vệt trăng, bảo tháp trên đảo, thuyền đèn, liễu rủ, đèn đá.
+///   • Kinh thành (Hồi 2): tường thành gạch đỏ có lỗ châu mai, lầu cổng hai tầng mái ngói vàng, cờ đuôi nheo,
+///     thềm rồng đá, lư đồng, đèn lồng vàng, hàng cây đa.
 /// Các phần chung (nền, ánh sáng gốc, nhạc) theo kiểu cảnh gốc <see cref="Base"/>.
 /// </summary>
 public static partial class ZodiacLevelBuilder
@@ -16,7 +18,7 @@ public static partial class ZodiacLevelBuilder
     /// <summary>Kiểu cảnh gốc để dùng chung nhạc, bước chân, nền xa…</summary>
     static Backdrop Base(Backdrop b) => b switch
     {
-        Backdrop.Field or Backdrop.Market or Backdrop.Lakeshore => Backdrop.Village,
+        Backdrop.Field or Backdrop.Market or Backdrop.Lakeshore or Backdrop.Citadel => Backdrop.Village,
         Backdrop.Pond => Backdrop.Bamboo,
         Backdrop.Limestone => Backdrop.Cave,
         _ => b,
@@ -423,6 +425,95 @@ public static partial class ZodiacLevelBuilder
             var head = Box("StoneLanternHead", scenery, p + Vector3.up * 1f, new Vector3(0.55f, 0.4f, 0.55f), lamp, 1f);
             Box("StoneLanternCap", scenery, p + Vector3.up * 1.3f, new Vector3(0.8f, 0.15f, 0.8f), stone, 1f);
             ZodiacLights.AddPoint(head, new Color(1f, 0.75f, 0.45f), 5f, 1.8f);
+        }
+    }
+
+    // ───────────────────────────── Kinh thành Thăng Long (Hồi 2) ─────────────────────────────
+
+    static void BuildCitadel()
+    {
+        var t = ctx.textures;
+        var wall = Mat("CitadelWall", t.brick.texture, new Color(0.62f, 0.26f, 0.2f));
+        var wallTop = Mat("CitadelCoping", t.cobble.texture, new Color(0.7f, 0.62f, 0.55f));
+        var red = Plain("PalaceRed", new Color(0.72f, 0.12f, 0.1f));
+        var gold = Mat("YellowTile", t.roof.texture, new Color(0.95f, 0.72f, 0.2f));
+        var dark = Plain("GateDark", new Color(0.12f, 0.08f, 0.06f));
+        var stone = Mat("DragonStone", t.cobble.texture, Color.Lerp(def.stone, Color.white, 0.2f));
+        var bronze = Plain("Bronze", new Color(0.45f, 0.35f, 0.2f));
+        var lantern = Plain("YellowLantern", new Color(1f, 0.8f, 0.3f), new Color(1f, 0.7f, 0.2f) * 2f);
+        var trunk = Plain("BanyanTrunk", new Color(0.35f, 0.28f, 0.22f));
+        var leaves = Plain("BanyanLeaves", Color.Lerp(def.grass, new Color(0.2f, 0.4f, 0.2f), 0.4f));
+        Color[] flagColors = { new Color(0.9f, 0.15f, 0.1f), new Color(0.95f, 0.75f, 0.15f), new Color(0.2f, 0.4f, 0.75f) };
+
+        // Tường thành dài phía sau, lỗ châu mai trên đỉnh
+        float wz = def.laneMax + 6.5f, wallH = 4.2f;
+        Box("CitadelWall", scenery, new Vector3(def.Length / 2f, wallH / 2f, wz), new Vector3(def.Length + 60f, wallH, 2f), wall, 2f);
+        Box("CitadelCoping", scenery, new Vector3(def.Length / 2f, wallH + 0.1f, wz), new Vector3(def.Length + 60f, 0.2f, 2.2f), wallTop, 2f);
+        for (float x = -28f; x < def.Length + 30f; x += 1.6f)
+            Box("Merlon", scenery, new Vector3(x, wallH + 0.55f, wz - 0.7f), new Vector3(0.8f, 0.7f, 0.5f), wall, 1f);
+        // Lầu cổng hai tầng mái ngói vàng, cửa vòm tối, cờ hai bên
+        for (float x = R(6f, 14f); x < def.Length + 10f; x += R(28f, 36f))
+        {
+            var p = new Vector3(x, 0f, wz - 0.2f);
+            Box("GateTower", scenery, p + Vector3.up * 2.6f, new Vector3(7f, 5.2f, 3f), wall, 1.5f);
+            Box("GateArch", scenery, p + new Vector3(0f, 1.4f, -1.52f), new Vector3(2f, 2.8f, 0.05f), dark, 1f);
+            Primitive(PrimitiveType.Cylinder, "GateArchTop", scenery, p + new Vector3(0f, 2.8f, -1.53f), new Vector3(2f, 0.03f, 2f), dark, new Vector3(90f, 0f, 0f));
+            float y = 5.2f;
+            for (int k = 0; k < 2; k++)
+            {
+                float w = 6.4f - k * 1.8f;
+                for (int c = 0; c < 4; c++)
+                    Box("PavilionPillar", scenery, p + new Vector3(-w / 2f + 0.4f + c * (w - 0.8f) / 3f, y + 0.8f, -0.9f), new Vector3(0.22f, 1.6f, 0.22f), red, 1f);
+                Box("PavilionWall", scenery, p + new Vector3(0f, y + 0.8f, 0.2f), new Vector3(w - 0.4f, 1.6f, 1.8f), red, 1f);
+                Box("PavilionRoof", scenery, p + new Vector3(0f, y + 1.8f, -0.1f), new Vector3(w + 1.6f, 0.35f, 3.4f), gold, 1f, euler: new Vector3(-6f, 0f, 0f));
+                foreach (float s in new[] { -1f, 1f })
+                    Box("RoofCurl", scenery, p + new Vector3(s * (w / 2f + 0.9f), y + 2.05f, -1.4f), new Vector3(0.5f, 0.18f, 0.18f), gold, 1f, euler: new Vector3(0f, 0f, s * 25f));
+                y += 2.2f;
+            }
+            foreach (float dx in new[] { -4.6f, 4.6f })
+            {
+                Box("FlagPole", scenery, p + new Vector3(dx, 3.5f, -1.2f), new Vector3(0.1f, 7f, 0.1f), bronze, 1f);
+                var flag = Plain("CitadelFlag" + (int)(Mathf.Abs(dx + x) % 3), flagColors[rnd.Next(flagColors.Length)]);
+                Box("Flag", scenery, p + new Vector3(dx + 0.55f, 6.4f, -1.2f), new Vector3(1.1f, 0.7f, 0.03f), flag, 1f);
+            }
+        }
+        // Thềm rồng đá: lan can đá thấp sau con đường, đầu rồng ở các trụ
+        for (float x = 0f; x < def.Length; x += 3f)
+        {
+            Box("RailPost", scenery, new Vector3(x, 0.5f, def.laneMax + 1.2f), new Vector3(0.3f, 1f, 0.3f), stone, 1f);
+            if (Mathf.Repeat(x, 12f) < 0.1f)
+            {
+                Box("DragonHead", scenery, new Vector3(x + 0.15f, 1.15f, def.laneMax + 1.2f), new Vector3(0.6f, 0.35f, 0.35f), stone, 1f, euler: new Vector3(0f, 0f, 15f));
+                Box("DragonMane", scenery, new Vector3(x - 0.15f, 1.3f, def.laneMax + 1.2f), new Vector3(0.25f, 0.4f, 0.3f), stone, 1f);
+            }
+        }
+        Box("Rail", scenery, new Vector3(def.Length / 2f, 0.9f, def.laneMax + 1.2f), new Vector3(def.Length, 0.14f, 0.24f), stone, 1f);
+        // Hàng cây đa giữa tường thành và lan can, đèn lồng vàng treo trên cành
+        for (float x = R(-2f, 4f); x < def.Length + 6f; x += R(10f, 15f))
+        {
+            var p = new Vector3(x, 0f, def.laneMax + R(3.2f, 4.2f));
+            Primitive(PrimitiveType.Cylinder, "BanyanTrunk", scenery, p + Vector3.up * 1.6f, new Vector3(0.7f, 1.6f, 0.7f), trunk);
+            Primitive(PrimitiveType.Sphere, "BanyanCrown", scenery, p + Vector3.up * 4f, new Vector3(4.2f, 2.4f, 3f), leaves);
+            Primitive(PrimitiveType.Sphere, "BanyanCrown2", scenery, p + new Vector3(R(-1.2f, 1.2f), 4.8f, 0.4f), new Vector3(2.8f, 1.8f, 2.4f), leaves);
+            var l = Primitive(PrimitiveType.Sphere, "YellowLantern", scenery, p + new Vector3(R(-1f, 1f), 2.6f, -1f), new Vector3(0.36f, 0.46f, 0.36f), lantern);
+            ZodiacLights.AddPoint(l, new Color(1f, 0.75f, 0.35f), 5f, 1.4f);
+        }
+        // Tiền cảnh: lư đồng ba chân và chum cảnh
+        for (float x = R(4f, 8f); x < def.Length; x += R(10f, 14f))
+        {
+            var p = new Vector3(x, 0f, def.laneMin - R(1.8f, 2.6f));
+            if (rnd.NextDouble() < 0.5)
+            {
+                Primitive(PrimitiveType.Sphere, "Urn", scenery, p + Vector3.up * 0.8f, new Vector3(0.9f, 0.7f, 0.9f), bronze);
+                Primitive(PrimitiveType.Cylinder, "UrnNeck", scenery, p + Vector3.up * 1.25f, new Vector3(0.5f, 0.12f, 0.5f), bronze);
+                for (int k = 0; k < 3; k++)
+                {
+                    float a = k * Mathf.PI * 2f / 3f;
+                    Box("UrnLeg", scenery, p + new Vector3(Mathf.Cos(a) * 0.3f, 0.25f, Mathf.Sin(a) * 0.3f), new Vector3(0.1f, 0.5f, 0.1f), bronze, 1f);
+                }
+            }
+            else
+                Primitive(PrimitiveType.Cylinder, "PlanterJar", scenery, p + Vector3.up * 0.35f, new Vector3(0.9f, 0.35f, 0.9f), wall);
         }
     }
 

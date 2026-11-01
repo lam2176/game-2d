@@ -46,6 +46,8 @@ public class EncounterZone : MonoBehaviour
 
     [Header("Boss (không bắt buộc)")]
     public BossBase boss;
+    [Tooltip("Nhân máu boss (boss Hồi 2 mạnh hơn); sát thương tăng nửa phần đó.")]
+    public float bossScale = 1f;
     public GameObject bossBar;
     public Text bossNameText;
     public AudioClip bossMusic;
@@ -82,7 +84,8 @@ public class EncounterZone : MonoBehaviour
         if (count > 0) ComboCounter.BeginRoom(count);
         if (boss != null)
         {
-            boss.ApplyScaling(ZodiacDifficulty.HealthScale, ZodiacDifficulty.DamageScale, ZodiacDifficulty.LootScale);
+            boss.ApplyScaling(ZodiacDifficulty.HealthScale * bossScale, ZodiacDifficulty.DamageScale * (1f + (bossScale - 1f) * 0.5f),
+                              ZodiacDifficulty.LootScale);
             if (bossBar != null) bossBar.SetActive(true);
             if (bossNameText != null) bossNameText.text = boss.bossName;
             ZodiacAudio.PlayMusic(bossMusic, 0.6f);

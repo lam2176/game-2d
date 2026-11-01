@@ -15,7 +15,7 @@ public static class ZodiacJournal
     {
         new Beast
         {
-            id = "Enemy_LinhDatNung", name = "Lính Đất Nung", art = "LinhDatNung", where = "Làng Quê · Cánh Đồng · Chợ Phiên…",
+            id = "Enemy_LinhDatNung", name = "Lính Đất Nung", art = "LinhDatNung", where = "Làng Quê · Cánh Đồng · Chợ Phiên · Kinh thành…",
             lore = "Tượng lính nặn bằng đất sét đỏ trong lăng cổ. Đêm Ba Mươi, oán khí của Hồ Tinh thổi hồn vào, chúng thức dậy cầm giáo đi tuần như còn sống.",
             tip = "Đánh đủ 3 đòn để quật ngã. Lúc nó choáng thì túm ({Interact}) rồi ném vào cả đám.",
         },
@@ -45,7 +45,7 @@ public static class ZodiacJournal
         },
         new Beast
         {
-            id = "Enemy_ThachSu", name = "Thạch Sư", art = "ThachSu", where = "Hang Đá Vôi · Bờ Hồ Tây · Động Hồ Tinh",
+            id = "Enemy_ThachSu", name = "Thạch Sư", art = "ThachSu", where = "Hang Đá Vôi · Bờ Hồ Tây · Động Hồ Tinh · Hoàng Thành",
             lore = "Sư tử đá canh cửa đền, bị yểm bùa nên phun lửa vào bất cứ ai đi qua.",
             tip = "Đứng yên một chỗ, không quật ngã được. Đổi làn hoặc nhảy tránh lửa, chém tan cầu lửa rồi áp sát đánh.",
         },
@@ -63,7 +63,7 @@ public static class ZodiacJournal
         },
         new Beast
         {
-            id = "Boss_ChanTinh", name = "Chằn Tinh", art = "ChanTinh", where = "Hang Đá Vôi",
+            id = "Boss_ChanTinh", name = "Chằn Tinh", art = "ChanTinh", where = "Hang Đá Vôi · Cổng Đoan Môn",
             lore = "Yêu tinh khổng lồ trong truyện Thạch Sanh, từng bắt dân làng nộp người hằng năm. Hồ Tinh hứa trả lại cho nó cả một năm không có ban ngày.",
             tip = "Giơ chùy là sắp nện — lùi ra rồi nhảy qua sóng chấn. Để nó húc vào vách: nó choáng, tha hồ đánh.",
         },
