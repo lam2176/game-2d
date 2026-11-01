@@ -199,7 +199,7 @@ public static class ZodiacEnemyFactory
         col.excludeLayers = 1 << playerLayer;
         var v = Visual(root);
         var glow = Shape(v, "Glow", true, Vector2.zero, new Vector2(1.5f, 1.5f), new Color(0.4f, 0.9f, 1f, 0.35f), 7);
-        Unlit(glow);
+        Unlit(glow).AddComponent<GlowPart>();   // quầng sáng không nháy theo khi trúng đòn
         if (Art(v, "MaTroi", 1.3f, Vector2.zero, 9, 0f, lit: false) == null)
         {
             Shape(v, "Flame", true, new Vector2(-0.12f, 0.12f), new Vector2(0.5f, 0.75f), new Color(0.45f, 0.95f, 0.95f), 8, 20f);
