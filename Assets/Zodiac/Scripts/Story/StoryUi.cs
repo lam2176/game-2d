@@ -68,7 +68,8 @@ public class StoryUi : MonoBehaviour
 
     void Awake()
     {
-        canvas = ZodiacUi.Canvas(transform, "StoryCanvas", 80);
+        // Trên mọi thanh chiến đấu (số sát thương 95, thanh mục tiêu 96, thanh boss 90), dưới các cửa sổ (≥ 300)
+        canvas = ZodiacUi.Canvas(transform, "StoryCanvas", 100);
         BuildDialogue();
         BuildPanels();
     }

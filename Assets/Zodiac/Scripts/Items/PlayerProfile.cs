@@ -182,9 +182,21 @@ public class PlayerProfile
     /// <summary>Tài khoản online đang dùng (<see cref="ZodiacCloud"/>) — null thì dùng ô lưu trên máy.</summary>
     static string account;
 
-    static string FilePath => account != null
+    /// <summary>File hồ sơ tạm cho kiểm tra khói — có thì dùng thay ô lưu / tài khoản, không đồng bộ máy chủ.</summary>
+    static string smokePath;
+
+    /// <summary>Chỉ cho ZodiacSmokeTest: chuyển sang hồ sơ tạm mới (zodiac_smoke.json).</summary>
+    internal static void UseSmokeFile()
+    {
+        smokePath = Path.Combine(Application.persistentDataPath, "zodiac_smoke.json");
+        if (File.Exists(smokePath)) File.Delete(smokePath);
+        current = null;
+        Changed?.Invoke();
+    }
+
+    static string FilePath => smokePath ?? (account != null
         ? Path.Combine(Application.persistentDataPath, $"zodiac_acc_{account}.json")
-        : PathFor(Slot);
+        : PathFor(Slot));
 
     public static bool HasSave => File.Exists(FilePath);
 
@@ -194,6 +206,7 @@ public class PlayerProfile
     /// </summary>
     public static void UseAccount(string username, string serverJson, bool keepLocal)
     {
+        if (smokePath != null) return;
         account = username;
         current = null;
         try
@@ -384,7 +397,7 @@ public class PlayerProfile
         {
             lastSaved = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
             File.WriteAllText(FilePath, JsonUtility.ToJson(this, true));
-            if (account != null) ZodiacCloud.MarkDirty();
+            if (account != null && smokePath == null) ZodiacCloud.MarkDirty();
         }
         catch (Exception e)
         {

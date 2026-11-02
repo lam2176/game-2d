@@ -407,11 +407,15 @@ public static class ZodiacPrototypeBuilder
         return AssetDatabase.LoadAssetAtPath<Sprite>(path);
     }
 
+    /// <summary>Scene trống của template Unity (trời xanh, đất xám) — không đưa vào bản build.</summary>
+    internal const string TemplateScenePath = "Assets/Scenes/SampleScene.unity";
+
     static void UpdateBuildSettings()
     {
         var paths = ScenePaths.ToList();
         var scenes = paths.Select(p => new EditorBuildSettingsScene(p, true)).ToList();
-        scenes.AddRange(EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path)));
+        // Giữ scene khác đã có (vd. Zodiac_Login) nhưng bỏ SampleScene của template
+        scenes.AddRange(EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path) && s.path != TemplateScenePath));
         EditorBuildSettings.scenes = scenes.ToArray();
     }
 

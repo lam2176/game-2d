@@ -352,6 +352,9 @@ public class ZodiacGameManager : MonoBehaviour
         if (collectText != null) collectText.text = $"Đồng xu: {collected}/{total}";
     }
 
+    /// <summary>Chỉ cho kiểm tra khói (ZodiacSmokeTest): thắng màn ngay.</summary>
+    internal void SmokeWin() => Finish(State.Won);
+
     public void Restart() => ScreenFader.LoadScene(SceneManager.GetActiveScene().name);
 
     /// <summary>Tải lại màn và bắt đầu ở đèn lồng đã thắp xa nhất (không có thì như chơi lại).</summary>
