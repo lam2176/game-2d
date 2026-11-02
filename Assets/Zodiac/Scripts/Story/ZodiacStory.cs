@@ -551,12 +551,24 @@ public static class ZodiacStory
             StoryArt.Kind.Dawn, "@me"),
     };
 
-    /// <summary>Kết thúc riêng của con giáp (mở đầu bằng khung chung).</summary>
+    /// <summary>Kết Hồi 1 (thắng Hồ Tinh dưới đáy Hồ Tây) — chưa phải phá đảo.</summary>
+    public static readonly Panel[] Act1Ending =
+    {
+        endingCommon[0],
+        new Panel("Còn sáu đuôi",
+            "Hồ Tinh để lại sáu chiếc đuôi rồi trốn lên kinh thành. Mười một Âm Phù vẫn nằm trong tay yêu quái.",
+            StoryArt.Kind.Shards),
+        new Panel("Hết Hồi 1",
+            "Hồi 2 — Kinh thành Thăng Long — đang chờ phía trước. Về làng nghỉ chân, đập đồ rồi lên đường nhé!",
+            StoryArt.Kind.Village),
+    };
+
+    /// <summary>Kết thúc riêng của con giáp — xem sau trận cuối Hồi 4.</summary>
     public static Panel[] Ending(string character)
     {
-        var list = new List<Panel>(endingCommon);
+        var list = new List<Panel>();
         if (endings.TryGetValue(character, out var own)) list.AddRange(own);
-        list.Add(new Panel("Còn sáu đuôi", "Phá đảo với cả mười hai con giáp để nghe trọn Khúc Giao Thừa.", StoryArt.Kind.Shards));
+        list.Add(new Panel("Mười hai canh giờ", "Phá đảo với cả mười hai con giáp để nghe trọn Khúc Giao Thừa.", StoryArt.Kind.Shards));
         return list.ToArray();
     }
 
@@ -601,13 +613,14 @@ public static class ZodiacStory
             "Dưới trần gian, pháo hoa nở rộ. Người làng ra sân đình, bánh chưng đã chín, câu đối đỏ dán trên mọi cửa.",
             StoryArt.Kind.Dawn, "@me"),
         new Panel("Hết Hồi 4",
-            "Đã phá đảo trọn bốn hồi! Phá đảo với cả mười hai con giáp để nghe trọn Khúc Giao Thừa — và thử sức ở độ khó Ác Mộng.",
+            "Đã phá đảo trọn bốn hồi! Độ khó Ác Mộng đã mở.",
             StoryArt.Kind.Village),
     };
 
-    /// <summary>Kết hồi theo số hồi (null = Hồi 1, dùng kết thúc riêng của con giáp).</summary>
+    /// <summary>Kết hồi theo số hồi.</summary>
     public static Panel[] ActEnding(int act) => act switch
     {
+        1 => Act1Ending,
         2 => Act2Ending,
         3 => Act3Ending,
         4 => Act4Ending,

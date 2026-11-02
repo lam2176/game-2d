@@ -36,7 +36,7 @@ public class ZodiacGameManager : MonoBehaviour
     public string levelTitle = "";
     [Tooltip("Thứ tự màn (0 = màn 1) — thắng thì mở màn kế trong hồ sơ.")]
     public int levelIndex;
-    [Tooltip("Hồi của màn — thắng màn cuối từ Hồi 2 trở đi thì xem kết hồi (ZodiacStory.ActEnding) thay cho kết thúc riêng của con giáp.")]
+    [Tooltip("Hồi của màn — thắng màn cuối hồi thì xem kết hồi (ZodiacStory.ActEnding); màn cuối Hồi 4 là phá đảo (mở Ác Mộng + kết thúc riêng của con giáp).")]
     public int act = 1;
     [Tooltip("Scene Làng Trung Tâm (nút Về làng).")]
     public string villageScene = "";
@@ -309,12 +309,14 @@ public class ZodiacGameManager : MonoBehaviour
         if (res != null) ZodiacAudio.Play(result == State.Won ? res.win : res.lose, 1f, 0f);
         if (result == State.Won)
         {
+            // Màn cuối mỗi hồi không có màn kế; chỉ trận cuối Hồi 4 mới là phá đảo (mở Ác Mộng, kết thúc riêng)
             bool final = string.IsNullOrEmpty(nextSceneName);
-            PlayerProfile.Current.CompleteLevel(levelIndex, final);
+            bool gameClear = final && act >= 4;
+            PlayerProfile.Current.CompleteLevel(levelIndex, gameClear);
             winDetailText.text = $"Thu được {collected}/{total} đồng xu";
             if (nextButtonLabel != null)
                 nextButtonLabel.text = final ? "Về làng" : "Màn tiếp theo";
-            // Lời kết màn → (màn cuối) kết thúc riêng của con giáp → (đủ 12 con) kết thúc thật → bảng thắng
+            // Lời kết màn → (màn cuối hồi) kết hồi → (phá đảo) kết thúc riêng của con giáp → (đủ 12 con) kết thúc thật → bảng thắng
             StoryUi.ShowDialogue(ZodiacStory.LevelWin(levelIndex, CharacterKey), () =>
             {
                 if (!final)
@@ -322,25 +324,20 @@ public class ZodiacGameManager : MonoBehaviour
                     winPanel.SetActive(true);
                     return;
                 }
-                int total = player.roster != null ? player.roster.Count : 12;
-                var actEnding = ZodiacStory.ActEnding(act);
-                if (actEnding != null)
+                var actEnding = ZodiacStory.ActEnding(act) ?? System.Array.Empty<ZodiacStory.Panel>();
+                if (!gameClear)
                 {
-                    // Trận cuối (Hồi 4) cũng tính là phá đảo với con giáp này; đủ mười hai con thì xem kết thúc thật
-                    bool allSeen = act >= 4 && PlayerProfile.Current.AddEnding(CharacterKey, total);
-                    StoryUi.ShowPanels(actEnding, () =>
-                    {
-                        if (allSeen) StoryUi.ShowPanels(ZodiacStory.TrueEnding, () => winPanel.SetActive(true));
-                        else winPanel.SetActive(true);
-                    });
+                    StoryUi.ShowPanels(actEnding, () => winPanel.SetActive(true));
                     return;
                 }
+                int total = player.roster != null ? player.roster.Count : 12;
                 bool all = PlayerProfile.Current.AddEnding(CharacterKey, total);
-                StoryUi.ShowPanels(ZodiacStory.Ending(CharacterKey), () =>
-                {
-                    if (all) StoryUi.ShowPanels(ZodiacStory.TrueEnding, () => winPanel.SetActive(true));
-                    else winPanel.SetActive(true);
-                });
+                StoryUi.ShowPanels(actEnding, () =>
+                    StoryUi.ShowPanels(ZodiacStory.Ending(CharacterKey), () =>
+                    {
+                        if (all) StoryUi.ShowPanels(ZodiacStory.TrueEnding, () => winPanel.SetActive(true));
+                        else winPanel.SetActive(true);
+                    }));
             });
         }
         else
