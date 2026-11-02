@@ -62,6 +62,7 @@ public class ZodiacSmokeTest : MonoBehaviour
             yield return Exercise();
         }
         WriteReport();
+        if (shotDir != null) yield return new WaitForSecondsRealtime(1f); // chờ ảnh cuối ghi xong
         Application.Quit(errors.Count == 0 ? 0 : 1);
     }
 
@@ -212,7 +213,11 @@ public class ZodiacSmokeTest : MonoBehaviour
         if (shotDir == null) yield break;
         yield return new WaitForEndOfFrame();
         shotCount++;
-        ScreenCapture.CaptureScreenshot(Path.Combine(shotDir, $"{shotCount:000}_{currentScene}_{name}.png"));
+        string file = Path.Combine(shotDir, $"{shotCount:000}_{currentScene}_{name}.png");
+        // Điện thoại: CaptureScreenshot tự ghép persistentDataPath vào trước → truyền đường dẫn tương đối
+        if (Application.isMobilePlatform && file.StartsWith(Application.persistentDataPath))
+            file = file.Substring(Application.persistentDataPath.Length).TrimStart('/');
+        ScreenCapture.CaptureScreenshot(file);
         yield return null;
     }
 
