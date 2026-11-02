@@ -6,11 +6,68 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Login.unity
+    guid: 8febb517778d7e44c886260b11601d9b
+  - enabled: 1
     path: Assets/Zodiac/Scenes/Zodiac_Start.unity
     guid: bb0ec7bf14e110f4a89a6e910ef7ad46
   - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Village.unity
+    guid: e227dc2a9d231f1468c25c032d25b3a3
+  - enabled: 1
     path: Assets/Zodiac/Scenes/Zodiac_Level01.unity
     guid: ab10d2b801eaf5944815c7d6903bc8bf
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level04.unity
+    guid: b2a5fe1968179154297ecd92ba18047e
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level02.unity
+    guid: f3845b427fd0d2348b221dfd8d1b4d62
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level05.unity
+    guid: aa97f05c216faf545a1abc80ab40d497
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level06.unity
+    guid: 7641f7765f11cfa49a4b5fc39e848b52
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level07.unity
+    guid: c012e4e2b9a5e1541b5975db356a23d2
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level08.unity
+    guid: 253d0cebef667b444a14c0c248dc1305
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level03.unity
+    guid: 47b28e3639850d943b650e07500aee84
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level09.unity
+    guid: c058f1e96b78aa44e846c98752f9668d
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level10.unity
+    guid: 13f365ba53852ae468e528437e51b3e2
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level11.unity
+    guid: 5edcca984b737864ca639cce41207020
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level12.unity
+    guid: 9d7b0ddd16dd04a46b7b28e64f77f0bd
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level13.unity
+    guid: 34a0e000413caf24f92e5ddbd000f1c0
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level14.unity
+    guid: ec8e334e9b1426649a28b0a9e111ee1a
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level15.unity
+    guid: 21d98627ca45c874980e9f377cfa48fd
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level16.unity
+    guid: 595609ac7e12925408933eae034e4023
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Level17.unity
+    guid: 335a12b098893d24a9915ad8c063bf06
+  - enabled: 1
+    path: Assets/Zodiac/Scenes/Zodiac_Tower.unity
+    guid: 3ad2e70c91e591e46b1d4b6c6c83ef34
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05

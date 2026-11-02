@@ -9,7 +9,8 @@ using UnityEngine.SceneManagement;
 /// Kiểm tra khói tự động cho bản build: chạy game với tham số <c>-zodiacSmoke</c> thì lần lượt mở mọi scene trong
 /// Build Settings, cho người chơi bất tử, đi qua từng khu (cả khu bí mật), mở thử các cửa sổ (cài đặt, hành trang,
 /// sổ ghi chép, làng, tháp), ép thắng từng màn (lời kết, kết hồi, kết thúc), ghi mọi lỗi / exception vào
-/// <c>smoke-report.txt</c> cạnh file exe rồi tự thoát. Dùng hồ sơ tạm riêng — không đụng ô lưu / tài khoản thật.
+/// <c>smoke-report.txt</c> cạnh file exe (điện thoại: persistentDataPath, chạy bằng
+/// <c>adb shell am start -n com.tunglam.zodiac/com.unity3d.player.UnityPlayerGameActivity -e unity -zodiacSmoke</c>) rồi tự thoát. Dùng hồ sơ tạm riêng — không đụng ô lưu / tài khoản thật.
 /// Không có tham số thì không làm gì.
 /// </summary>
 public class ZodiacSmokeTest : MonoBehaviour
@@ -171,7 +172,10 @@ public class ZodiacSmokeTest : MonoBehaviour
         foreach (var e in errors) sb.AppendLine(e);
         sb.AppendLine();
         sb.Append(log);
-        string dir = Path.GetDirectoryName(Application.dataPath);
-        File.WriteAllText(Path.Combine(dir, "smoke-report.txt"), sb.ToString(), Encoding.UTF8);
+        // Điện thoại: thư mục APK chỉ đọc → ghi vào persistentDataPath, in thêm ra log (adb logcat -s Unity)
+        string dir = Application.isMobilePlatform ? Application.persistentDataPath : Path.GetDirectoryName(Application.dataPath);
+        Debug.Log("[ZodiacSmoke]\n" + sb);
+        try { File.WriteAllText(Path.Combine(dir, "smoke-report.txt"), sb.ToString(), Encoding.UTF8); }
+        catch (System.Exception e) { Debug.LogWarning("[ZodiacSmoke] Không ghi được báo cáo: " + e.Message); }
     }
 }

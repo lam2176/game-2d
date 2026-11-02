@@ -14,9 +14,66 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ZodiacCharacter
   displayName: "Kh\u1EC9"
   zodiacName: "Th\xE2n"
+  instrument: "Ch\u0169m ch\u1ECDe"
   sprite: {fileID: 21300000, guid: 50fd3113bfed432bb5f646f93dfc1483, type: 3}
+  themeColor: {r: 0.95, g: 0.7, b: 0.25, a: 1}
   colliderSize: {x: 0.8, y: 1.9}
   colliderOffset: {x: 0.15, y: 0.95}
+  maxHealth: 100
   walkSpeed: 5
   runSpeed: 8.5
   jumpHeight: 3.2
+  attackDamage: 20
+  defense: 0
+  maxEnergy: 100
+  energyRegen: 2.5
+  passiveName: "T\u1EC1 Thi\xEAn"
+  passiveDescription: "Nh\u1EA3y th\xEAm 1 l\u1EA7n tr\xEAn kh\xF4ng \u2014 \u0111\xE1 bay tr\xFAng qu\xE1i h\u1ED3i th\xEAm 6 Kh\xED, tung h\u1EE9ng qu\xE1i li\xEAn ho\xE0n."
+  airJumps: 1
+  glideFallSpeed: 0
+  knockbackResistance: 0
+  lastStandCharges: 0
+  poisonDamage: 0
+  coinMagnetRadius: 0
+  coinsPerHeal: 0
+  stompDamageMultiplier: 1
+  critBonus: 0
+  dodgeCooldownScale: 1
+  airHitEnergy: 6
+  airHitStun: 0
+  finisherFireball: 0
+  skill:
+    type: 1
+    name: "Ch\u0169m Ch\u1ECDe Bay"
+    description: "N\xE9m ch\u0169m ch\u1ECDe xoay t\xEDt bay ra r\u1ED3i quay v\u1EC1 tay, ch\xE9m m\u1ECDi qu\xE1i tr\xEAn \u0111\u01B0\u1EDDng \u0111i l\u1EABn \u0111\u01B0\u1EDDng v\u1EC1.\n(Tham kh\u1EA3o: Metal Blade c\u1EE7a Mega Man, boomerang c\u1EE7a Zelda)"
+    cooldown: 1.8
+    energyCost: 35
+    damage: 20
+    dashSpeed: 20
+    dashTime: 0.2
+    dashAngle: 0
+    dashInvulnerable: 1
+    dashBounceOnHit: 0
+    projectileCount: 1
+    spreadAngle: 0
+    projectileSpeed: 13
+    projectileRange: 10
+    projectileSize: 0.7
+    pierce: -1
+    boomerang: 1
+    bothDirections: 0
+    groundWave: 0
+    radius: 3
+    forwardOffset: 0
+    stunTime: 1
+    knockback: 1
+    clearsProjectiles: 0
+    diveSpeed: 26
+    healAmount: 40
+    channelTime: 0.6
+    stealthDuration: 2.5
+    backstabMultiplier: 3
+  skillSound: {fileID: 8300000, guid: c54e1e393f106714dabb1365d8ea1aa3, type: 3}
+  ultimateName: "T\u1EC1 Thi\xEAn \u0110\u1EA1i Th\xE1nh"
+  ultimateDescription: "Nh\u1ED5 l\xF4ng th\u1ED5i ra 3 ph\xE2n th\xE2n v\xE0ng t\u1EF1 lao v\xE0o \u0111\xE1nh qu\xE1i trong 8 gi\xE2y \u2014 Kh\u1EC9 v\u1EABn \u0111\xE1nh ti\u1EBFp \u0111\u01B0\u1EE3c."
+  dataVersion: 8
