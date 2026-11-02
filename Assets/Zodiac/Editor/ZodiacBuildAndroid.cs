@@ -52,7 +52,7 @@ public static class ZodiacBuildAndroid
 
     static bool Build()
     {
-        var scenes = EditorBuildSettings.scenes.Where(s => s.enabled && File.Exists(s.path)).Select(s => s.path).ToArray();
+        var scenes = EditorBuildSettings.scenes.Where(s => s.enabled && File.Exists(s.path) && s.path != ZodiacPrototypeBuilder.TemplateScenePath).Select(s => s.path).ToArray();
         if (scenes.Length == 0)
         {
             Debug.LogError("[ZodiacBuild] Build Settings chưa có scene — chạy Tools/Zodiac/Dựng prototype trước.");

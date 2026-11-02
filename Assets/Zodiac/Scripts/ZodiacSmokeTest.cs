@@ -48,10 +48,12 @@ public class ZodiacSmokeTest : MonoBehaviour
         PlayerProfile.UseSmokeFile();
         yield return null;
         int count = SceneManager.sceneCountInBuildSettings;
+        string only = Arg("-zodiacOnly");
         for (int i = 0; i < count; i++)
         {
             string path = SceneUtility.GetScenePathByBuildIndex(i);
             currentScene = Path.GetFileNameWithoutExtension(path);
+            if (only != null && currentScene != only) continue;
             Note($"Mở {currentScene}");
             SceneManager.LoadScene(i);
             yield return null;
@@ -150,14 +152,37 @@ public class ZodiacSmokeTest : MonoBehaviour
             if (p.endingsSeen.Count - endBefore != (clear ? 1 : 0))
                 errors.Add($"[{currentScene}] Số kết thúc {p.endingsSeen.Count} sai sau màn {gm.levelIndex + 1}");
         }
-        // Tháp: để chạy một lúc (sinh quái, luật tầng)
+        // Tháp: để chạy một lúc (sinh quái, luật tầng); -zodiacOnly thì chạy lâu hơn và chụp màn hình
         if (FindAnyObjectByType<TowerRun>() != null)
-            for (float t = 0f; t < 8f; t += 0.5f)
+        {
+            float duration = Arg("-zodiacOnly") != null ? 40f : 8f;
+            for (float t = 0f; t < duration; t += 0.5f)
             {
                 health?.SetInvulnerable(100000f);
+                if (Mathf.Repeat(t, 4f) < 0.01f) Shot($"{currentScene}_{t:00}");
                 yield return new WaitForSecondsRealtime(0.5f);
             }
+            Note($"  tháp: tầng {TowerRun.CurrentFloor}, camera {Describe(Camera.main)}");
+        }
     }
+
+    static string Arg(string name)
+    {
+        var args = System.Environment.GetCommandLineArgs();
+        int i = System.Array.IndexOf(args, name);
+        return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+    }
+
+    /// <summary>Chụp màn hình khi chạy có đồ hoạ (cạnh exe / persistentDataPath trên điện thoại).</summary>
+    void Shot(string name)
+    {
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return;
+        string dir = Application.isMobilePlatform ? Application.persistentDataPath : Path.GetDirectoryName(Application.dataPath);
+        ScreenCapture.CaptureScreenshot(Path.Combine(dir, $"smoke_{name}.png"));
+    }
+
+    static string Describe(Camera c) => c == null ? "không có" :
+        $"{c.transform.position} xoá {c.clearFlags} màu {c.backgroundColor}, sương {(RenderSettings.fog ? $"{RenderSettings.fogStartDistance}-{RenderSettings.fogEndDistance} {RenderSettings.fogColor}" : "tắt")}";
 
     static void SkipStory()
     {
